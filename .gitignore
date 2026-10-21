@@ -26,6 +26,7 @@ testdata/fuzz/
 /scratch/
 /nsd-work/
 /generated/
+/.generated/
 /generated-docs/
 .nsd-cache/
 

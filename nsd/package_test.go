@@ -5,6 +5,8 @@ package nsd_test
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io/fs"
 	"os"
@@ -144,7 +146,7 @@ func TestReadZIPRejectsUnsafeArchives(t *testing.T) {
 		{"compression ratio", []entry{{name: "bomb.nsd", data: bomb}}, nil, model.ErrLimitExceeded},
 		{"ratio option", []entry{{name: "bomb.nsd", data: bomb}}, []nsd.Option{nsd.WithMaxCompressionRatio(1 << 20), nsd.WithMaxDocumentSize(1 << 10)}, model.ErrLimitExceeded},
 		{"archive budget", []entry{{name: "a.nsd", data: ns}, {name: "b.nsd", data: ns}}, []nsd.Option{nsd.WithMaxArchiveSize(int64(len(ns)) + 500)}, model.ErrLimitExceeded},
-		{"duplicate namespace", []entry{{name: "a.nsd", data: ns}, {name: "b.nsd", data: ns}}, nil, model.ErrNamespaceConflict},
+		{"conflicting namespace", []entry{{name: "a.nsd", data: ns}, {name: "b.nsd", data: append(append([]byte(nil), ns...), "<!-- other -->"...)}}, nil, model.ErrNamespaceConflict},
 		{"invalid document", []entry{{name: "a.nsd", data: []byte("<NS")}}, nil, model.ErrInvalidNSD},
 		{"bad manifest", []entry{{name: "IECManifest.xml", data: []byte("<m>")}}, nil, model.ErrInvalidNSD},
 	}
@@ -162,6 +164,35 @@ func TestReadZIPRejectsUnsafeArchives(t *testing.T) {
 	}
 	if _, err := nsd.ReadZIP(strings.NewReader("xxxx"), nsd.WithMaxArchiveSize(2)); !errors.Is(err, model.ErrLimitExceeded) {
 		t.Errorf("oversized archive error = %v", err)
+	}
+}
+
+func TestIdenticalDocumentsAreDeduplicated(t *testing.T) {
+	ns := fixtures.Read(t, fixtures.NS72)
+	inner := buildZIP(t, entry{name: "x.nsd", data: ns}, entry{name: "Manifest.xml", data: []byte(`<IECManifest><Copyright><Notice> Notice  text </Notice><License uri="www.iec.ch/CCv1" kind="Standard"/></Copyright></IECManifest>`)})
+	outer := buildZIP(t, entry{name: "pkg/x.nsd", data: ns}, entry{name: "pkg/inner.zip", data: inner},
+		entry{name: "pkg/s.snsd", data: []byte(`<ServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-8-1" version="2003" revision="A" release="4"/>`)},
+		entry{name: "pkg/a.AppNS", data: []byte(`<ApplicableServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" version="2"/>`)})
+	p, err := nsd.ReadZIP(bytes.NewReader(outer))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Namespaces()) != 1 || !hasDiagSource(p.Diagnostics(), "duplicate-document", "inner.zip") {
+		t.Errorf("dedupe: %d namespaces %v", len(p.Namespaces()), p.Diagnostics())
+	}
+	if s := p.ServiceNamespaces(); len(s) != 1 || s[0].String() != "IEC 61850-8-1:2003A4" {
+		t.Errorf("service namespaces %v", s)
+	}
+	m := p.Manifest()
+	if m == nil {
+		t.Fatal("Manifest.xml not recognized")
+	}
+	if uri, kind, ok := m.License(); !ok || uri != "www.iec.ch/CCv1" || kind != "Standard" || m.Notice() != "Notice text" {
+		t.Errorf("license %q %q %v, notice %q", uri, kind, ok, m.Notice())
+	}
+	empty := &nsd.Manifest{}
+	if _, _, ok := empty.License(); ok || empty.Notice() != "" {
+		t.Error("empty manifest")
 	}
 }
 
@@ -184,6 +215,16 @@ func TestLoadFileDirZIP(t *testing.T) {
 	}
 	if len(p.Namespaces()) != 1 || p.Namespaces()[0].Provenance.PackageSHA256 != "" || p.SHA256() == "" {
 		t.Errorf("LoadFile(nsd) %+v", p.Namespaces()[0].Provenance)
+	}
+	inDir, err := nsd.LoadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zipDigest := sha256.Sum256(must(os.ReadFile(zipPath)))
+	for _, ns := range inDir.Namespaces() {
+		if ns.Provenance.PackageSHA256 != hex.EncodeToString(zipDigest[:]) {
+			t.Errorf("%s loaded from a directory must record the archive digest: %+v", ns.ID, ns.Provenance)
+		}
 	}
 	p, err = nsd.LoadDir(fixtures.Dir())
 	if err != nil {
@@ -217,6 +258,13 @@ func TestLoadFileDirZIP(t *testing.T) {
 	if _, err := nsd.LoadDir(fixtures.Dir(), nsd.WithMaxDocumentSize(10)); !errors.Is(err, model.ErrLimitExceeded) {
 		t.Errorf("oversized dir entry error = %v", err)
 	}
+}
+
+func must(data []byte, err error) []byte {
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 func TestValidateNil(t *testing.T) {

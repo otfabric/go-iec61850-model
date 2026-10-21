@@ -91,6 +91,10 @@ type Result struct {
 	// Abstract marks abstract logical node classes and their data
 	// objects.
 	Abstract bool `json:"abstract,omitempty"`
+	// Variant is the CDC variant of CDC and data attribute results.
+	Variant string `json:"variant,omitempty"`
+	// Extension marks extension classes and the data objects they add.
+	Extension bool `json:"extension,omitempty"`
 }
 
 // Search returns the elements matching q in a stable order: by kind,
@@ -132,7 +136,7 @@ func (v *view) Search(q Query) []Result {
 					continue
 				}
 				if want(KindLogicalNode) && nameOK(ln.Name) && (q.CDC == "" || declaresCDC(ln, q.CDC)) {
-					out = append(out, Result{Kind: KindLogicalNode, Name: ln.Name, Path: ln.Name, Namespace: ns.ID, Abstract: ln.Abstract})
+					out = append(out, Result{Kind: KindLogicalNode, Name: ln.Name, Path: ln.Name, Namespace: ns.ID, Abstract: ln.Abstract, Extension: ln.IsExtension})
 				}
 				if !want(KindDataObject) {
 					continue
@@ -142,7 +146,7 @@ func (v *view) Search(q Query) []Result {
 					if nameOK(do.Name) && (q.CDC == "" || do.Type == q.CDC) {
 						out = append(out, Result{
 							Kind: KindDataObject, Name: do.Name, Path: model.Path(ln.Name, do.Name), Namespace: ns.ID,
-							Type: do.Type, Presence: do.Presence, Abstract: ln.Abstract,
+							Type: do.Type, Presence: do.Presence, Abstract: ln.Abstract, Extension: ln.IsExtension,
 						})
 					}
 				}
@@ -157,7 +161,7 @@ func (v *view) Search(q Query) []Result {
 				continue
 			}
 			if want(KindCDC) && cdcFilters && nameOK(c.Name) {
-				out = append(out, Result{Kind: KindCDC, Name: c.Name, Path: c.Name, Namespace: ns.ID})
+				out = append(out, Result{Kind: KindCDC, Name: c.Name, Path: c.Key(), Namespace: ns.ID, Variant: c.Variant})
 			}
 			if !want(KindDataAttribute) || !daFilters {
 				continue
@@ -165,7 +169,7 @@ func (v *view) Search(q Query) []Result {
 			for j := range c.DataAttributes {
 				a := &c.DataAttributes[j]
 				if attrOK(a) {
-					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Name, a.Name), Namespace: ns.ID, Type: a.Type, FC: a.FC, Presence: a.Presence})
+					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Key(), a.Name), Namespace: ns.ID, Type: a.Type, FC: a.FC, Presence: a.Presence, Variant: c.Variant})
 				}
 			}
 		}

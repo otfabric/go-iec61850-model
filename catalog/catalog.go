@@ -104,41 +104,13 @@ func (c *Catalog) Standards() []string {
 	return out
 }
 
-// match finds the loaded namespace a possibly partial ID designates:
-// the exact ID, or the only loaded release that matches the fields
-// that are set.
+// match finds the loaded namespace a possibly partial ID designates.
 func (c *Catalog) match(id model.NamespaceID) (*model.Namespace, error) {
-	if ns, ok := c.byID[id]; ok {
-		return ns, nil
+	resolved, err := c.ResolveNamespace(id)
+	if err != nil {
+		return nil, err
 	}
-	var found []*model.Namespace
-	for _, ns := range c.namespaces {
-		if ns.ID.Standard != id.Standard {
-			continue
-		}
-		if id.Version != "" && ns.ID.Version != id.Version {
-			continue
-		}
-		if id.Revision != "" && ns.ID.Revision != id.Revision {
-			continue
-		}
-		if id.Release != 0 && ns.ID.Release != id.Release {
-			continue
-		}
-		found = append(found, ns)
-	}
-	switch len(found) {
-	case 0:
-		return nil, fmt.Errorf("%w: %s", model.ErrUnknownNamespace, id)
-	case 1:
-		return found[0], nil
-	default:
-		ids := make([]model.NamespaceID, len(found))
-		for i, ns := range found {
-			ids[i] = ns.ID
-		}
-		return nil, &model.AmbiguityError{Kind: "namespace", Name: id.String(), Candidates: ids}
-	}
+	return c.byID[resolved], nil
 }
 
 // DefaultProfile returns a profile of every loaded namespace when the

@@ -1,6 +1,10 @@
 # Licensing of IEC source material
 
-This repository is MIT-licensed. The license covers the code written for it:
+This repository is MIT-licensed, except the generated output in `names/`,
+`official/` and `docs/reference/`, which is derived from IEC code components
+and published under the IEC Code Components license (see
+[Decision](#decision)). The MIT license covers the code written for the
+repository:
 API contracts, importer, catalog, resolver, tests and tools. It grants nothing
 for IEC standards or for the NSD files you load with the library.
 
@@ -8,7 +12,7 @@ for IEC standards or for the NSD files you load with the library.
 
 - No official IEC NSD, NSDoc or XSD files, and no ZIP packages of them.
 - No text from IEC standards or NSDoc files: no titles, descriptions, tables or
-  presence-condition explanations.
+  presence-condition explanations, also not in the generated output.
 - Small, **independently authored** test fixtures in [testdata/nsd](../testdata/nsd).
   They follow the NSD structure so the importer is exercised on realistic
   input, contain only the definitions the tests need, and use OTFabric wording
@@ -16,12 +20,18 @@ for IEC standards or for the NSD files you load with the library.
   chains (`MMXU`, `Hz`, `MV`, `mag`, `FLOAT32`) appear in them.
 - OTFabric-authored labels, such as the short logical node group names returned
   by `model.LNGroup.Label`.
+- IEC-derived output, under a recorded decision (see [Decision](#decision)),
+  each directory with the attribution and notices in its `NOTICE.md`:
+  - [`official/`](../official): the normalized namespaces embedded as JSON,
+    with the named profiles;
+  - [`names/`](../names): the Go constants of the default profile;
+  - [`docs/reference/`](reference/index.md): the model reference.
 
 ## What stays local
 
 Official NSD packages are **inputs you obtain and load yourself**. Treat
-everything derived from them as local-only until a licensing decision says
-otherwise:
+everything derived from them as local-only unless a recorded decision (see
+[Decision](#decision)) says otherwise:
 
 - the archives, XML and documentation texts themselves;
 - catalogs, JSON exports, generated Go code and generated documentation built
@@ -30,26 +40,63 @@ otherwise:
 
 Generating code or documentation from NSD files can create derivative material
 protected by copyright. Deleting the source XML afterwards does not change
-that. Do not commit such output, publish it in CI caches, Actions artifacts or
-release archives, or paste it into issues.
+that. Apart from the committed output the decision covers, do not commit such
+output, publish it in CI caches, Actions artifacts or release archives, or
+paste it into issues.
 
 At run time the library holds what you loaded in memory, including NSDoc texts
 (`model.Doc.Title`, `model.Doc.Description`). Showing those texts to the users
 of your own installation is a matter of your IEC license; publishing them is
 not covered by this repository's license.
 
-## Status of the review
+## The license of the packages
 
-The IEC Code Components license and its attribution requirements have **not
-been reviewed** yet (milestone M0 in [REQUIREMENTS.md](../REQUIREMENTS.md)).
-Until that review is documented here, with the applicable notices:
+Every official package declares the license `www.iec.ch/CCv1`, the IEC Code
+Components End-user Licence Agreement (SPDX `IEC-Code-Components-EULA`), and
+carries a copyright notice in its `Manifest.xml` and NS documents. As
+summarized from the SPDX copy of the agreement (the iec.ch page itself refuses
+automated access):
 
-- `nsdctl generate` marks its output local-only and adds a `LOCAL-ONLY.md`
-  notice; `--publish` is refused unless the lock file records
-  `"redistribution": "permitted"` for every source namespace (see
-  [generation.md](generation.md));
-- no IEC-derived catalog ships with this module;
-- the CI never downloads official packages.
+- redistributed software must retain the copyright notice, the list of
+  conditions and the disclaimer;
+- each code component must be attributed to IEC, naming the standard it is
+  taken from;
+- IEC's name may not be used to promote derived products without permission;
+- the components come without warranty.
+
+The importer reads the notice and license of every namespace
+(`model.Namespace.Copyright`, `nsd.Manifest.License`), and `nsdctl generate`
+writes them, with the attribution, into `NOTICE.md` next to every output.
+
+## Decision
+
+**2026-10-21 — redistribution permitted for the generated output.** The
+project owners decided that the output generated from the official packages is
+the core of the library and is committed and published, under the IEC Code
+Components license, with the attribution and notices it requires. Only the
+downloaded packages stay out of source control.
+
+- The lock marks the 12 NSD namespaces the package is generated from as
+  `"redistribution": "permitted"` (7-2, 7-3, 7-4, 7-410, 7-420 and the technical
+  reports 90-3, 90-4, 90-6, 90-9, 90-11, 90-14, 90-21). The 8-1 service
+  namespace and the 7-7 schema package contribute nothing to the output and stay
+  `local-only`.
+- The committed output — [`names/`](../names) (`generate go`, default
+  profile), [`official/`](../official) (`generate catalog`, extended profile)
+  and [`docs/reference/`](reference/index.md) (`generate docs`, extended
+  profile) — is generated by `make nsd-publish` with `--publish`, which refuses
+  unless every source namespace is permitted and its digest matches the lock.
+  Every file header attributes the content to IEC and lists every source
+  namespace with its digest; each `NOTICE.md` carries, per namespace, the
+  attribution, the license `www.iec.ch/CCv1` and the copyright notice from the
+  NSD document, as the license requires.
+- Programs that import `official`, nsdctl among them, embed the catalog and
+  its notices: `official.Notice()` returns them and `nsdctl notice` prints
+  them.
+- The decision covers identifiers, types and structure. Documentation texts
+  (NSDoc) are not part of it: the committed output is generated without them.
+
+The official packages themselves are still never committed or redistributed.
 
 ## Purchased standards
 

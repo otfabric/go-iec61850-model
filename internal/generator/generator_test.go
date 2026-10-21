@@ -70,19 +70,7 @@ func TestGoOutputTypeChecks(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := files[GoFileName]
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, GoFileName, src, parser.ParseComments)
-	if err != nil {
-		t.Fatalf("parse: %v\n%s", err, src)
-	}
-	if !ast.IsGenerated(f) {
-		t.Error("file is not recognized as generated")
-	}
-	conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
-	pkg, err := conf.Check("names", fset, []*ast.File{f}, nil)
-	if err != nil {
-		t.Fatalf("type check: %v", err)
-	}
+	pkg := typeCheck(t, files)
 	for _, name := range []string{"LN_MMXU", "CDC_WYE", "MMXU_Hz", "MMXU_Beh", "BehaviourModeKind_test_blocked", "MultiplierKind_Empty", "LNClasses", "CDCs"} {
 		if pkg.Scope().Lookup(name) == nil {
 			t.Errorf("missing identifier %s", name)
@@ -190,7 +178,7 @@ func TestJSONContent(t *testing.T) {
 func TestWriteAndCheck(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "out")
 	files, _ := Go(input(t), "names")
-	if diffs, err := Check(dir, files); err != nil || len(diffs) != 2 || diffs[0].Kind != DiffMissing {
+	if diffs, err := Check(dir, files); err != nil || len(diffs) != 3 || diffs[0].Kind != DiffMissing {
 		t.Fatalf("check of missing dir: %v %v", diffs, err)
 	}
 	if _, err := Write(dir, files, false); err != nil {
@@ -229,7 +217,7 @@ func TestWriteAndCheck(t *testing.T) {
 	if _, err := Write(dir, files, false); !errors.Is(err, ErrWouldOverwrite) {
 		t.Fatalf("overwrite: %v", err)
 	}
-	if written, err := Write(dir, files, true); err != nil || len(written) != 2 {
+	if written, err := Write(dir, files, true); err != nil || len(written) != 3 {
 		t.Fatalf("forced write: %v %v", written, err)
 	}
 }
@@ -303,5 +291,104 @@ func TestGolden(t *testing.T) {
 		if len(diffs) > 0 {
 			t.Errorf("golden %s output differs: %v (run make golden after an intentional change)", kind, diffs)
 		}
+	}
+}
+
+func TestNotice(t *testing.T) {
+	ns := &model.Namespace{ID: model.NamespaceID{Standard: "IEC 61850-7-4", Version: "2007", Revision: "B", Release: 6},
+		Copyright: model.Copyright{Notice: "COPYRIGHT (c) IEC, 2025. Test notice.", LicenseURI: "www.iec.ch/CCv1", LicenseKind: "Standard"}}
+	other := &model.Namespace{ID: model.NamespaceID{Standard: "X", Version: "1"}}
+	c, _ := catalog.New(ns, other)
+	p, _ := c.Profile(ns.ID, other.ID)
+	for _, gen := range []func(Input) (Files, error){func(in Input) (Files, error) { return Go(in, "names") }, Docs, JSON} {
+		files, err := gen(Input{Profile: p})
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := string(files["NOTICE.md"])
+		if !strings.Contains(n, "## IEC 61850-7-4:2007B6") || !strings.Contains(n, "License: www.iec.ch/CCv1 (Standard).") || !strings.Contains(n, "> COPYRIGHT (c) IEC, 2025. Test notice.") || strings.Contains(n, "## X:1") {
+			t.Errorf("NOTICE.md:\n%s", n)
+		}
+	}
+	files, _ := Go(Input{Profile: p}, "names")
+	if !bytes.Contains(files[GoFileName], []byte("Attribution: derived from IEC code components")) {
+		t.Error("Go header lacks the attribution")
+	}
+	if Input.noticeFile(Input{Profile: fixtures.Profile(t)}, "go") != nil {
+		t.Error("no notice without copyright")
+	}
+}
+
+// typeCheck parses and type-checks the generated file together with its
+// generated test.
+func typeCheck(t *testing.T, files Files) *types.Package {
+	t.Helper()
+	fset := token.NewFileSet()
+	var parsed []*ast.File
+	for _, name := range []string{GoFileName, GoTestFileName} {
+		f, err := parser.ParseFile(fset, name, files[name], parser.ParseComments)
+		if err != nil {
+			t.Fatalf("parse %s: %v\n%s", name, err, files[name])
+		}
+		if !ast.IsGenerated(f) {
+			t.Errorf("%s is not recognized as generated", name)
+		}
+		parsed = append(parsed, f)
+	}
+	conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
+	pkg, err := conf.Check("names", fset, parsed, nil)
+	if err != nil {
+		t.Fatalf("type check: %v", err)
+	}
+	return pkg
+}
+
+func TestOverlappingDefinitions(t *testing.T) {
+	a := model.NamespaceID{Standard: "A", Version: "1"}
+	b := model.NamespaceID{Standard: "B", Version: "1"}
+	nsA := &model.Namespace{ID: a,
+		CDCs:              []model.CommonDataClass{{Name: "MV", Source: a}},
+		AbstractLNClasses: []model.LogicalNodeClass{{Name: "BaseLN", Abstract: true, Source: a, DataObjects: []model.DataObject{{Name: "Beh", Type: "MV"}}}},
+		LNClasses:         []model.LogicalNodeClass{{Name: "DBAT", Base: "BaseLN", Source: a, DataObjects: []model.DataObject{{Name: "One", Type: "MV"}, {Name: "Both", Type: "MV"}}}},
+		Enumerations:      []model.Enumeration{{Name: "KindE", Source: a, Literals: []model.Literal{{Name: "x", Value: 1}, {Name: "y", Value: 2}}}},
+	}
+	nsB := &model.Namespace{ID: b,
+		LNClasses:    []model.LogicalNodeClass{{Name: "DBAT", Base: "Missing", Source: b, DataObjects: []model.DataObject{{Name: "Both", Type: "MV"}, {Name: "Two", Type: "MV"}}}},
+		Enumerations: []model.Enumeration{{Name: "KindE", Source: b, Literals: []model.Literal{{Name: "y", Value: 3}, {Name: "z", Value: 1}}}},
+	}
+	c, _ := catalog.New(nsA, nsB)
+	p, err := c.Profile(a, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := Go(Input{Profile: p}, "names")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg := typeCheck(t, files)
+	src := string(files[GoFileName])
+	for _, want := range []string{"DBAT_Beh", "DBAT_One", "DBAT_Both", "DBAT_Two", "LN_DBAT", "KindE_A_x", "KindE_B_z"} {
+		if pkg.Scope().Lookup(want) == nil {
+			t.Errorf("missing %s", want)
+		}
+	}
+	for _, unwanted := range []string{"LN_DBAT_2", "DBAT_Both_2", "KindE", "KindE_x"} {
+		if pkg.Scope().Lookup(unwanted) != nil {
+			t.Errorf("%s must not exist: definitions are not merged and none takes precedence", unwanted)
+		}
+	}
+	for _, want := range []string{
+		"DBAT is defined by A:1, B:1; the constants name the data objects of each definition, with its namespace; the definitions are not merged",
+		"KindE is defined by several namespaces; KindE_A is the definition of A:1",
+		`DBAT_Both DataObjectRef = "DBAT.Both" // MV, - (A:1); MV, - (B:1)`,
+		`DBAT_Beh  DataObjectRef = "DBAT.Beh"  // MV, - (A:1)`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("output lacks %q", want)
+		}
+	}
+	test := string(files[GoTestFileName])
+	if !strings.Contains(test, `{KindE_A_y.String(), "y"}`) || !strings.Contains(test, `{KindE_B_y.String(), "y"}`) {
+		t.Errorf("generated test:\n%s", test)
 	}
 }

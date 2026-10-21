@@ -14,6 +14,7 @@ import (
 // several yields a [*model.AmbiguityError].
 type view struct {
 	namespaces []*model.Namespace
+	scopes     map[model.NamespaceID][][]model.NamespaceID
 	lns        map[string][]*model.LogicalNodeClass
 	cdcs       map[string][]*model.CommonDataClass
 	cas        map[string][]*model.ConstructedAttribute
@@ -33,6 +34,7 @@ func newView(nss []*model.Namespace) view {
 		basics:     map[string][]*model.BasicType{},
 		fcs:        map[model.FunctionalConstraint][]*model.FunctionalConstraintDef{},
 		presence:   map[string][]*model.PresenceConditionDef{},
+		scopes:     computeScopes(nss),
 	}
 	for _, ns := range nss {
 		for i := range ns.AbstractLNClasses {
@@ -104,13 +106,95 @@ func (v *view) IDs() []model.NamespaceID {
 // the given name. It fails with [model.ErrUnknownLogicalNode] when no
 // namespace defines it, and with a [*model.AmbiguityError] when more
 // than one does.
+//
+// Extension classes (isExtension, e.g. MMXU in IEC 61850-7-420) add data
+// objects to the class of the same name and are not candidates: the
+// base definition is returned, and [view.Extensions] lists the
+// extensions. An extension whose base class is not loaded is returned
+// itself.
 func (v *view) LogicalNode(name string) (*model.LogicalNodeClass, error) {
-	return lookup(v.lns[name], "logical node class", name, func(l *model.LogicalNodeClass) model.NamespaceID { return l.Source }, model.ErrUnknownLogicalNode)
+	defs := v.lns[name]
+	var base []*model.LogicalNodeClass
+	for _, ln := range defs {
+		if !ln.IsExtension {
+			base = append(base, ln)
+		}
+	}
+	if len(base) == 0 {
+		base = defs
+	}
+	return lookup(base, "logical node class", name, func(l *model.LogicalNodeClass) model.NamespaceID { return l.Source }, model.ErrUnknownLogicalNode)
 }
 
-// CDC returns the common data class with the given name.
+// Extensions returns the extension classes of the class with the given
+// name (isExtension), in namespace order. Their data objects belong to
+// the class: [view.DataObjects] includes them.
+func (v *view) Extensions(name string) []*model.LogicalNodeClass {
+	var out []*model.LogicalNodeClass
+	for _, ln := range v.lns[name] {
+		if ln.IsExtension {
+			out = append(out, ln)
+		}
+	}
+	return out
+}
+
+// hasBase reports whether a non-extension definition of the class is
+// loaded.
+func (v *view) hasBase(name string) bool {
+	for _, ln := range v.lns[name] {
+		if !ln.IsExtension {
+			return true
+		}
+	}
+	return false
+}
+
+// CDC returns the common data class with the given name. A CDC defined
+// in variants by one namespace (e.g. SPG for SP, SG and SE) is one CDC:
+// CDC returns its first variant and [view.CDCVariants] all of them. A
+// name defined by several namespaces is ambiguous.
 func (v *view) CDC(name string) (*model.CommonDataClass, error) {
-	return lookup(v.cdcs[name], "CDC", name, func(c *model.CommonDataClass) model.NamespaceID { return c.Source }, model.ErrUnknownCDC)
+	defs, err := v.CDCVariants(name)
+	if err != nil {
+		return nil, err
+	}
+	return defs[0], nil
+}
+
+// CDCVariants returns every definition of the CDC with the given name:
+// one, or one per variant, in document order.
+func (v *view) CDCVariants(name string) ([]*model.CommonDataClass, error) {
+	defs := v.cdcs[name]
+	if len(defs) == 0 {
+		return nil, &model.ResolutionError{Element: name, Reason: "CDC is not defined", Err: model.ErrUnknownCDC}
+	}
+	if ids := distinctSources(defs, func(c *model.CommonDataClass) model.NamespaceID { return c.Source }); len(ids) > 1 {
+		return nil, &model.AmbiguityError{Kind: "CDC", Name: name, Candidates: ids}
+	}
+	return append([]*model.CommonDataClass(nil), defs...), nil
+}
+
+// distinctSources returns the distinct namespaces of definitions, in
+// order of first appearance.
+func distinctSources[T any](defs []*T, src func(*T) model.NamespaceID) []model.NamespaceID {
+	var out []model.NamespaceID
+	for _, d := range defs {
+		id := src(d)
+		if len(out) == 0 || !containsID(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+func containsID(ids []model.NamespaceID, id model.NamespaceID) bool {
+	for _, x := range ids {
+		if x == id {
+			return true
+		}
+	}
+	return false
 }
 
 // ConstructedAttribute returns the constructed attribute type with the
@@ -141,7 +225,8 @@ func (v *view) PresenceCondition(name string) (*model.PresenceConditionDef, erro
 }
 
 // ListLogicalNodes returns the concrete logical node classes, ordered
-// by name and namespace.
+// by name and namespace. Extension classes are listed only when their
+// base class is not loaded; see [view.Extensions].
 func (v *view) ListLogicalNodes() []*model.LogicalNodeClass {
 	return v.listLNs(false)
 }
@@ -156,7 +241,7 @@ func (v *view) listLNs(abstract bool) []*model.LogicalNodeClass {
 	var out []*model.LogicalNodeClass
 	for _, defs := range v.lns {
 		for _, ln := range defs {
-			if ln.Abstract == abstract {
+			if ln.Abstract == abstract && (!ln.IsExtension || !v.hasBase(ln.Name)) {
 				out = append(out, ln)
 			}
 		}
@@ -165,10 +250,10 @@ func (v *view) listLNs(abstract bool) []*model.LogicalNodeClass {
 	return out
 }
 
-// ListCDCs returns the common data classes, ordered by name and
-// namespace.
+// ListCDCs returns the common data classes, every variant separately,
+// ordered by name, namespace and variant.
 func (v *view) ListCDCs() []*model.CommonDataClass {
-	return list(v.cdcs, func(c *model.CommonDataClass) (string, model.NamespaceID) { return c.Name, c.Source })
+	return list(v.cdcs, func(c *model.CommonDataClass) (string, model.NamespaceID) { return c.Key(), c.Source })
 }
 
 // ListConstructedAttributes returns the constructed attribute types,

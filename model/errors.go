@@ -66,8 +66,14 @@ var (
 	ErrInvalidReference = errors.New("iec61850-model: invalid object reference")
 
 	// ErrAmbiguousReference indicates a lookup that matches more than
-	// one definition and needs an explicit namespace profile.
+	// one definition: a name that two namespaces of the profile define
+	// (DBAT in IEC 61850-7-420 and IEC TR 61850-90-9). Look it up with
+	// its namespace (LogicalNodeIn and the other …In lookups).
 	ErrAmbiguousReference = errors.New("iec61850-model: ambiguous reference")
+
+	// ErrAmbiguousSymbol is ErrAmbiguousReference, under the name the
+	// namespace policy uses (REQUIREMENTS.md, section 5.2.1).
+	ErrAmbiguousSymbol = ErrAmbiguousReference
 
 	// ErrCycle indicates a cyclic inheritance or type definition.
 	ErrCycle = errors.New("iec61850-model: cyclic definition")

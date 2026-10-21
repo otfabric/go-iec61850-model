@@ -78,3 +78,61 @@ fixtures only; no official namespace release is claimed as supported yet.
 - **Conflicts** — the ontology graph and the generators keep working when
   extension namespaces define the same name; conflicts are listed
   (`Graph.Conflicts`, generated headers). Generator output format 2.
+
+### Official packages
+
+- **`nsdctl sources fetch`** and Makefile targets `nsd-fetch`, `nsd-lock`,
+  `nsd-check`, `nsd-generate`, `nsd-generate-check`, `nsd-clean`; packages are
+  downloaded from `assets.iec.ch`, verified against pinned digests, and kept
+  out of version control.
+- **Workflow `nsd.yml`** — fetch, validate, integration test, deterministic
+  generation, compile check; no caches or artifacts; weekly tracking issue.
+- **Importer** — abstract classes inside `LNClasses`, CDC variants, per-FC
+  attribute copies, extension classes, `Manifest.xml`, namespace copyright,
+  changes and NSD version, FC applicable services, value bounds, service
+  namespaces, deduplication of identical nested copies.
+- **Lock** — the 14 packages are pinned (`sources/nsd.lock.json`), all
+  `local-only`.
+- **Generator** — `NOTICE.md` with IEC attribution, notice and license; output
+  format 3.
+
+### nsdctl
+
+- **Binaries** for Linux (amd64, arm64, armv7), macOS (amd64, arm64) and
+  Windows (amd64, arm64) on every release, with a checksum file.
+- **`nsdctl version`** prints version, tag, commit, build date, Go version and
+  platform, like the other otfabric CLIs; `--json` supported.
+- **`model show`** lists every variant of a CDC, the namespace of each data
+  object, and the alternatives when an attribute's FC depends on the variant.
+- **`schema`** reports gaps only for the NSD schema, not for the package
+  metadata schemas.
+
+### Generated names package
+
+- **Package `official`** — the 12 official NSD namespaces embedded (no
+  documentation texts) with the profiles `default` and `extended`:
+  `official.Default()`, `official.Extended()`, `official.Open(name)`,
+  `official.Notice()`.
+- **Package `names`** — committed Go constants for every logical node class
+  (`LN_MMXU`), data object (`MMXU_Hz`), CDC (`CDC_WYE`) and enumeration
+  (`BehaviourModeKind_on`, with `String`) of the default profile, generated
+  from the official packages; `names/NOTICE.md` attributes them to IEC with the
+  license and copyright notices.
+- **Model reference** — `docs/reference/`, generated for the extended profile.
+- The three are regenerated with `make nsd-publish`; CI checks them against the
+  pinned packages.
+- **Namespace policy** — IEC TR 61850-90-9 is left out of the default profile
+  and kept in `extended`. Definitions of the same name in two namespaces are
+  never merged: unqualified lookups return `ErrAmbiguousSymbol`, qualified
+  lookups (`LogicalNodeIn` and the other `…In` lookups, `Resolver.In`) select
+  one, and `Overlaps` / `nsdctl catalog overlaps` compares them.
+- **nsdctl** — uses the embedded catalog without `--source`; `--ns`, named
+  profiles, `catalog profiles`, `catalog overlaps`, `generate catalog`,
+  `notice`.
+- **Lock** — the 12 NSD namespaces are `permitted` (decision recorded in
+  docs/licensing.md); 8-1 and 7-7 stay `local-only`.
+- **Generator** — output format 5: names defined by several namespaces are not
+  merged (per-definition comments, one Go type per enumeration definition), and
+  the Go output comes with a generated test.
+- **Fix** — namespaces loaded from a directory of archives record the digest of
+  their archive, which the license gate compares with the lock.
