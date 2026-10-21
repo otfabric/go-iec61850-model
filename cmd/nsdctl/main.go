@@ -15,6 +15,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"text/tabwriter"
 
@@ -134,7 +136,7 @@ error, 4 differences found, 5 refused by the license policy.`,
 	pf.StringVar(&a.language, "lang", "en", "NSDoc language to apply (empty: none)")
 
 	root.AddCommand(a.inspectCmd(), a.validateCmd(), a.dependenciesCmd(), a.modelCmd(), a.diffCmd(),
-		a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), versionCmd())
+		a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd())
 	return root
 }
 
@@ -262,31 +264,85 @@ func printDiagnostics(w io.Writer, ds model.Diagnostics, min model.Severity) {
 	}
 }
 
-func versionCmd() *cobra.Command {
+func (a *app) versionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Print version information",
+		Short: "Print the version of nsdctl",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, _ []string) {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), versionString())
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			info, _ := debug.ReadBuildInfo()
+			v := currentVersion(info)
+			out := cmd.OutOrStdout()
+			if a.json {
+				return writeJSON(out, v)
+			}
+			_, _ = fmt.Fprint(out, v.String())
+			return nil
 		},
 	}
 }
 
-func versionString() string {
-	s := "nsdctl " + version
-	if tag != "" {
-		s += " (" + tag + ")"
+// devVersion is the version of a binary built without the ldflags of
+// the Makefile and the release.
+const devVersion = "dev"
+
+// versionInfo is what nsdctl version reports.
+type versionInfo struct {
+	Version   string `json:"version"`
+	Tag       string `json:"tag,omitempty"`
+	Commit    string `json:"commit,omitempty"`
+	BuildDate string `json:"buildDate,omitempty"`
+	GoVersion string `json:"goVersion"`
+	Platform  string `json:"platform"`
+}
+
+// String formats the version in the layout of the other otfabric CLIs.
+func (v versionInfo) String() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "nsdctl version: %s\n", v.Version)
+	if v.Tag != "" {
+		fmt.Fprintf(&b, "tag:         %s\n", v.Tag)
 	}
-	if commit != "" {
-		c := commit
-		if len(c) > 8 {
-			c = c[:8]
+	if v.Commit != "" {
+		fmt.Fprintf(&b, "commit:      %s\n", v.Commit)
+	}
+	if v.BuildDate != "" {
+		fmt.Fprintf(&b, "build date:  %s\n", v.BuildDate)
+	}
+	fmt.Fprintf(&b, "go version:  %s\n", v.GoVersion)
+	fmt.Fprintf(&b, "platform:    %s\n", v.Platform)
+	return b.String()
+}
+
+// currentVersion returns the version to report. The ldflags of the
+// Makefile and of the release set it; a binary built without them
+// (go install, go build) reports what the go toolchain records: the
+// module version (v0.3.0 for go install …@v0.3.0, or one derived from
+// the git tags for go build in a clone) and the git revision.
+func currentVersion(info *debug.BuildInfo) versionInfo {
+	v := versionInfo{
+		Version: strings.TrimSpace(version), Tag: strings.TrimSpace(tag), Commit: strings.TrimSpace(commit),
+		BuildDate: strings.TrimSpace(buildDate), GoVersion: runtime.Version(), Platform: runtime.GOOS + "/" + runtime.GOARCH,
+	}
+	if info != nil {
+		if v.Version == devVersion || v.Version == "" {
+			if mv := info.Main.Version; mv != "" && mv != "(devel)" {
+				v.Version = mv
+			}
 		}
-		s += " commit " + c
+		if v.Commit == "" {
+			for _, st := range info.Settings {
+				if st.Key == "vcs.revision" {
+					v.Commit = st.Value
+				}
+			}
+		}
 	}
-	if buildDate != "" {
-		s += " built " + buildDate
+	if len(v.Commit) > 8 {
+		v.Commit = v.Commit[:8]
 	}
-	return s
+	if v.Version == "" {
+		v.Version = "(unknown)"
+	}
+	return v
 }

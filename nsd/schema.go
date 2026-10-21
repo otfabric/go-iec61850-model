@@ -101,7 +101,7 @@ var memberElements = []string{"SubDataObject", "DataAttribute", "ServiceParamete
 // ApplicableServiceNS content is recognized but not modeled and is not
 // included.
 func Supported() (elements, attributes []string) {
-	elems, attrs := map[string]bool{"NS": true, "NSDoc": true, "Doc": true}, map[string]bool{"id": true}
+	elems, attrs := map[string]bool{"NS": true, "NSDoc": true, "Doc": true}, map[string]bool{"id": true, "uri": true, "kind": true}
 	for _, e := range memberElements {
 		elems[e] = true
 	}

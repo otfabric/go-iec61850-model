@@ -121,7 +121,27 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 		UMLVersion:       raw.UMLVersion,
 		UMLDate:          raw.UMLDate,
 		TissuesApplied:   raw.TissuesApplied,
+		NamespaceType:    raw.NamespaceType,
+		AppVersion:       raw.AppVersion,
+		NSDVersion:       nsdVersion(raw.rawNSDVersion),
 		Doc:              doc(raw.rawDocAttrs),
+	}
+	if c := raw.Copyright; c != nil {
+		p := root + "/Copyright"
+		n.container(p, c.Attrs, c.Any)
+		ns.Copyright.Notice = normalizeSpace(c.Notice)
+		if l := c.License; l != nil {
+			n.unknownAttrs(p+"/License", l.Attrs)
+			ns.Copyright.LicenseURI, ns.Copyright.LicenseKind = l.URI, l.Kind
+		}
+	}
+	for _, c := range raw.Changes {
+		p := root + "/Changes"
+		n.unknownAttrs(p, c.Attrs)
+		n.unknownElems(p, c.Any)
+		ns.Changes = append(ns.Changes, model.NamespaceChange{
+			Version: c.Version, Revision: c.Revision, Release: c.Release, Tissues: c.Tissues, ChangesID: c.ChangesID, Date: c.Date,
+		})
 	}
 
 	for _, d := range raw.DependsOn {
@@ -129,6 +149,12 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 		n.require(p, "id", d.ID)
 		n.unknownAttrs(p, d.Attrs)
 		n.unknownElems(p, d.Any)
+		if d.DependencyType != "" {
+			if ns.DependencyTypes == nil {
+				ns.DependencyTypes = map[string]string{}
+			}
+			ns.DependencyTypes[strings.TrimSpace(d.ID)] = d.DependencyType
+		}
 		ns.Dependencies = append(ns.Dependencies, model.NamespaceID{
 			Standard: strings.TrimSpace(d.ID),
 			Version:  strings.TrimSpace(d.Version),
@@ -152,9 +178,23 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 		for _, it := range c.Items {
 			ip := elemPath(p, "FunctionalConstraint", it.Abbreviation)
 			n.abbreviated(ip, &it)
-			ns.FunctionalConstraints = append(ns.FunctionalConstraints, model.FunctionalConstraintDef{
-				Abbreviation: model.FunctionalConstraint(it.Abbreviation), Doc: doc(it.rawDocAttrs), Source: n.id,
-			})
+			fc := model.FunctionalConstraintDef{Abbreviation: model.FunctionalConstraint(it.Abbreviation), Doc: doc(it.rawDocAttrs), Source: n.id}
+			if as := it.ApplicableServices; as != nil {
+				ap := ip + "/ApplicableServices"
+				n.container(ap, as.Attrs, as.Any)
+				for _, sv := range as.Services {
+					n.named(elemPath(ap, "Service", sv.Name), &sv)
+					fc.Services = append(fc.Services, sv.Name)
+				}
+				for _, cb := range as.DataSetMemberOf {
+					cp := elemPath(ap, "DataSetMemberOf", cb.CB)
+					n.require(cp, "cb", cb.CB)
+					n.unknownAttrs(cp, cb.Attrs)
+					n.unknownElems(cp, cb.Any)
+					fc.DataSetMemberOf = append(fc.DataSetMemberOf, cb.CB)
+				}
+			}
+			ns.FunctionalConstraints = append(ns.FunctionalConstraints, fc)
 		}
 	}
 	if c := raw.TriggerOptions; c != nil {
@@ -163,6 +203,9 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 		for _, it := range c.Items {
 			ip := elemPath(p, "TriggerOption", it.Abbreviation)
 			n.abbreviated(ip, &it)
+			if it.ApplicableServices != nil {
+				n.add(model.SeverityWarning, "unknown-element", ip, "element \"ApplicableServices\" is not supported here and was not imported")
+			}
 			ns.TriggerOptions = append(ns.TriggerOptions, model.TriggerOption{Abbreviation: it.Abbreviation, Doc: doc(it.rawDocAttrs), Source: n.id})
 		}
 	}
@@ -219,6 +262,9 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 	if c := raw.LNClasses; c != nil {
 		p := root + "/LNClasses"
 		n.container(p, c.Attrs, c.Any)
+		for i := range c.Abstract {
+			ns.AbstractLNClasses = append(ns.AbstractLNClasses, n.lnClass(p, "AbstractLNClass", &c.Abstract[i], true))
+		}
 		for i := range c.Items {
 			ns.LNClasses = append(ns.LNClasses, n.lnClass(p, "LNClass", &c.Items[i], false))
 		}
@@ -298,11 +344,16 @@ func (n *normalizer) constructed(parent string, raw *rawConstructedAttr) model.C
 }
 
 func (n *normalizer) cdc(parent string, raw *rawCDC) model.CommonDataClass {
-	p := elemPath(parent, "CDC", raw.Name)
+	key := raw.Name
+	if raw.Variant != "" {
+		key += "/" + raw.Variant
+	}
+	p := elemPath(parent, "CDC", key)
 	n.require(p, "name", raw.Name)
 	n.unknownAttrs(p, raw.Attrs)
 	c := model.CommonDataClass{
 		Name:                  raw.Name,
+		Variant:               raw.Variant,
 		EnumParameterized:     n.boolean(p, "enumParameterized", raw.EnumParameterized),
 		TypeKindParameterized: n.boolean(p, "typeKindParameterized", raw.TypeKindParameterized),
 		Statistics:            n.boolean(p, "statistics", raw.Statistics),
@@ -393,7 +444,7 @@ func (n *normalizer) dataObject(p string, m *rawCDCMember, pos int) model.DataOb
 }
 
 func (n *normalizer) unexpectedTriggers(p string, m *rawCDCMember) {
-	for _, a := range []struct{ name, v string }{{"dchg", m.Dchg}, {"qchg", m.Qchg}, {"dupd", m.Dupd}, {"defaultValue", m.DefaultValue}} {
+	for _, a := range []struct{ name, v string }{{"dchg", m.Dchg}, {"qchg", m.Qchg}, {"dupd", m.Dupd}, {"defaultValue", m.DefaultValue}, {"minValue", m.MinValue}, {"maxValue", m.MaxValue}} {
 		if a.v != "" {
 			n.add(model.SeverityWarning, "unexpected-attribute", p, fmt.Sprintf("attribute %q is not defined for data objects and was ignored", a.name))
 		}
@@ -431,6 +482,9 @@ func (n *normalizer) attribute(p string, m *rawCDCMember, pos int, withFC bool) 
 		Qchg:              n.boolean(p, "qchg", m.Qchg),
 		Dupd:              n.boolean(p, "dupd", m.Dupd),
 		DefaultValue:      m.DefaultValue,
+		MinValue:          m.MinValue,
+		MaxValue:          m.MaxValue,
+		MinIndex:          m.MinIndex,
 		Deprecated:        n.boolean(p, "deprecated", m.Deprecated),
 		Informative:       n.boolean(p, "informative", m.Informative),
 		Doc:               doc(m.rawDocAttrs),
@@ -486,3 +540,8 @@ func (n *normalizer) nsdoc(raw *rawNSDoc) *NSDoc {
 }
 
 func normalizeSpace(s string) string { return strings.Join(strings.Fields(s), " ") }
+
+// nsdVersion joins the NSD format version attributes, e.g. "2017B6".
+func nsdVersion(v rawNSDVersion) string {
+	return strings.TrimSpace(v.NSDVersion) + strings.TrimSpace(v.NSDRevision) + strings.TrimSpace(v.NSDRelease)
+}

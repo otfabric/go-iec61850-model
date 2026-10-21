@@ -305,3 +305,28 @@ func TestGolden(t *testing.T) {
 		}
 	}
 }
+
+func TestNotice(t *testing.T) {
+	ns := &model.Namespace{ID: model.NamespaceID{Standard: "IEC 61850-7-4", Version: "2007", Revision: "B", Release: 6},
+		Copyright: model.Copyright{Notice: "COPYRIGHT (c) IEC, 2025. Test notice.", LicenseURI: "www.iec.ch/CCv1", LicenseKind: "Standard"}}
+	other := &model.Namespace{ID: model.NamespaceID{Standard: "X", Version: "1"}}
+	c, _ := catalog.New(ns, other)
+	p, _ := c.Profile(ns.ID, other.ID)
+	for _, gen := range []func(Input) (Files, error){func(in Input) (Files, error) { return Go(in, "names") }, Docs, JSON} {
+		files, err := gen(Input{Profile: p})
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := string(files["NOTICE.md"])
+		if !strings.Contains(n, "## IEC 61850-7-4:2007B6") || !strings.Contains(n, "License: www.iec.ch/CCv1 (Standard).") || !strings.Contains(n, "> COPYRIGHT (c) IEC, 2025. Test notice.") || strings.Contains(n, "## X:1") {
+			t.Errorf("NOTICE.md:\n%s", n)
+		}
+	}
+	files, _ := Go(Input{Profile: p}, "names")
+	if !bytes.Contains(files[GoFileName], []byte("Attribution: derived from IEC code components")) {
+		t.Error("Go header lacks the attribution")
+	}
+	if Input.noticeFile(Input{Profile: fixtures.Profile(t)}, "go") != nil {
+		t.Error("no notice without copyright")
+	}
+}

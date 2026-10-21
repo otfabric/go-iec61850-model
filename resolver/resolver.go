@@ -22,6 +22,7 @@ type Lookup interface {
 	DataObject(lnClass, name string) (catalog.InheritedDataObject, error)
 	DataObjects(lnClass string) ([]catalog.InheritedDataObject, error)
 	CDC(name string) (*model.CommonDataClass, error)
+	CDCVariants(name string) ([]*model.CommonDataClass, error)
 	ConstructedAttribute(name string) (*model.ConstructedAttribute, error)
 	Enumeration(name string) (*model.Enumeration, error)
 	BasicType(name string) (*model.BasicType, error)
@@ -70,6 +71,14 @@ type Step struct {
 	// Instance is the instance number of a numbered data object, e.g.
 	// "1" for Ind1 of the multi-instance data object Ind.
 	Instance string `json:"instance,omitempty"`
+	// Variant is the CDC variant that declares a data attribute, e.g.
+	// "SG" for setVal of SPG/SG.
+	Variant string `json:"variant,omitempty"`
+	// Variants lists the alternative definitions of a data attribute
+	// with different FCs ("SPG/SG.setVal", "RST._setMag"), when no FC
+	// was requested; FC is then empty because it depends on the
+	// realization. Request an FC to select one.
+	Variants []string `json:"variants,omitempty"`
 	// Parameterized reports that the type was taken from the underlying
 	// type of the enclosing data object (e.g. ENS.stVal).
 	Parameterized bool `json:"parameterized,omitempty"`
@@ -231,7 +240,7 @@ func (r *Resolver) ResolvePath(lnClass string, path []string, fc model.Functiona
 		}
 	}
 	if fc != "" && !w.res.IsAttribute() && len(w.res.Steps) > 1 {
-		ok, err := r.hasFC(w.cdc, fc, map[string]bool{})
+		ok, err := r.hasFC(w.cdc.Name, fc, map[string]bool{})
 		if err != nil {
 			return nil, err
 		}
@@ -252,6 +261,7 @@ type walker struct {
 	// cdc and do are the CDC and data object of the current data
 	// object context; attr is set once the path enters an attribute.
 	cdc  *model.CommonDataClass
+	cdcs []*model.CommonDataClass // all variants of cdc
 	do   *model.DataObject
 	attr *Step
 }
@@ -323,22 +333,25 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		if sdo, ok := w.cdc.SubDataObject(name); ok {
 			return w.enterDataObject(sdo, StepSubDataObject, w.cdc.Name, w.cdc.Source)
 		}
-		da, ok := w.cdc.DataAttribute(name)
-		if !ok {
-			return w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("CDC %s has no member %s", w.cdc.Name, name), "", "")
+		cdc, da, variants, err := w.selectAttribute(name, fc)
+		if err != nil {
+			return err
 		}
-		if fc != "" && da.FC != fc {
-			return w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("attribute %s has functional constraint %s", name, da.FC), string(fc), string(da.FC))
-		}
-		typ, kind, param, err := w.r.attrType(da, w.cdc, w.do)
+		typ, kind, param, err := w.r.attrType(da, cdc, w.do)
 		if err != nil {
 			return w.annotate(err, name)
 		}
-		w.res.Attribute = da
-		w.res.Steps = append(w.res.Steps, Step{
+		w.cdc = cdc
+		w.res.CDC, w.res.Attribute = cdc, da
+		step := Step{
 			Name: name, Kind: StepDataAttribute, Type: typ, TypeKind: kind, FC: da.FC, Presence: da.Presence,
-			IsArray: da.IsArray, Parameterized: param, DeclaredIn: w.cdc.Name, Source: w.cdc.Source,
-		})
+			IsArray: da.IsArray, Parameterized: param, DeclaredIn: cdc.Key(), Source: cdc.Source, Variant: cdc.Variant,
+		}
+		if len(variants) > 1 {
+			// The FC depends on the variant the device realizes.
+			step.FC, step.Variant, step.Variants = "", "", variants
+		}
+		w.res.Steps = append(w.res.Steps, step)
 		w.attr = &w.res.Steps[len(w.res.Steps)-1]
 		return nil
 	default: // attribute → sub data attribute
@@ -397,15 +410,61 @@ func IsMultiInstance(p model.PresenceCondition) bool {
 	return strings.Contains(strings.ToLower(p.Name), "multi")
 }
 
+// selectAttribute finds a data attribute among the variants of the
+// current CDC, by exact name or by base name (setMag also matches the
+// per-FC copies _setMag and __setMag). With an FC, the definition with
+// that FC is chosen. Without one, the first is used, and when the
+// candidates differ in FC all of them are returned as alternatives
+// ("CDC/variant.attribute").
+func (w *walker) selectAttribute(name string, fc model.FunctionalConstraint) (*model.CommonDataClass, *model.DataAttribute, []string, error) {
+	type cand struct {
+		cdc *model.CommonDataClass
+		da  *model.DataAttribute
+	}
+	var all, found []cand
+	for _, c := range w.cdcs {
+		for i := range c.DataAttributes {
+			da := &c.DataAttributes[i]
+			if da.Name == name || (!strings.HasPrefix(name, "_") && da.BaseName() == name) {
+				all = append(all, cand{c, da})
+				if fc == "" || da.FC == fc {
+					found = append(found, cand{c, da})
+				}
+			}
+		}
+	}
+	switch {
+	case len(all) == 0:
+		return nil, nil, nil, w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("CDC %s has no member %s", w.cdc.Name, name), "", "")
+	case len(found) == 0:
+		fcs := make([]string, len(all))
+		for i, c := range all {
+			fcs[i] = string(c.da.FC)
+		}
+		return nil, nil, nil, w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("attribute %s has functional constraint %s", name, strings.Join(fcs, "/")), string(fc), strings.Join(fcs, "/"))
+	}
+	var alternatives []string
+	for _, c := range found[1:] {
+		if c.da.FC != found[0].da.FC {
+			for _, a := range found {
+				alternatives = append(alternatives, a.cdc.Key()+"."+a.da.Name)
+			}
+			break
+		}
+	}
+	return found[0].cdc, found[0].da, alternatives, nil
+}
+
 func (w *walker) enterDataObject(do *model.DataObject, kind StepKind, declaredIn string, src model.NamespaceID) error {
-	cdc, err := w.r.l.CDC(do.Type)
+	cdcs, err := w.r.l.CDCVariants(do.Type)
 	if err != nil {
 		return w.annotate(err, do.Name)
 	}
+	cdc := cdcs[0]
 	if kind == StepDataObject {
 		w.res.DataObject = do
 	}
-	w.cdc, w.do = cdc, do
+	w.cdc, w.cdcs, w.do = cdc, cdcs, do
 	w.res.CDC = cdc
 	w.res.Steps = append(w.res.Steps, Step{
 		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src,
@@ -502,25 +561,28 @@ func (r *Resolver) kindOf(element, typ string, kind model.TypeKind) (model.TypeK
 	}
 }
 
-// hasFC reports whether a CDC, or a CDC of one of its sub data
-// objects, has a data attribute with the functional constraint.
-func (r *Resolver) hasFC(cdc *model.CommonDataClass, fc model.FunctionalConstraint, visiting map[string]bool) (bool, error) {
-	if visiting[cdc.Name] {
-		return false, &model.ResolutionError{Element: cdc.Name, Reason: "CDC contains itself", Err: model.ErrCycle}
+// hasFC reports whether a CDC (any of its variants), or a CDC of one of
+// its sub data objects, has a data attribute with the functional
+// constraint.
+func (r *Resolver) hasFC(cdcName string, fc model.FunctionalConstraint, visiting map[string]bool) (bool, error) {
+	if visiting[cdcName] {
+		return false, &model.ResolutionError{Element: cdcName, Reason: "CDC contains itself", Err: model.ErrCycle}
 	}
-	visiting[cdc.Name] = true
-	defer delete(visiting, cdc.Name)
-	for i := range cdc.DataAttributes {
-		if cdc.DataAttributes[i].FC == fc {
-			return true, nil
+	visiting[cdcName] = true
+	defer delete(visiting, cdcName)
+	variants, err := r.l.CDCVariants(cdcName)
+	if err != nil {
+		return false, err
+	}
+	for _, cdc := range variants {
+		for i := range cdc.DataAttributes {
+			if cdc.DataAttributes[i].FC == fc {
+				return true, nil
+			}
 		}
 	}
-	for i := range cdc.SubDataObjects {
-		sub, err := r.l.CDC(cdc.SubDataObjects[i].Type)
-		if err != nil {
-			return false, err
-		}
-		ok, err := r.hasFC(sub, fc, visiting)
+	for i := range variants[0].SubDataObjects {
+		ok, err := r.hasFC(variants[0].SubDataObjects[i].Type, fc, visiting)
 		if err != nil || ok {
 			return ok, err
 		}
@@ -567,15 +629,19 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 	}
 	leaf := res.Leaf()
 	var typeKey string
-	var children []string
+	var members []member
 	switch {
 	case !res.IsAttribute():
 		typeKey = "cdc:" + res.CDC.Name
-		children = memberOrder(res.CDC)
+		ms, err := r.cdcMembers(res.CDC.Name, fc)
+		if err != nil {
+			return nil, err
+		}
+		members = ms
 	case leaf.TypeKind == model.TypeKindConstructed:
 		typeKey = "ca:" + leaf.Type
 		for _, m := range res.Constructed.SubDataAttributes {
-			children = append(children, m.Name)
+			members = append(members, member{name: m.Name})
 		}
 	default:
 		return append(out, res), nil
@@ -586,13 +652,8 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 	visiting[typeKey] = true
 	defer delete(visiting, typeKey)
 
-	for _, name := range children {
-		if !res.IsAttribute() && fc != "" {
-			if da, ok := res.CDC.DataAttribute(name); ok && da.FC != fc {
-				continue
-			}
-		}
-		child, err := r.extend(res, name)
+	for _, m := range members {
+		child, err := r.extend(res, m.name, m.fc)
 		if err != nil {
 			return nil, err
 		}
@@ -603,33 +664,52 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 	return out, nil
 }
 
-// extend resolves one more path element below res.
-func (r *Resolver) extend(res *Resolution, name string) (*Resolution, error) {
+// member is a child of a CDC or constructed type to expand: its device
+// name and, for data attributes, the FC that selects its definition.
+type member struct {
+	name string
+	fc   model.FunctionalConstraint
+	pos  int
+}
+
+// cdcMembers lists the sub data objects and data attributes of a CDC
+// in document order, over all its variants, by device name and FC
+// (setMag[SP], setMag[SG], ...). With fc, only data attributes with that
+// FC are included.
+func (r *Resolver) cdcMembers(name string, fc model.FunctionalConstraint) ([]member, error) {
+	variants, err := r.l.CDCVariants(name)
+	if err != nil {
+		return nil, err
+	}
+	var out []member
+	seen := map[string]bool{}
+	for _, s := range variants[0].SubDataObjects {
+		out = append(out, member{name: s.Name, pos: s.Position})
+	}
+	for vi, c := range variants {
+		for i := range c.DataAttributes {
+			da := &c.DataAttributes[i]
+			if fc != "" && da.FC != fc {
+				continue
+			}
+			key := da.BaseName() + "[" + string(da.FC) + "]"
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			out = append(out, member{name: da.BaseName(), fc: da.FC, pos: da.Position*len(variants) + vi})
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].pos < out[j].pos })
+	return out, nil
+}
+
+// extend resolves one more path element below res. The FC selects the
+// definition of a data attribute among variants and per-FC copies.
+func (r *Resolver) extend(res *Resolution, name string, fc model.FunctionalConstraint) (*Resolution, error) {
 	path := make([]string, 0, len(res.Steps))
 	for _, s := range res.Steps[1:] {
 		path = append(path, s.Name)
 	}
-	return r.ResolvePath(res.Steps[0].Name, append(path, name), "")
-}
-
-// memberOrder lists the sub data objects and data attributes of a CDC
-// in document order.
-func memberOrder(c *model.CommonDataClass) []string {
-	type member struct {
-		name string
-		pos  int
-	}
-	ms := make([]member, 0, len(c.SubDataObjects)+len(c.DataAttributes))
-	for _, d := range c.SubDataObjects {
-		ms = append(ms, member{d.Name, d.Position})
-	}
-	for _, a := range c.DataAttributes {
-		ms = append(ms, member{a.Name, a.Position})
-	}
-	sort.SliceStable(ms, func(i, j int) bool { return ms[i].pos < ms[j].pos })
-	names := make([]string, len(ms))
-	for i, m := range ms {
-		names[i] = m.name
-	}
-	return names
+	return r.ResolvePath(res.Steps[0].Name, append(path, name), fc)
 }

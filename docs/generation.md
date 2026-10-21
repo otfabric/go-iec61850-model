@@ -19,6 +19,7 @@ discovery.
 - Every file starts with a header naming the generator version, the output
   format version (`generator.FormatVersion`), the distribution status and the
   source namespaces with their digests.
+- The output format is version 3 (`generator.FormatVersion`).
 - `TestGolden` compares the output for the synthetic fixtures with
   [testdata/golden](../testdata/golden); `make golden` refreshes it after an
   intentional change (bump `FormatVersion` too).
@@ -40,12 +41,32 @@ header, so no collision is resolved silently.
 - `--check` writes nothing; it lists missing, changed and stale files and exits
   with code 4 when there are any.
 
+## Notices
+
+When the source namespaces declare a copyright (all official ones do), every
+output gets a `NOTICE.md` with, per namespace, the attribution to IEC and the
+standard, the license and the copyright notice, as the IEC Code Components
+license requires for redistribution. Generated Go headers point to it.
+
+## Variants, extensions and ambiguities
+
+- CDCs defined in variants (SPG for SP, SG, SE) get one `CDC_` constant.
+- Data objects of extension classes (e.g. those 7-420 adds to MMXU) are part of
+  the class's `DataObjectRef` constants.
+- A class whose name two namespaces of the profile define is ambiguous: its
+  constants cover only its own data objects, and the header lists it under
+  "Ambiguous names". Select a profile without the overlap to avoid that.
+
 ## Documentation texts
 
 NSDoc titles and descriptions are IEC text. They are left out unless
 `--include-doc-text` is given; the JSON exports also drop local paths.
 
 ## License gate
+
+With the official packages, `make nsd-generate` writes all three kinds into
+the git-ignored `.generated/` and `make nsd-generate-check` verifies it is up to
+date; the `nsd.yml` workflow runs both.
 
 Output is **local-only** by default: the header says so and a `LOCAL-ONLY.md`
 notice is added. `--publish` removes the notice and is refused (exit code 5)

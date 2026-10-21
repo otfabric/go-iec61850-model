@@ -45,6 +45,7 @@ type packageStatus struct {
 	Found      []string `json:"found,omitempty"`
 	Schemas    int      `json:"schemas,omitempty"`
 	Error      string   `json:"error,omitempty"`
+	URL        string   `json:"url,omitempty"`
 
 	pkg *nsd.Package
 }
@@ -56,7 +57,7 @@ func (a *app) survey(idx *sources.Index, dir string, tiers []string) []packageSt
 		if !slices.Contains(tiers, p.Tier) {
 			continue
 		}
-		st := packageStatus{Tier: p.Tier, Part: p.Part, Name: p.Name, Release: p.Release, Kind: p.Kind}
+		st := packageStatus{Tier: p.Tier, Part: p.Part, Name: p.Name, Release: p.Release, Kind: p.Kind, URL: p.URL}
 		file, ok := p.FindFile(dir)
 		if !ok {
 			st.Status = statusMissing
@@ -72,10 +73,14 @@ func (a *app) survey(idx *sources.Index, dir string, tiers []string) []packageSt
 		}
 		st.pkg = pkg
 		st.Schemas = len(pkg.Schemas())
+		ids := pkg.ServiceNamespaces()
 		for _, ns := range pkg.Namespaces() {
-			st.Found = append(st.Found, ns.ID.String())
-			if p.MatchesNamespace(ns.ID) {
-				st.Namespaces = append(st.Namespaces, ns.ID.String())
+			ids = append(ids, ns.ID)
+		}
+		for _, id := range ids {
+			st.Found = append(st.Found, id.String())
+			if p.MatchesNamespace(id) {
+				st.Namespaces = append(st.Namespaces, id.String())
 			}
 		}
 		switch {
@@ -108,7 +113,7 @@ func (a *app) sourcesCmd() *cobra.Command {
 		Use:   "sources",
 		Short: "Work with the source registry, the tracked packages and the version lock",
 	}
-	cmd.AddCommand(a.sourcesCheckCmd(), a.sourcesLockCmd())
+	cmd.AddCommand(a.sourcesCheckCmd(), a.sourcesLockCmd(), a.sourcesFetchCmd())
 	return cmd
 }
 
@@ -343,7 +348,11 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 		if st.Kind == sources.KindSchema {
 			ns := "IEC 61850-" + st.Part + ":" + st.Release
 			e := byNS[ns]
+			if e.Source == "" {
+				e.Source = st.URL
+			}
 			e.Standard, e.Namespace, e.Content, e.SHA256 = "IEC 61850-"+st.Part, ns, string(st.pkg.Content()), digest
+			e.Package = st.Name
 			e.Status, e.Notes = sources.StateNSDAvailable, fmt.Sprintf("schema package, %d XSD files", st.Schemas)
 			if e.Redistribution == "" {
 				e.Redistribution = sources.RedistributionLocalOnly
@@ -351,9 +360,26 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 			byNS[ns] = e
 			continue
 		}
+		for _, id := range st.pkg.ServiceNamespaces() {
+			e := byNS[id.String()]
+			e.Standard, e.Namespace, e.SHA256, e.Package = id.Standard, id.String(), digest, st.Name
+			e.Content = string(st.pkg.Content())
+			if e.Source == "" {
+				e.Source = st.URL
+			}
+			if e.Redistribution == "" {
+				e.Redistribution = sources.RedistributionLocalOnly
+			}
+			e.Status, e.Notes = sources.StateNSDAvailable, "service namespace; recognized, not modeled yet"
+			byNS[id.String()] = e
+		}
 		for _, ns := range st.pkg.Namespaces() {
 			e := byNS[ns.ID.String()]
 			e.Standard, e.Namespace, e.SHA256 = ns.ID.Standard, ns.ID.String(), digest
+			e.Package = st.Name
+			if e.Source == "" {
+				e.Source = st.URL
+			}
 			e.Content = string(ns.Provenance.Content)
 			e.Dependencies = nil
 			for _, d := range ns.Dependencies {
@@ -398,6 +424,7 @@ type schemaReport struct {
 	NamespaceAccepted bool     `json:"namespaceAccepted"`
 	Elements          int      `json:"elements"`
 	Attributes        int      `json:"attributes"`
+	Role              string   `json:"role,omitempty"`
 	MissingElements   []string `json:"missingElements,omitempty"`
 	MissingAttributes []string `json:"missingAttributes,omitempty"`
 }
@@ -422,13 +449,17 @@ gaps.`,
 			var reps []schemaReport
 			for _, p := range pkgs {
 				for _, s := range p.Schemas() {
-					els, attrs := s.Gaps()
-					reps = append(reps, schemaReport{
+					r := schemaReport{
 						Source: s.Source, SHA256: s.SHA256, TargetNamespace: s.TargetNamespace,
 						NamespaceAccepted: s.TargetNamespace == nsd.SchemaNamespace2016,
 						Elements:          len(s.Elements), Attributes: len(s.Attributes),
-						MissingElements: els, MissingAttributes: attrs,
-					})
+					}
+					if r.NamespaceAccepted {
+						r.MissingElements, r.MissingAttributes = s.Gaps()
+					} else {
+						r.Role = "package metadata (manifest, copyright), not NSD"
+					}
+					reps = append(reps, r)
 				}
 			}
 			if len(reps) == 0 {
@@ -438,9 +469,6 @@ gaps.`,
 			gaps := 0
 			for _, r := range reps {
 				gaps += len(r.MissingElements) + len(r.MissingAttributes)
-				if !r.NamespaceAccepted {
-					gaps++
-				}
 			}
 			if a.json {
 				if err := writeJSON(w, reps); err != nil {
@@ -448,8 +476,12 @@ gaps.`,
 				}
 			} else {
 				for _, r := range reps {
-					_, _ = fmt.Fprintf(w, "%s\n  target namespace  %s (accepted: %t)\n  declares          %d elements, %d attributes\n",
-						r.Source, orDash(r.TargetNamespace), r.NamespaceAccepted, r.Elements, r.Attributes)
+					_, _ = fmt.Fprintf(w, "%s\n  target namespace  %s\n  declares          %d elements, %d attributes\n",
+						r.Source, orDash(r.TargetNamespace), r.Elements, r.Attributes)
+					if r.Role != "" {
+						_, _ = fmt.Fprintf(w, "  role              %s\n", r.Role)
+						continue
+					}
 					_, _ = fmt.Fprintf(w, "  not modeled       elements: %s\n", orDash(strings.Join(r.MissingElements, ", ")))
 					_, _ = fmt.Fprintf(w, "                    attributes: %s\n", orDash(strings.Join(r.MissingAttributes, ", ")))
 				}
@@ -461,5 +493,87 @@ gaps.`,
 		},
 	}
 	cmd.Flags().BoolVar(&exitOnGap, "exit-code", false, "Exit with code 4 when the schemas declare constructs the importer does not model")
+	return cmd
+}
+
+func (a *app) sourcesFetchCmd() *cobra.Command {
+	var indexPath, lockPath, dest, tierList string
+	var f sources.Fetcher
+	cmd := &cobra.Command{
+		Use:   "fetch",
+		Short: "Download the tracked packages from their official IEC locations into a cache",
+		Long: `Fetch downloads every tracked package of the selected tiers from the
+official HTTPS location recorded in sources/index.json into --dest, and
+verifies its SHA-256 against sources/nsd.lock.json. Redirects to other
+hosts are refused, downloads are size-bounded and written atomically, and
+cached files that match the lock are not downloaded again.
+
+The packages are temporary inputs and must never be committed: --dest
+must be outside the Git work tree or its git-ignored .nsd-cache directory.
+
+A package without a locked digest is refused unless --allow-unpinned is
+given; pin new packages with "nsdctl sources lock --write" after
+reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
+2 when a download fails.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			tiers, err := parseTiers(tierList)
+			if err != nil {
+				return err
+			}
+			if err := sources.CheckDestination(dest); err != nil {
+				return withCode(exitUsage, "%v", err)
+			}
+			idx, err := sources.LoadIndex(indexPath)
+			if err != nil {
+				return err
+			}
+			if ds := idx.Validate(); ds.HasErrors() {
+				return &model.ValidationError{Diagnostics: ds}
+			}
+			lock, err := sources.LoadLock(lockPath)
+			if err != nil {
+				return err
+			}
+			f.UserAgent = "nsdctl/" + currentVersion(nil).Version
+			results, ferr := f.Fetch(cmd.Context(), idx, lock, dest, tiers)
+			w := cmd.OutOrStdout()
+			if a.json {
+				if results == nil {
+					results = []sources.FetchResult{}
+				}
+				if err := writeJSON(w, results); err != nil {
+					return err
+				}
+			} else {
+				var rows [][]string
+				for _, r := range results {
+					pin := "pinned"
+					if !r.Pinned {
+						pin = "unpinned"
+					}
+					rows = append(rows, []string{r.Name, r.Status, pin, orDash(short(r.SHA256)), orDash(r.Error)})
+				}
+				if err := table(w, "PACKAGE\tSTATUS\tLOCK\tSHA256\tERROR", rows); err != nil {
+					return err
+				}
+			}
+			switch {
+			case ferr == nil:
+				return nil
+			case errors.Is(ferr, sources.ErrDigestMismatch), errors.Is(ferr, sources.ErrNotPinned):
+				return withCode(exitValidation, "%v", ferr)
+			default:
+				return withCode(exitSource, "%v", ferr)
+			}
+		},
+	}
+	fl := cmd.Flags()
+	fl.StringVar(&indexPath, "index", "sources/index.json", "Source registry")
+	fl.StringVar(&lockPath, "lock", "sources/nsd.lock.json", "Version lock")
+	fl.StringVar(&dest, "dest", sources.CacheDirName, "Cache directory, outside the Git work tree or its .nsd-cache")
+	fl.StringVar(&tierList, "tiers", "all", "Tiers to fetch: required, recommended, optional or all (comma-separated)")
+	fl.BoolVar(&f.AllowUnpinned, "allow-unpinned", false, "Accept packages without a locked digest (first fetch before pinning)")
+	fl.BoolVar(&f.Refresh, "refresh", false, "Download even when a cached file matches the lock")
 	return cmd
 }

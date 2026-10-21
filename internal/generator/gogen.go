@@ -99,13 +99,19 @@ func Go(in Input, pkg string) (Files, error) {
 	w(")\n\n// LNClasses lists the logical node classes in name order.\nvar LNClasses = []LNClass{")
 	w("%s}\n\n", strings.Join(lnIdents, ", "))
 
-	cdcs := p.ListCDCs()
+	// One constant per CDC name; variants (SPG/SP, SPG/SG, ...) share it.
+	var cdcNames []string
+	for _, c := range p.ListCDCs() {
+		if len(cdcNames) == 0 || cdcNames[len(cdcNames)-1] != c.Name {
+			cdcNames = append(cdcNames, c.Name)
+		}
+	}
 	w("// CDC is the name of a common data class.\ntype CDC string\n\n")
 	w("// Common data classes.\nconst (\n")
-	cdcIdents := make([]string, len(cdcs))
-	for i, c := range cdcs {
-		cdcIdents[i] = ids.assign("CDC_", c.Name)
-		w("\t%s CDC = %q\n", cdcIdents[i], c.Name)
+	cdcIdents := make([]string, len(cdcNames))
+	for i, name := range cdcNames {
+		cdcIdents[i] = ids.assign("CDC_", name)
+		w("\t%s CDC = %q\n", cdcIdents[i], name)
 	}
 	w(")\n\n// CDCs lists the common data classes in name order.\nvar CDCs = []CDC{%s}\n\n", strings.Join(cdcIdents, ", "))
 
@@ -174,6 +180,7 @@ func Go(in Input, pkg string) (Files, error) {
 		return nil, fmt.Errorf("generator: formatting generated Go: %w", err)
 	}
 	files := Files{GoFileName: src}
+	in.addNotice(files, "go")
 	if !in.Publish {
 		files["LOCAL-ONLY.md"] = in.localNotice("go")
 	}

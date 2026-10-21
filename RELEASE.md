@@ -78,3 +78,31 @@ fixtures only; no official namespace release is claimed as supported yet.
 - **Conflicts** — the ontology graph and the generators keep working when
   extension namespaces define the same name; conflicts are listed
   (`Graph.Conflicts`, generated headers). Generator output format 2.
+
+### Official packages
+
+- **`nsdctl sources fetch`** and Makefile targets `nsd-fetch`, `nsd-lock`,
+  `nsd-check`, `nsd-generate`, `nsd-generate-check`, `nsd-clean`; packages are
+  downloaded from `assets.iec.ch`, verified against pinned digests, and kept
+  out of version control.
+- **Workflow `nsd.yml`** — fetch, validate, integration test, deterministic
+  generation, compile check; no caches or artifacts; weekly tracking issue.
+- **Importer** — abstract classes inside `LNClasses`, CDC variants, per-FC
+  attribute copies, extension classes, `Manifest.xml`, namespace copyright,
+  changes and NSD version, FC applicable services, value bounds, service
+  namespaces, deduplication of identical nested copies.
+- **Lock** — the 14 packages are pinned (`sources/nsd.lock.json`), all
+  `local-only`.
+- **Generator** — `NOTICE.md` with IEC attribution, notice and license; output
+  format 3.
+
+### nsdctl
+
+- **Binaries** for Linux (amd64, arm64, armv7), macOS (amd64, arm64) and
+  Windows (amd64, arm64) on every release, with a checksum file.
+- **`nsdctl version`** prints version, tag, commit, build date, Go version and
+  platform, like the other otfabric CLIs; `--json` supported.
+- **`model show`** lists every variant of a CDC, the namespace of each data
+  object, and the alternatives when an attribute's FC depends on the variant.
+- **`schema`** reports gaps only for the NSD schema, not for the package
+  metadata schemas.

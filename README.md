@@ -33,7 +33,9 @@ round.
 - [Packages](#packages)
 - [Normative model, device instance, semantic inference](#normative-model-device-instance-semantic-inference)
 - [Namespaces, releases and profiles](#namespaces-releases-and-profiles)
+- [Install nsdctl](#install-nsdctl)
 - [Command-line tool](#command-line-tool)
+- [Official packages](#official-packages)
 - [Errors](#errors)
 - [Input safety](#input-safety)
 - [Documentation](#documentation)
@@ -49,20 +51,22 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 
 | Area | State |
 | --- | --- |
-| NSD importer (`nsd`) | Implemented; verified on synthetic fixtures only |
+| NSD importer (`nsd`) | Implemented; imports all 14 tracked official packages (0 validation errors) |
 | Catalog, profiles, search, diff (`catalog`) | Implemented |
 | Reference parsing (`reference`) | Implemented; compatible with `go-iec61850` `ParseRef` |
 | Type resolution (`resolver`) | Implemented |
 | Semantic mapping (`semantic`) | Implemented: MMXU, MMXN, MMTR rules, overrides, unit handling |
 | Ontology helpers (`ontology`) | Implemented: concept graph, traversal, JSON export |
-| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, diff, generate (go, docs, json) with license gate, sources check |
+| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, diff, generate (go, docs, json) with license gate, sources fetch/check/lock, schema, version; binaries for Linux, macOS and Windows |
 | NSD update monitor | Planned (M5) |
 
-**Standards coverage.** The importer targets the NSD format of IEC 61850-7-7.
-The project tracks 14 code component packages: 7-2, 7-3, 7-4, 7-410 and
-7-420 (required), 90-9 and 90-14 (recommended), 90-6, 90-3, 90-4, 90-11,
-90-21 and 8-1 (optional), and the 7-7 schema; `nsdctl sources check
---packages DIR` shows which of them are present and loadable. No official NSD package has
+**Standards coverage.** The importer targets the NSD format of IEC 61850-7-7
+and is tested against the 14 tracked official packages: 7-2, 7-3, 7-4
+(2007B6), 7-410 (2024A4) and 7-420 (2019A4) (required), 90-9 and 90-14
+(recommended), 90-6, 90-3, 90-4, 90-11, 90-21 and 8-1 (optional), and the 7-7
+schema. They load and validate together; 93% of the concrete data objects
+resolve to leaf types, the rest hit upstream gaps. See
+[docs/nsd-sources.md](docs/nsd-sources.md). No official NSD package has
 been parsed and validated yet, so this module claims support for **no**
 specific namespace release. [docs/nsd-sources.md](docs/nsd-sources.md) tracks
 what is published, available, parsed and validated.
@@ -182,25 +186,168 @@ with `model.ErrAmbiguousReference`. A `catalog.Profile` selects at most one
 release per standard and adds dependencies when exactly one loaded release
 satisfies them. See [docs/namespaces.md](docs/namespaces.md).
 
+## Install nsdctl
+
+The easiest way to install `nsdctl` is to download a pre-built binary from the [GitHub Releases page](https://github.com/otfabric/go-iec61850-model/releases). No Go toolchain is required.
+
+| Platform | CPU | Download |
+|---|---|---|
+| Linux | x86-64 | `nsdctl-<version>-linux-amd64.tar.gz` |
+| Linux | 64-bit ARM (Raspberry Pi 4/5 with a 64-bit OS, AWS Graviton) | `nsdctl-<version>-linux-arm64.tar.gz` |
+| Linux | 32-bit ARM (Raspberry Pi with a 32-bit OS) | `nsdctl-<version>-linux-armv7.tar.gz` |
+| macOS | Apple Silicon (M1 and later) | `nsdctl-<version>-darwin-arm64.tar.gz` |
+| macOS | Intel | `nsdctl-<version>-darwin-amd64.tar.gz` |
+| Windows | x86-64 | `nsdctl-<version>-windows-amd64.zip` |
+| Windows | ARM64 | `nsdctl-<version>-windows-arm64.zip` |
+
+Each release also contains `nsdctl-<version>-checksums.txt` (SHA-256) so you can verify your download. The commands below fetch the **latest** release, verify its checksum and install it. Afterwards, check that it works:
+
+```console
+nsdctl version
+```
+
+### Linux
+
+```bash
+# 1. Find the latest version and your CPU architecture
+VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/otfabric/go-iec61850-model/releases/latest | sed 's|.*/v||')
+case "$(uname -m)" in
+  x86_64)         ARCH=amd64 ;;
+  aarch64|arm64)  ARCH=arm64 ;;
+  armv7l)         ARCH=armv7 ;;
+  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+
+# 2. Download the archive and the checksum file
+FILE="nsdctl-${VERSION}-linux-${ARCH}.tar.gz"
+BASE="https://github.com/otfabric/go-iec61850-model/releases/download/v${VERSION}"
+curl -fsSLO "${BASE}/${FILE}"
+curl -fsSLO "${BASE}/nsdctl-${VERSION}-checksums.txt"
+
+# 3. Verify the download (should print "OK")
+grep "${FILE}" "nsdctl-${VERSION}-checksums.txt" | sha256sum -c -
+
+# 4. Extract and install (the binary in the archive carries the version and platform in its name)
+rm -rf nsdctl-dl && mkdir -p nsdctl-dl && tar -xzf "${FILE}" -C nsdctl-dl
+sudo install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-linux-${ARCH}" /usr/local/bin/nsdctl
+```
+
+No `sudo`? Install into your home directory instead (and make sure `~/.local/bin` is in your `PATH`):
+
+```bash
+mkdir -p ~/.local/bin
+install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-linux-${ARCH}" ~/.local/bin/nsdctl
+```
+
+### macOS
+
+```bash
+# 1. Find the latest version and your CPU architecture (arm64 = Apple Silicon, x86_64 = Intel)
+VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/otfabric/go-iec61850-model/releases/latest | sed 's|.*/v||')
+case "$(uname -m)" in
+  arm64)   ARCH=arm64 ;;
+  x86_64)  ARCH=amd64 ;;
+  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+
+# 2. Download the archive and the checksum file
+FILE="nsdctl-${VERSION}-darwin-${ARCH}.tar.gz"
+BASE="https://github.com/otfabric/go-iec61850-model/releases/download/v${VERSION}"
+curl -fsSLO "${BASE}/${FILE}"
+curl -fsSLO "${BASE}/nsdctl-${VERSION}-checksums.txt"
+
+# 3. Verify the download (should print "OK")
+grep "${FILE}" "nsdctl-${VERSION}-checksums.txt" | shasum -a 256 -c -
+
+# 4. Extract and install (the binary in the archive carries the version and platform in its name)
+rm -rf nsdctl-dl && mkdir -p nsdctl-dl && tar -xzf "${FILE}" -C nsdctl-dl
+sudo install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-darwin-${ARCH}" /usr/local/bin/nsdctl
+```
+
+If you downloaded the archive with a web browser instead of `curl` and macOS refuses to run the binary ("cannot be verified"), remove the quarantine flag: `xattr -d com.apple.quarantine /usr/local/bin/nsdctl`.
+
+### Windows (PowerShell)
+
+```powershell
+# 1. Find the latest version and your CPU architecture
+$version = (Invoke-RestMethod https://api.github.com/repos/otfabric/go-iec61850-model/releases/latest).tag_name.TrimStart('v')
+$arch    = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'amd64' }
+
+# 2. Download the archive and the checksum file
+$file = "nsdctl-$version-windows-$arch.zip"
+$base = "https://github.com/otfabric/go-iec61850-model/releases/download/v$version"
+Invoke-WebRequest "$base/$file" -OutFile "$env:TEMP\$file"
+Invoke-WebRequest "$base/nsdctl-$version-checksums.txt" -OutFile "$env:TEMP\nsdctl-checksums.txt"
+
+# 3. Verify the download (throws an error on mismatch)
+$expected = ((Select-String -Path "$env:TEMP\nsdctl-checksums.txt" -Pattern $file).Line -split '\s+')[0]
+$actual   = (Get-FileHash "$env:TEMP\$file" -Algorithm SHA256).Hash
+if ($expected -ne $actual) { throw "Checksum mismatch for $file" }
+
+# 4. Extract to a per-user folder and name the program nsdctl.exe
+#    (the .exe in the archive carries the version and platform in its name)
+$dir = "$env:LOCALAPPDATA\Programs\nsdctl"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+Remove-Item -Recurse -Force "$env:TEMP\nsdctl-dl" -ErrorAction SilentlyContinue
+Expand-Archive "$env:TEMP\$file" -DestinationPath "$env:TEMP\nsdctl-dl" -Force
+Copy-Item "$env:TEMP\nsdctl-dl\nsdctl-$version-windows-$arch.exe" "$dir\nsdctl.exe" -Force
+
+# 5. Add nsdctl to your user PATH (then open a new terminal)
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+if ($userPath -notlike "*$dir*") {
+  [Environment]::SetEnvironmentVariable('Path', "$userPath;$dir", 'User')
+}
+```
+
+If Windows SmartScreen warns about an unrecognised app, choose **More info → Run anyway**.
+
+### Manual download
+
+1. Open the [latest release](https://github.com/otfabric/go-iec61850-model/releases/latest).
+2. Download the archive for your platform from the table above.
+3. Extract it, rename the binary to `nsdctl` (`nsdctl.exe` on Windows) and move it to a folder on your `PATH`.
+
+### Update
+
+Run the same commands again. They always fetch the latest release, unpack it into an emptied `nsdctl-dl` folder and overwrite the previous binary.
+
+### Build from source
+
+Requires Go 1.24 or later:
+
+```console
+git clone https://github.com/otfabric/go-iec61850-model.git
+cd go-iec61850-model
+make build
+```
+
+`make build` writes the binary to **`bin/nsdctl`**; `make build-all` cross-compiles every release target into `dist/`. With a Go toolchain you can also install straight from the module (`nsdctl version` then reports the module version the Go toolchain records, such as `v0.1.0`, or `dev` when none is recorded):
+
+```console
+go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@latest
+```
+
 ## Command-line tool
 
 ```bash
-go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@latest
-
-nsdctl inspect ./nsd/IEC_61850-7-4.zip
-nsdctl -s ./nsd validate
-nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" model show MMXU
-nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" model describe 'LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]'
+nsdctl sources fetch                         # official packages into .nsd-cache/, digests verified
+nsdctl sources check --packages .nsd-cache   # coverage of the 14 tracked packages
+nsdctl validate .nsd-cache
+nsdctl -s .nsd-cache model show MMXU
+nsdctl -s .nsd-cache model describe 'LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]'
+nsdctl -s .nsd-cache -p "IEC 61850-7-420" model show DBAT
 nsdctl diff --exit-code ./old/ ./new/
-nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" generate go -o ./generated --package iec61850names
-nsdctl sources check --packages ./nsd    # coverage of the 14 tracked packages
-nsdctl schema ./nsd/IEC_61850-7-7.2017.NSD.2017A.full.zip
+nsdctl -s .nsd-cache generate go -o .generated/go --package iec61850names
+nsdctl schema .nsd-cache/IEC_61850-7-7.2017.NSD.2017A.full.zip
+nsdctl version
 ```
 
 Text or `--json` output; exit codes 0 ok, 1 usage, 2 source error,
-3 validation, 4 differences, 5 refused by the license policy. Generated
-output is local-only unless the lock file permits publishing it. See
-[docs/cli.md](docs/cli.md) and [docs/generation.md](docs/generation.md).
+3 validation, 4 differences, 5 refused by the license policy. Generated output
+is local-only unless the lock file permits publishing it.
+[docs/cli.md](docs/cli.md) walks through every command with real output from
+the official packages; [docs/generation.md](docs/generation.md) covers the
+generator.
 
 ## Errors
 
@@ -235,6 +382,20 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [ERRORS.md](ERRORS.md) | Error taxonomy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Workflow, checks and source policy |
 | [REQUIREMENTS.md](REQUIREMENTS.md), [PLAN.md](PLAN.md), [PROGRESS.md](PROGRESS.md) | Scope, plan and progress |
+
+## Official packages
+
+The official packages are temporary inputs, downloaded from `assets.iec.ch`,
+verified against the digests pinned in `sources/nsd.lock.json`, and never
+committed:
+
+```bash
+make nsd-fetch nsd-check official   # download into .nsd-cache/, validate, integration test
+make nsd-generate                   # Go, docs and JSON into .generated/ (git-ignored)
+```
+
+The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
+in CI without caches or artifacts.
 
 ## Development
 

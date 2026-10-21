@@ -230,12 +230,58 @@ exact official names and runs `sources check`, `sources lock`, `validate`,
 `TestOfficialPackages` (`make official NSD_DIR=...`) runs the same checks
 against the real packages in place.
 
+## Official packages: download, validation and generation
+
+**Date:** 2026-10-21
+
+All 14 tracked packages are downloadable from `https://assets.iec.ch/public/tc57/`
+(two names corrected: 7-2 is `….Light`, 90-6 is `IEC_TR_….Light`). `nsdctl
+sources fetch` downloads them into `.nsd-cache/` (or outside the repository),
+verified against digests pinned with `nsdctl sources lock`; Makefile targets
+`nsd-fetch`, `nsd-lock`, `nsd-check`, `nsd-generate`, `nsd-generate-check`,
+`nsd-clean`, `official`; workflow `.github/workflows/nsd.yml` (PRs touching the
+importer, weekly, on demand) in `$RUNNER_TEMP` without caches or artifacts,
+with a tracking issue for weekly failures.
+
+The first import of real data required:
+
+1. Abstract classes inside `LNClasses`.
+2. CDC variants (`variant`), selected by FC in the resolver.
+3. Per-FC attribute copies (`_setMag`), resolved by device name and FC.
+4. Extension classes (`isExtension`), merged into their base class.
+5. Manifest `Manifest.xml`; NS `Copyright`, `Changes`, NSD version,
+   namespace type, dependency types; FC applicable services; value bounds.
+6. ServiceNS / ApplicableServiceNS (`.snsd`, `.AppNS`) recognized; 8-1 counted.
+7. Identical nested copies imported once.
+8. Unresolved references downgraded to warnings: they are upstream gaps
+   (`PhyComAddr*`, `SCR`, 7-420 enumerations, `MFsg`), listed in
+   docs/nsd-sources.md.
+9. `FindMeasurements` skips unmapped data objects that cannot be resolved.
+10. Generated output carries `NOTICE.md` with the IEC notices and license
+    (CCv1); output format 3.
+
+Result: 12 namespaces validate together with 0 errors; 3336 of 3577 concrete
+data objects resolve to leaf types; generated Go (30k lines) compiles; the
+output is deterministic.
+
+## nsdctl distribution
+
+- Binary release for linux/amd64, linux/arm64, linux/armv7, darwin/amd64,
+  darwin/arm64, windows/amd64 and windows/arm64 through the shared
+  `go-binary-release.yml`, with SHA-256 checksums; `make build-all` builds the
+  same targets locally.
+- `nsdctl version` in the layout of the other otfabric CLIs, with `--json`.
+- README install instructions per platform; docs/cli.md walkthrough with real
+  output from the official packages.
+
 ## Next
 
 - **M0** — verify official sources and the license; fill `sources/`.
-- **M1 exit** — download the 14 tracked packages, run `make official
-  NSD_DIR=...` and `nsdctl schema` on 7-7; model whatever the diagnostics
-  report; model the manifest; `nsdctl sources lock --write`.
+- **Licensing decision** — whether IEC-derived generated output may be
+  committed; then set `redistribution: permitted` in the lock and publish with
+  `--publish` (NOTICE.md is ready).
+- **Service namespaces** — model ServiceNS (8-1) content, which likely defines
+  `PhyComAddrL2`/`PhyComAddrUDP`.
 - **M3 follow-up** — extend default rules for 7-420 DER and 7-410 classes once
   their official NSDs are loaded (only with rules whose CDCs are verified).
 - **M5** — `nsd-monitor.yml`: weekly discovery against verified official

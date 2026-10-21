@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -36,6 +37,7 @@ type Package struct {
 	namespaces  []*model.Namespace
 	docs        []*NSDoc
 	schemas     []*Schema
+	services    []model.NamespaceID
 	diagnostics model.Diagnostics
 }
 
@@ -63,6 +65,13 @@ func (p *Package) Manifest() *Manifest {
 		return nil
 	}
 	return p.manifests[0]
+}
+
+// ServiceNamespaces returns the IDs of the service namespace documents
+// (ServiceNS, e.g. IEC 61850-8-1) of the package, ordered by ID. Their
+// content is recognized but not modeled yet.
+func (p *Package) ServiceNamespaces() []model.NamespaceID {
+	return append([]model.NamespaceID(nil), p.services...)
 }
 
 // Manifests returns every manifest found, one per archive, ordered by
@@ -142,7 +151,7 @@ func LoadDir(dir string, opts ...Option) (*Package, error) {
 			continue
 		}
 		full := filepath.Join(dir, e.Name())
-		known := isNSDFile(e.Name()) || isSchemaFile(e.Name()) || strings.EqualFold(filepath.Ext(e.Name()), ".zip") || strings.EqualFold(e.Name(), ManifestFileName)
+		known := isNSDFile(e.Name()) || isSchemaFile(e.Name()) || strings.EqualFold(filepath.Ext(e.Name()), ".zip") || isManifestFile(e.Name())
 		if !known && !startsWithZIP(full) {
 			b.info("not-processed", full, "file is not an NSD document and was not processed")
 			continue
@@ -220,7 +229,7 @@ func (b *builder) info(code, source, msg string) {
 
 func isNSDFile(name string) bool {
 	switch strings.ToLower(path.Ext(name)) {
-	case ".nsd", ".snsd", ".nsdoc":
+	case ".nsd", ".snsd", ".nsdoc", ".appns":
 		return true
 	}
 	return false
@@ -256,7 +265,7 @@ func (b *builder) addFile(name, source string, data []byte, depth int) error {
 		}
 		b.pkg.schemas = append(b.pkg.schemas, s)
 		return nil
-	case strings.EqualFold(path.Base(name), ManifestFileName):
+	case isManifestFile(name):
 		o := *b.o
 		o.Source = source
 		m, err := parseManifest(data, &o)
@@ -290,7 +299,11 @@ func (b *builder) addFile(name, source string, data []byte, depth int) error {
 			b.pkg.namespaces = append(b.pkg.namespaces, doc.Namespace)
 		case KindNSDoc:
 			b.pkg.docs = append(b.pkg.docs, doc.NSDoc)
-		case KindServiceNS, KindApplicableServiceNS:
+		case KindServiceNS:
+			if !doc.ID.IsZero() {
+				b.pkg.services = append(b.pkg.services, doc.ID)
+			}
+		case KindApplicableServiceNS:
 			// Recognized, reported by parseBytes, not modeled.
 		}
 		return nil
@@ -329,7 +342,7 @@ func (b *builder) addZIP(source string, data []byte, depth int) error {
 			return &model.SourceError{Source: entrySource, Reason: "entry is not a regular file", Err: model.ErrUnsafeArchive}
 		}
 		base := path.Base(name)
-		if !isNSDFile(base) && !isSchemaFile(base) && !strings.EqualFold(path.Ext(base), ".zip") && !strings.EqualFold(base, ManifestFileName) {
+		if !isNSDFile(base) && !isSchemaFile(base) && !strings.EqualFold(path.Ext(base), ".zip") && !isManifestFile(base) {
 			b.info("not-processed", entrySource, "entry is not an NSD document and was not processed")
 			continue
 		}
@@ -411,6 +424,22 @@ func (b *builder) finish() (*Package, error) {
 		}
 		return p.docs[i].Lang < p.docs[j].Lang
 	})
+	sort.SliceStable(p.services, func(i, j int) bool { return p.services[i].Compare(p.services[j]) < 0 })
+	p.services = slices.Compact(p.services)
+	// Packages may ship the same document twice, e.g. directly and in a
+	// nested copy of the package: keep one when the bytes are identical.
+	kept := p.namespaces[:0]
+	for _, ns := range p.namespaces {
+		if n := len(kept); n > 0 && kept[n-1].ID == ns.ID && kept[n-1].Provenance.SHA256 == ns.Provenance.SHA256 {
+			p.diagnostics = append(p.diagnostics, model.Diagnostic{
+				Severity: model.SeverityInfo, Code: "duplicate-document", Namespace: ns.ID, Source: ns.Provenance.Source,
+				Message: "identical copy of " + kept[n-1].Provenance.Source + "; ignored",
+			})
+			continue
+		}
+		kept = append(kept, ns)
+	}
+	p.namespaces = kept
 	for i := 1; i < len(p.namespaces); i++ {
 		if p.namespaces[i].ID == p.namespaces[i-1].ID {
 			return nil, &model.SourceError{

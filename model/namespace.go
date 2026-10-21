@@ -128,12 +128,27 @@ type Namespace struct {
 	UMLDate    string `json:"umlDate,omitempty"`
 	// TissuesApplied lists the technical issues applied, when declared.
 	TissuesApplied string `json:"tissuesApplied,omitempty"`
+	// NamespaceType and AppVersion are declared by some namespaces,
+	// e.g. technical reports, verbatim.
+	NamespaceType string `json:"namespaceType,omitempty"`
+	AppVersion    string `json:"appVersion,omitempty"`
+	// NSDVersion is the version of the NSD format the document was
+	// written for, e.g. "2017B6" (nsdVersion, nsdRevision, nsdRelease).
+	NSDVersion string `json:"nsdVersion,omitempty"`
+	// Changes lists the change records of the namespace, in order.
+	Changes []NamespaceChange `json:"changes,omitempty"`
+	// Copyright is the copyright notice and license the namespace
+	// document declares. Redistributed code components must retain it.
+	Copyright Copyright `json:"copyright,omitzero"`
 	// Doc holds the namespace-level documentation references.
 	Doc Doc `json:"doc,omitzero"`
 
 	// Dependencies are the namespaces this namespace depends on, in
 	// declaration order.
 	Dependencies []NamespaceID `json:"dependencies,omitempty"`
+	// DependencyTypes holds the declared dependencyType of a
+	// dependency, by dependency standard, verbatim.
+	DependencyTypes map[string]string `json:"dependencyTypes,omitempty"`
 
 	BasicTypes            []BasicType               `json:"basicTypes,omitempty"`
 	FunctionalConstraints []FunctionalConstraintDef `json:"functionalConstraints,omitempty"`
@@ -153,6 +168,31 @@ type Namespace struct {
 	Provenance Provenance `json:"provenance,omitzero"`
 }
 
+// Copyright is the copyright block of an NSD document or package
+// manifest.
+type Copyright struct {
+	// Notice is the copyright notice, with white space normalized.
+	Notice string `json:"notice,omitempty"`
+	// LicenseURI and LicenseKind identify the license, e.g.
+	// "www.iec.ch/CCv1" and "Standard".
+	LicenseURI  string `json:"licenseURI,omitempty"`
+	LicenseKind string `json:"licenseKind,omitempty"`
+}
+
+// IsZero reports whether no copyright is declared.
+func (c Copyright) IsZero() bool { return c == Copyright{} }
+
+// NamespaceChange is a change record of a namespace: the namespace
+// version it refers to and the technical issues it applies.
+type NamespaceChange struct {
+	Version   string `json:"version,omitempty"`
+	Revision  string `json:"revision,omitempty"`
+	Release   string `json:"release,omitempty"`
+	Tissues   string `json:"tissues,omitempty"`
+	ChangesID string `json:"changesID,omitempty"`
+	Date      string `json:"date,omitempty"`
+}
+
 // LogicalNodeClass returns the concrete or abstract logical node class
 // with the given name.
 func (ns *Namespace) LogicalNodeClass(name string) (*LogicalNodeClass, bool) {
@@ -163,10 +203,24 @@ func (ns *Namespace) LogicalNodeClass(name string) (*LogicalNodeClass, bool) {
 	return ln, ln != nil
 }
 
-// CDC returns the common data class with the given name.
+// CDC returns the common data class with the given name. For a CDC
+// defined in variants it returns the first variant; see
+// [Namespace.CDCVariants].
 func (ns *Namespace) CDC(name string) (*CommonDataClass, bool) {
 	c := find(ns.CDCs, name, func(c *CommonDataClass) string { return c.Name })
 	return c, c != nil
+}
+
+// CDCVariants returns every definition of the CDC with the given name:
+// one, or one per variant (e.g. SPG for SP, SG and SE).
+func (ns *Namespace) CDCVariants(name string) []*CommonDataClass {
+	var out []*CommonDataClass
+	for i := range ns.CDCs {
+		if ns.CDCs[i].Name == name {
+			out = append(out, &ns.CDCs[i])
+		}
+	}
+	return out
 }
 
 // ConstructedAttribute returns the constructed attribute type with the
@@ -230,8 +284,13 @@ type BasicType struct {
 // constraint.
 type FunctionalConstraintDef struct {
 	Abbreviation FunctionalConstraint `json:"abbreviation"`
-	Doc          Doc                  `json:"doc,omitzero"`
-	Source       NamespaceID          `json:"source"`
+	// Services lists the services applicable to data of this FC.
+	Services []string `json:"services,omitempty"`
+	// DataSetMemberOf lists the control blocks whose data sets may
+	// contain data of this FC, e.g. GoCB.
+	DataSetMemberOf []string    `json:"dataSetMemberOf,omitempty"`
+	Doc             Doc         `json:"doc,omitzero"`
+	Source          NamespaceID `json:"source"`
 }
 
 // TriggerOption is the namespace definition of a trigger option, e.g.

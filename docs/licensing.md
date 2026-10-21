@@ -38,18 +38,42 @@ At run time the library holds what you loaded in memory, including NSDoc texts
 of your own installation is a matter of your IEC license; publishing them is
 not covered by this repository's license.
 
-## Status of the review
+## The license of the packages
 
-The IEC Code Components license and its attribution requirements have **not
-been reviewed** yet (milestone M0 in [REQUIREMENTS.md](../REQUIREMENTS.md)).
-Until that review is documented here, with the applicable notices:
+Every official package declares the license `www.iec.ch/CCv1`, the IEC Code
+Components End-user Licence Agreement (SPDX `IEC-Code-Components-EULA`), and
+carries a copyright notice in its `Manifest.xml` and NS documents. As
+summarized from the SPDX copy of the agreement (the iec.ch page itself refuses
+automated access):
+
+- redistributed software must retain the copyright notice, the list of
+  conditions and the disclaimer;
+- each code component must be attributed to IEC, naming the standard it is
+  taken from;
+- IEC's name may not be used to promote derived products without permission;
+- the components come without warranty.
+
+The importer reads the notice and license of every namespace
+(`model.Namespace.Copyright`, `nsd.Manifest.License`), and `nsdctl generate`
+writes them, with the attribution, into `NOTICE.md` next to every output.
+
+## Status of the decision
+
+Whether IEC-derived generated output is committed or published is a decision
+for the project owners, to be recorded here, and per namespace in the lock
+(`"redistribution": "permitted"`). Until then:
 
 - `nsdctl generate` marks its output local-only and adds a `LOCAL-ONLY.md`
   notice; `--publish` is refused unless the lock file records
   `"redistribution": "permitted"` for every source namespace (see
   [generation.md](generation.md));
 - no IEC-derived catalog ships with this module;
-- the CI never downloads official packages.
+- the regular CI never downloads official packages; the separate
+  `nsd.yml` workflow downloads them into `$RUNNER_TEMP`, without caches or
+  artifacts, and deletes them at the end;
+- downloaded packages live in the git-ignored `.nsd-cache/` or outside the
+  repository (`nsdctl sources fetch` refuses anything else), generated output
+  in the git-ignored `.generated/`.
 
 ## Purchased standards
 

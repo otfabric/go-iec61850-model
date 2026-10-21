@@ -29,9 +29,14 @@ type rawNS struct {
 	UMLVersion       string `xml:"umlVersion,attr"`
 	UMLDate          string `xml:"umlDate,attr"`
 	TissuesApplied   string `xml:"tissuesApplied,attr"`
+	NamespaceType    string `xml:"namespaceType,attr"`
+	AppVersion       string `xml:"appVersion,attr"`
+	rawNSDVersion
 	rawDocAttrs
 	Attrs []xml.Attr `xml:",any,attr"`
 
+	Changes               []rawChanges           `xml:"Changes"`
+	Copyright             *rawCopyright          `xml:"Copyright"`
 	DependsOn             []rawDependsOn         `xml:"DependsOn"`
 	BasicTypes            *rawBasicTypes         `xml:"BasicTypes"`
 	FunctionalConstraints *rawFCs                `xml:"FunctionalConstraints"`
@@ -46,7 +51,39 @@ type rawNS struct {
 	Any                   []rawAny               `xml:",any"`
 }
 
+type rawCopyright struct {
+	Attrs   []xml.Attr  `xml:",any,attr"`
+	Notice  string      `xml:"Notice"`
+	License *rawLicense `xml:"License"`
+	Any     []rawAny    `xml:",any"`
+}
+
+type rawLicense struct {
+	URI   string     `xml:"uri,attr"`
+	Kind  string     `xml:"kind,attr"`
+	Attrs []xml.Attr `xml:",any,attr"`
+}
+
+// rawNSDVersion is the version of the NSD format a document declares.
+type rawNSDVersion struct {
+	NSDVersion  string `xml:"nsdVersion,attr"`
+	NSDRevision string `xml:"nsdRevision,attr"`
+	NSDRelease  string `xml:"nsdRelease,attr"`
+}
+
+type rawChanges struct {
+	Version   string     `xml:"version,attr"`
+	Revision  string     `xml:"revision,attr"`
+	Release   string     `xml:"release,attr"`
+	Tissues   string     `xml:"tissues,attr"`
+	ChangesID string     `xml:"changesID,attr"`
+	Date      string     `xml:"date,attr"`
+	Attrs     []xml.Attr `xml:",any,attr"`
+	Any       []rawAny   `xml:",any"`
+}
+
 type rawDependsOn struct {
+	DependencyType   string     `xml:"dependencyType,attr"`
 	ID               string     `xml:"id,attr"`
 	Version          string     `xml:"version,attr"`
 	Revision         string     `xml:"revision,attr"`
@@ -89,6 +126,20 @@ type rawTriggerOptions struct {
 type rawAbbreviated struct {
 	Abbreviation string `xml:"abbreviation,attr"`
 	rawDocAttrs
+	Attrs              []xml.Attr             `xml:",any,attr"`
+	ApplicableServices *rawApplicableServices `xml:"ApplicableServices"`
+	Any                []rawAny               `xml:",any"`
+}
+
+type rawApplicableServices struct {
+	Attrs           []xml.Attr     `xml:",any,attr"`
+	Services        []rawNamed     `xml:"Service"`
+	DataSetMemberOf []rawDataSetCB `xml:"DataSetMemberOf"`
+	Any             []rawAny       `xml:",any"`
+}
+
+type rawDataSetCB struct {
+	CB    string     `xml:"cb,attr"`
 	Attrs []xml.Attr `xml:",any,attr"`
 	Any   []rawAny   `xml:",any"`
 }
@@ -160,6 +211,7 @@ type rawCDCs struct {
 
 type rawCDC struct {
 	Name                  string `xml:"name,attr"`
+	Variant               string `xml:"variant,attr"`
 	EnumParameterized     string `xml:"enumParameterized,attr"`
 	TypeKindParameterized string `xml:"typeKindParameterized,attr"`
 	Statistics            string `xml:"statistics,attr"`
@@ -205,6 +257,9 @@ type rawMemberAttrs struct {
 	Qchg              string `xml:"qchg,attr"`
 	Dupd              string `xml:"dupd,attr"`
 	DefaultValue      string `xml:"defaultValue,attr"`
+	MinValue          string `xml:"minValue,attr"`
+	MaxValue          string `xml:"maxValue,attr"`
+	MinIndex          string `xml:"minIndex,attr"`
 	Deprecated        string `xml:"deprecated,attr"`
 	Informative       string `xml:"informative,attr"`
 	rawDocAttrs
@@ -219,7 +274,10 @@ type rawAbstractLNClasses struct {
 type rawLNClasses struct {
 	rawContainer
 	Items []rawLNClass `xml:"LNClass"`
-	Any   []rawAny     `xml:",any"`
+	// Abstract holds abstract classes listed among the concrete ones,
+	// as official namespaces do.
+	Abstract []rawLNClass `xml:"AbstractLNClass"`
+	Any      []rawAny     `xml:",any"`
 }
 
 type rawLNClass struct {
