@@ -57,6 +57,7 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 | Type resolution (`resolver`) | Implemented |
 | Semantic mapping (`semantic`) | Implemented: MMXU, MMXN, MMTR rules, overrides, unit handling |
 | Ontology helpers (`ontology`) | Implemented: concept graph, traversal, JSON export |
+| Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the 14 tracked packages, with IEC attribution |
 | `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, diff, generate (go, docs, json) with license gate, sources fetch/check/lock, schema, version; binaries for Linux, macOS and Windows |
 | NSD update monitor | Planned (M5) |
 
@@ -156,6 +157,7 @@ files of [catalog](catalog/example_test.go), [resolver](resolver/example_test.go
 | [`reference`](reference) | Instance and class references, LN name parts, MMS form | `Parse`, `ParseClass`, `ParseLNName`, `Normalize`, `FromMMS` |
 | [`resolver`](resolver) | Path and type resolution with provenance | `New`, `Resolve`, `ResolveString`, `ResolvePath`, `Leaves` |
 | [`semantic`](semantic) | Quantity, phase, reference, component and unit hints from explicit rules | `Describe`, `FindMeasurements`, `Match`, `NormalizeUnit`, `DeviceUnit`, `Mapper` |
+| [`names`](names) | Generated from the official packages: `LN_*`, `CDC_*`, `<Class>_<DataObject>` constants and one type per enumeration | `names.MMXU_Hz`, `names.BehaviourModeKind_on` |
 | [`ontology`](ontology) | Typed concept graph with deterministic traversal and JSON export | `BuildGraph`, `Relations`, `Incoming`, `FindConcepts`, `Walk`, `ExportJSON` |
 
 The import direction is `model` ← `nsd`, `catalog` ← `resolver` (which also
@@ -385,13 +387,28 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 
 ## Official packages
 
-The official packages are temporary inputs, downloaded from `assets.iec.ch`,
+The repository commits one derivative of the official packages: the generated
+Go package [`names`](names) (typed constants for classes, data objects, CDCs
+and enumerations), published under the IEC Code Components license with the
+attribution in [`names/NOTICE.md`](names/NOTICE.md); see
+[docs/licensing.md](docs/licensing.md#decision). Everything else derived from
+the packages stays local.
+
+```go
+import "github.com/otfabric/go-iec61850-model/names"
+
+ref := string(names.MMXU_PhV) + ".phsA.cVal.mag.f" // "MMXU.PhV.phsA.cVal.mag.f"
+mode := names.BehaviourModeKind(1)                 // mode.String() == "on"
+```
+
+The official packages themselves are temporary inputs, downloaded from `assets.iec.ch`,
 verified against the digests pinned in `sources/nsd.lock.json`, and never
 committed:
 
 ```bash
 make nsd-fetch nsd-check official   # download into .nsd-cache/, validate, integration test
 make nsd-generate                   # Go, docs and JSON into .generated/ (git-ignored)
+make nsd-publish                    # regenerate the committed names/ package
 ```
 
 The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
@@ -410,5 +427,8 @@ Run `make` for all targets.
 ## License
 
 MIT — see [LICENSE](LICENSE). The license covers the code of this repository.
-It grants nothing for IEC standards or NSD files you load with it; see
+The generated package [`names/`](names) is derived from IEC code components and
+published under the IEC Code Components license, with the attribution and
+notices in [`names/NOTICE.md`](names/NOTICE.md). Nothing here grants rights to
+the IEC standards or to NSD files you load; see
 [docs/licensing.md](docs/licensing.md).

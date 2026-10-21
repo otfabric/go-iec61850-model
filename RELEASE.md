@@ -106,3 +106,19 @@ fixtures only; no official namespace release is claimed as supported yet.
   object, and the alternatives when an attribute's FC depends on the variant.
 - **`schema`** reports gaps only for the NSD schema, not for the package
   metadata schemas.
+
+### Generated names package
+
+- **Package `names`** — committed Go constants for every logical node class
+  (`LN_MMXU`), data object (`MMXU_Hz`), CDC (`CDC_WYE`) and enumeration
+  (`BehaviourModeKind_on`, with `String`) of the 12 NSD namespaces, generated
+  from the official packages; `names/NOTICE.md` attributes them to IEC with the
+  license and copyright notices. Regenerated with `make nsd-publish`; CI checks
+  it against the pinned packages.
+- **Lock** — the 12 NSD namespaces are `permitted` (decision recorded in
+  docs/licensing.md); 8-1 and 7-7 stay `local-only`.
+- **Generator** — output format 4: names defined by several namespaces get one
+  set of constants (union of data objects, merged literals), and the Go output
+  comes with a generated test.
+- **Fix** — namespaces loaded from a directory of archives record the digest of
+  their archive, which the license gate compares with the lock.

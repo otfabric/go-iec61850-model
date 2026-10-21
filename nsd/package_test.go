@@ -5,6 +5,8 @@ package nsd_test
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io/fs"
 	"os"
@@ -214,6 +216,16 @@ func TestLoadFileDirZIP(t *testing.T) {
 	if len(p.Namespaces()) != 1 || p.Namespaces()[0].Provenance.PackageSHA256 != "" || p.SHA256() == "" {
 		t.Errorf("LoadFile(nsd) %+v", p.Namespaces()[0].Provenance)
 	}
+	inDir, err := nsd.LoadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zipDigest := sha256.Sum256(must(os.ReadFile(zipPath)))
+	for _, ns := range inDir.Namespaces() {
+		if ns.Provenance.PackageSHA256 != hex.EncodeToString(zipDigest[:]) {
+			t.Errorf("%s loaded from a directory must record the archive digest: %+v", ns.ID, ns.Provenance)
+		}
+	}
 	p, err = nsd.LoadDir(fixtures.Dir())
 	if err != nil {
 		t.Fatal(err)
@@ -246,6 +258,13 @@ func TestLoadFileDirZIP(t *testing.T) {
 	if _, err := nsd.LoadDir(fixtures.Dir(), nsd.WithMaxDocumentSize(10)); !errors.Is(err, model.ErrLimitExceeded) {
 		t.Errorf("oversized dir entry error = %v", err)
 	}
+}
+
+func must(data []byte, err error) []byte {
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 func TestValidateNil(t *testing.T) {

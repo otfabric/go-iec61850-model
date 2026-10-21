@@ -85,6 +85,13 @@ long lines yourself.
 `generator.FormatVersion`, run `make golden` and review the diff. Never commit
 output generated from official IEC files.
 
+### The names package
+
+[`names/`](names) is generated from the official packages; never edit it by
+hand. After a change of the lock (`make nsd-lock`) or of the Go generator
+output, run `make nsd-fetch nsd-publish` and commit the result together with
+the change. The `nsd.yml` workflow fails when it is out of date.
+
 ### Errors
 
 Return the sentinels and typed errors of package `model` so callers can use

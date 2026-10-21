@@ -19,7 +19,7 @@ discovery.
 - Every file starts with a header naming the generator version, the output
   format version (`generator.FormatVersion`), the distribution status and the
   source namespaces with their digests.
-- The output format is version 3 (`generator.FormatVersion`).
+- The output format is version 4 (`generator.FormatVersion`).
 - `TestGolden` compares the output for the synthetic fixtures with
   [testdata/golden](../testdata/golden); `make golden` refreshes it after an
   intentional change (bump `FormatVersion` too).
@@ -41,6 +41,35 @@ header, so no collision is resolved silently.
 - `--check` writes nothing; it lists missing, changed and stale files and exits
   with code 4 when there are any.
 
+## The committed names package
+
+[`names/`](../names) is the Go output for all tracked packages, committed to
+the repository under the [licensing decision](licensing.md#decision):
+
+```bash
+make nsd-fetch        # the official packages, verified against the lock
+make nsd-publish      # regenerate names/ (generate go --publish, Go version of go.mod)
+make nsd-publish-check
+```
+
+`nsd-publish` runs with the Go toolchain of `go.mod`, as CI does, so the
+committed bytes do not depend on the local toolchain. The `nsd.yml` workflow
+fails when `names/` differs from what the pinned packages generate. Regenerate
+it whenever the lock or the generator output changes.
+
+The Go output comes with a generated test, `names_gen_test.go`, that checks
+every `String` method and the listings.
+
+```go
+import "github.com/otfabric/go-iec61850-model/names"
+
+names.LN_MMXU                     // LNClass "MMXU"
+names.MMXU_Hz                     // DataObjectRef "MMXU.Hz"
+names.CDC_WYE                     // CDC "WYE"
+names.BehaviourModeKind_on        // BehaviourModeKind 1
+names.BehaviourModeKind(5).String() // "off"
+```
+
 ## Notices
 
 When the source namespaces declare a copyright (all official ones do), every
@@ -53,9 +82,11 @@ license requires for redistribution. Generated Go headers point to it.
 - CDCs defined in variants (SPG for SP, SG, SE) get one `CDC_` constant.
 - Data objects of extension classes (e.g. those 7-420 adds to MMXU) are part of
   the class's `DataObjectRef` constants.
-- A class whose name two namespaces of the profile define is ambiguous: its
-  constants cover only its own data objects, and the header lists it under
-  "Ambiguous names". Select a profile without the overlap to avoid that.
+- A class or enumeration that two namespaces of the profile define (DBAT in
+  90-9 and 7-420, FSCH in 7-4 and 7-410) gets one set of constants: the data
+  objects are the union of the definitions and the literals are merged by name.
+  The header lists every such name under "Ambiguous names", and a literal whose
+  value differs between definitions keeps the first value and is reported.
 
 ## Documentation texts
 
