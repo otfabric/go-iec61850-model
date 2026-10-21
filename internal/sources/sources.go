@@ -96,8 +96,10 @@ type Package struct {
 	Content string `json:"content"`
 	// Purpose describes what the package adds.
 	Purpose string `json:"purpose"`
-	// Verified reports whether name and release were checked against
-	// an official listing.
+	// URL is the official HTTPS download location.
+	URL string `json:"url,omitempty"`
+	// Verified reports whether name and URL were checked against the
+	// official host.
 	Verified bool `json:"verified"`
 }
 
@@ -182,6 +184,9 @@ type Entry struct {
 	Namespace string `json:"namespace"`
 	// Content is "light" or "full".
 	Content string `json:"content,omitempty"`
+	// Package is the file name of the code component package that
+	// carries the namespace; its SHA256 is the package digest.
+	Package string `json:"package,omitempty"`
 	// Source is the official location the package was obtained from.
 	Source string `json:"source,omitempty"`
 	// RetrievedAt is the RFC 3339 retrieval time.
@@ -199,6 +204,17 @@ type Entry struct {
 
 // ID parses the namespace ID of the entry.
 func (e Entry) ID() (model.NamespaceID, error) { return model.ParseNamespaceID(e.Namespace) }
+
+// PackageDigest returns the locked SHA-256 of a package file name, when
+// an entry records one.
+func (l *Lock) PackageDigest(name string) (string, bool) {
+	for _, e := range l.Sources {
+		if e.Package != "" && e.SHA256 != "" && baseName(e.Package) == baseName(name) {
+			return e.SHA256, true
+		}
+	}
+	return "", false
+}
 
 // Permitted reports whether output derived from the entry may be
 // published.
@@ -295,6 +311,9 @@ func (idx *Index) Validate() model.Diagnostics {
 		}
 		if _, _, _, err := p.ReleaseID(); err != nil {
 			add(path, err.Error())
+		}
+		if p.URL != "" && (!officialHost(p.URL) || baseName(p.URL) != baseName(p.Name)) {
+			add(path, fmt.Sprintf("URL %q must be an official IEC HTTPS location ending in the package name", p.URL))
 		}
 		if p.Name != "" && !strings.Contains(strings.ToLower(p.Name), strings.ToLower(p.Release)) {
 			add(path, fmt.Sprintf("name %s does not carry release %s", p.Name, p.Release))

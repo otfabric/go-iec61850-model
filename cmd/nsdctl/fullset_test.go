@@ -100,7 +100,7 @@ func fullSet(t *testing.T) string {
 	dir := t.TempDir()
 	manifest := []byte(`<IECManifest><Copyright>synthetic</Copyright></IECManifest>`)
 	pkgs := map[string]map[string][]byte{
-		"IEC_61850-7-2.NSD.2007B6.light": {"IEC_61850-7-2_2007B6.nsd": asRelease6(t, fixtures.NS72), "NSD.xsd": []byte(syntheticXSD), "IECManifest.xml": manifest},
+		"IEC_61850-7-2.NSD.2007B6.Light": {"IEC_61850-7-2_2007B6.nsd": asRelease6(t, fixtures.NS72), "NSD.xsd": []byte(syntheticXSD), "IECManifest.xml": manifest},
 		"IEC_61850-7-3.NSD.2007B6.Light": {"IEC_61850-7-3_2007B6.nsd": asRelease6(t, fixtures.NS73)},
 		"IEC_61850-7-4.NSD.2007B6.Light": {"IEC_61850-7-4_2007B6.nsd": asRelease6(t, fixtures.NS74),
 			"IEC_61850-7-4_2007B6.en.nsdoc": fixtures.Read(t, fixtures.NSDoc74)},
@@ -108,15 +108,16 @@ func fullSet(t *testing.T) string {
 		"IEC_61850-7-420.NSD.2019A4.Light.zip":    {"7-420.nsd": extension("IEC 61850-7-420", "2019", "A", "4", dependsOn74, "DXTS", "OutW")},
 		"IEC_TR_61850-90-9.NSD.2018A3.Light.zip":  {"90-9.nsd": extension("IEC TR 61850-90-9", "2018", "A", "3", dependsOn420, "ZXBA", "SocW")},
 		"IEC_TR_61850-90-14.NSD.2020A3.Light.zip": {"90-14.nsd": extension("IEC 61850-90-14", "2020", "A", "3", dependsOn74, "ZXCV", "DcW")},
-		"IEC_61850-90-6.NSD.2018B.light.zip":      {"90-6.nsd": extension("IEC 61850-90-6", "2018", "B", "", dependsOn74, "AXDA", "FltA")},
+		"IEC_TR_61850-90-6.NSD.2018B.Light":       {"90-6.nsd": extension("IEC 61850-90-6", "2018", "B", "", dependsOn74, "AXDA", "FltA")},
 		"IEC_TR_61850-90-3.NSD.2015B.Light.zip":   {"90-3.nsd": extension("IEC 61850-90-3", "2015", "B", "2", dependsOn74, "SXCM", "Temp")},
 		"IEC_TR_61850-90-4.NSD.2018A.Light.zip":   {"90-4.nsd": extension("IEC 61850-90-4", "2018", "A", "", dependsOn74, "LXBR", "Load")},
 		"IEC_TR_61850-90-11.NSD.2019A2.light.zip": {"90-11.nsd": extension("IEC 61850-90-11", "2019", "A", "2", dependsOn74, "FXLG", "Out")},
 		"IEC_TR_61850-90-21.NSD.2022A2.Light":     {"90-21.nsd": extension("IEC 61850-90-21", "2022", "A", "2", dependsOn74, "RXTW", "Dist")},
-		"IEC_61850-8-1.NSD.2003A4.Light": {"8-1.nsd": []byte(nsHeader + `<NS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-8-1" version="2003" revision="A" release="4">
-  <DependsOn id="IEC 61850-7-2" version="2007" revision="B"/>
-  <Enumerations><Enumeration name="SyntheticMappingKind"><Literal name="a" literalVal="1"/></Enumeration></Enumerations>
-</NS>`)},
+		"IEC_61850-8-1.NSD.2003A4.Light": {
+			"8-1.snsd":     []byte(nsHeader + `<ServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-8-1" version="2003" revision="A" release="4" nsdVersion="2017" nsdRevision="B" nsdRelease="6"/>`),
+			"x.AppNS":      []byte(nsHeader + `<ApplicableServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" version="2"/>`),
+			"Manifest.xml": manifest,
+		},
 		"IEC_61850-7-7.2017.NSD.2017A.full.zip": {"NSD.xsd": []byte(syntheticXSD), "NSDoc.xsd": []byte(syntheticXSD), "IECManifest.xml": manifest},
 	}
 	for name, files := range pkgs {
@@ -127,9 +128,20 @@ func fullSet(t *testing.T) string {
 	return dir
 }
 
+// emptyLock writes a lock without entries: the synthetic stand-ins do
+// not have the digests the repository lock pins for the real packages.
+func emptyLock(t *testing.T) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "nsd.lock.json")
+	if err := os.WriteFile(p, []byte(`{"schemaVersion":1,"sources":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
 func TestFullSetCoverage(t *testing.T) {
 	dir := fullSet(t)
-	index, lock := "../../sources/index.json", "../../sources/nsd.lock.json"
+	index, lock := "../../sources/index.json", emptyLock(t)
 
 	idx, err := sources.LoadIndex(index)
 	if err != nil {
@@ -193,7 +205,7 @@ func TestFullSetLockAndModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(lock.Sources) != 14 {
-		t.Fatalf("%d lock entries, want 13 namespaces and the schema package", len(lock.Sources))
+		t.Fatalf("%d lock entries, want 12 namespaces, the 8-1 service namespace and the schema package", len(lock.Sources))
 	}
 	if ds := lock.Validate(); ds.HasErrors() {
 		t.Errorf("generated lock is invalid: %v", ds)
@@ -203,6 +215,10 @@ func TestFullSetLockAndModel(t *testing.T) {
 		case "IEC 61850-7-420:2019A4":
 			if e.Redistribution != sources.RedistributionPermitted || e.Source == "" || e.Status != sources.StateNSDValidated || e.Content != "light" {
 				t.Errorf("existing decisions must be kept: %+v", e)
+			}
+		case "IEC 61850-8-1:2003A4":
+			if e.Status != sources.StateNSDAvailable || !strings.Contains(e.Notes, "service namespace") || e.Package == "" {
+				t.Errorf("service namespace entry %+v", e)
 			}
 		case "IEC 61850-7-7:2017A":
 			if e.Status != sources.StateNSDAvailable || e.Content != "full" || !strings.Contains(e.Notes, "2 XSD files") {
@@ -225,7 +241,7 @@ func TestFullSetLockAndModel(t *testing.T) {
 	}
 
 	// The whole set forms one profile: exactly one release per standard.
-	if out, e, code := nsdctl(t, "validate", dir); code != exitOK || !strings.Contains(out, "13 namespaces, 0 errors") {
+	if out, e, code := nsdctl(t, "validate", dir); code != exitOK || !strings.Contains(out, "12 namespaces, 0 errors") {
 		t.Errorf("validate: %d\n%s\n%s", code, out, e)
 	}
 	if out, _, code := nsdctl(t, "-s", dir, "model", "list"); code != exitOK || !containsAll(out, "AXDA", "DXTS", "FXLG", "HXTS", "LXBR", "MMXU", "RXTW", "SXCM", "ZXBA", "ZXCV") {
@@ -243,7 +259,7 @@ func TestFullSetLockAndModel(t *testing.T) {
 
 	schemaPkg := filepath.Join(dir, "IEC_61850-7-7.2017.NSD.2017A.full.zip")
 	out, _, code = nsdctl(t, "schema", schemaPkg)
-	if code != exitOK || !containsAll(out, "FutureElement", "futureAttr", "accepted: true") {
+	if code != exitOK || !containsAll(out, "FutureElement", "futureAttr", "http://www.iec.ch/61850/2016/NSD") {
 		t.Errorf("schema: %d\n%s", code, out)
 	}
 	if _, _, code := nsdctl(t, "schema", "--exit-code", schemaPkg); code != exitDifferent {

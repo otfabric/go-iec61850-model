@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -32,6 +33,7 @@ type dataObjectRow struct {
 	CDC        string `json:"cdc"`
 	Presence   string `json:"presence,omitempty"`
 	DeclaredIn string `json:"declaredIn"`
+	Namespace  string `json:"namespace"`
 	Semantics  string `json:"semantics,omitempty"`
 	Text       string `json:"text,omitempty"`
 }
@@ -89,8 +91,8 @@ func (a *app) modelShowCmd() *cobra.Command {
 			} else if !errors.Is(err, model.ErrUnknownLogicalNode) {
 				return err
 			}
-			if c, err := p.CDC(name); err == nil {
-				return a.showCDC(w, c)
+			if cs, err := p.CDCVariants(name); err == nil {
+				return a.showCDC(w, cs)
 			}
 			if c, err := p.ConstructedAttribute(name); err == nil {
 				return a.output(w, c, func() error { return showMembers(w, "constructed attribute", c.Name, c.Source, c.SubDataAttributes) })
@@ -146,7 +148,7 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 	}
 	for _, do := range dos {
 		v.DataObjects = append(v.DataObjects, dataObjectRow{Name: do.Name, CDC: do.Type, Presence: do.Presence.String(),
-			DeclaredIn: do.DeclaredIn.Name, Semantics: sem[do.Name], Text: do.Doc.Title})
+			DeclaredIn: do.DeclaredIn.Name, Namespace: do.DeclaredIn.Source.String(), Semantics: sem[do.Name], Text: do.Doc.Title})
 	}
 	return a.output(w, v, func() error {
 		_, _ = fmt.Fprintf(w, "%s %s (%s)\n", v.Kind, v.Name, v.Namespace)
@@ -159,40 +161,48 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 		_, _ = fmt.Fprintf(w, "inheritance  %s\n\n", strings.Join(v.Inheritance, " → "))
 		var rows [][]string
 		for _, d := range v.DataObjects {
-			rows = append(rows, []string{d.Name, d.CDC, orDash(d.Presence), d.DeclaredIn, orDash(d.Semantics)})
+			rows = append(rows, []string{d.Name, d.CDC, orDash(d.Presence), d.DeclaredIn, d.Namespace, orDash(d.Semantics)})
 		}
-		return table(w, "DATA OBJECT\tCDC\tPRESENCE\tDECLARED IN\tSEMANTICS", rows)
+		return table(w, "DATA OBJECT\tCDC\tPRESENCE\tDECLARED IN\tNAMESPACE\tSEMANTICS", rows)
 	})
 }
 
-func (a *app) showCDC(w io.Writer, c *model.CommonDataClass) error {
-	return a.output(w, c, func() error {
-		_, _ = fmt.Fprintf(w, "CDC %s (%s)\n\n", c.Name, c.Source)
-		type row struct {
-			pos  int
-			cols []string
-		}
-		var rows []row
-		for _, s := range c.SubDataObjects {
-			rows = append(rows, row{s.Position, []string{s.Name, "sub data object", s.Type, "-", orDash(s.Presence.String())}})
-		}
-		for _, d := range c.DataAttributes {
-			typ := d.Type
-			if typ == "" {
-				typ = "(" + string(d.TypeKind) + " from data object)"
+func (a *app) showCDC(w io.Writer, variants []*model.CommonDataClass) error {
+	var v any = variants[0]
+	if len(variants) > 1 {
+		v = variants
+	}
+	return a.output(w, v, func() error {
+		for i, c := range variants {
+			if i > 0 {
+				_, _ = fmt.Fprintln(w)
 			}
-			rows = append(rows, row{d.Position, []string{d.Name, "data attribute", typ, orDash(string(d.FC)), orDash(d.Presence.String())}})
-		}
-		ordered := make([][]string, len(rows))
-		for i := range rows {
-			for j := i + 1; j < len(rows); j++ {
-				if rows[j].pos < rows[i].pos {
-					rows[i], rows[j] = rows[j], rows[i]
+			_, _ = fmt.Fprintf(w, "CDC %s (%s)\n\n", c.Key(), c.Source)
+			type row struct {
+				pos  int
+				cols []string
+			}
+			var rows []row
+			for _, s := range c.SubDataObjects {
+				rows = append(rows, row{s.Position, []string{s.Name, "sub data object", s.Type, "-", orDash(s.Presence.String())}})
+			}
+			for _, d := range c.DataAttributes {
+				typ := d.Type
+				if typ == "" {
+					typ = "(" + string(d.TypeKind) + " from data object)"
 				}
+				rows = append(rows, row{d.Position, []string{d.Name, "data attribute", typ, orDash(string(d.FC)), orDash(d.Presence.String())}})
 			}
-			ordered[i] = rows[i].cols
+			sort.SliceStable(rows, func(i, j int) bool { return rows[i].pos < rows[j].pos })
+			ordered := make([][]string, len(rows))
+			for i := range rows {
+				ordered[i] = rows[i].cols
+			}
+			if err := table(w, "MEMBER\tKIND\tTYPE\tFC\tPRESENCE", ordered); err != nil {
+				return err
+			}
 		}
-		return table(w, "MEMBER\tKIND\tTYPE\tFC\tPRESENCE", ordered)
+		return nil
 	})
 }
 
@@ -239,6 +249,11 @@ func (a *app) showPath(w io.Writer, p *catalog.Profile, ref string) error {
 		}
 		if err := table(w, "STEP\tNAME\tTYPE\tFC\tPRESENCE\tDECLARED IN\tNAMESPACE", rows); err != nil {
 			return err
+		}
+		for _, st := range v.Steps {
+			if len(st.Variants) > 0 {
+				_, _ = fmt.Fprintf(w, "\nThe FC of %s depends on the realization: %s.\nAppend [FC] to the reference to select one.\n", st.Name, strings.Join(st.Variants, ", "))
+			}
 		}
 		if v.Semantics != nil {
 			_, _ = fmt.Fprintln(w)

@@ -51,8 +51,10 @@ This is the rule that matters most in this repository:
   (`MMXU`, `Hz`, `MV`, `mag`) are fine; reproducing whole class tables is not.
 - **Do not paste IEC text into code comments, docs or issues.** Describe
   behavior in your own words and refer to the clause number.
-- Tests against official packages run locally or in a controlled, licensed
-  environment and must not leak inputs into Git, CI caches, logs or artifacts.
+- Official packages are fetched with `make nsd-fetch` into the git-ignored
+  `.nsd-cache/` (or a directory outside the repository) and tested with `make
+  official`; generated output goes to the git-ignored `.generated/`. Neither may
+  enter Git, CI caches, logs or artifacts.
 
 See [docs/licensing.md](docs/licensing.md).
 

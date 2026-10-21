@@ -272,3 +272,23 @@ func TestConcurrentDescribe(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestFindMeasurementsSkipsUnresolvableUnmapped(t *testing.T) {
+	id := model.NamespaceID{Standard: "G", Version: "1"}
+	ns := &model.Namespace{ID: id,
+		CDCs:      []model.CommonDataClass{{Name: "MV", Source: id}},
+		LNClasses: []model.LogicalNodeClass{{Name: "MMXU", Source: id, DataObjects: []model.DataObject{{Name: "Hz", Type: "MV"}, {Name: "Odd", Type: "MISSING"}}}},
+	}
+	c, _ := catalog.New(ns)
+	ds, err := semantic.FindMeasurements(c, "MMXU")
+	if err != nil || len(ds) != 1 {
+		t.Fatalf("unmapped unresolvable data object must be skipped: %v %v", ds, err)
+	}
+	m, _ := semantic.NewMapper([]semantic.Rule{{ID: "o", LNClass: "MMXU", DataObject: "Odd", CDC: "MISSING", Quantity: semantic.QuantityCurrent}}, nil)
+	if _, err := m.FindMeasurements(c, "MMXU"); !errors.Is(err, model.ErrUnknownCDC) {
+		t.Errorf("mapped unresolvable data object: %v", err)
+	}
+	if _, err := semantic.FindMeasurements(c, "XXXX"); err == nil {
+		t.Error("unknown class")
+	}
+}

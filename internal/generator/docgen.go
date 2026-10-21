@@ -38,6 +38,7 @@ func Docs(in Input) (Files, error) {
 		return nil, err
 	}
 	files["index.md"] = g.index()
+	in.addNotice(files, "docs")
 	if !in.Publish {
 		files["LOCAL-ONLY.md"] = in.localNotice("docs")
 	}
@@ -177,7 +178,7 @@ func (g *docGen) cdcs() []byte {
 	var b bytes.Buffer
 	g.header(&b, "Common data classes")
 	for _, c := range g.in.Profile.ListCDCs() {
-		fmt.Fprintf(&b, "## %s\n\nNamespace: %s.", c.Name, c.Source)
+		fmt.Fprintf(&b, "## %s\n\nNamespace: %s.", c.Key(), c.Source)
 		if t := g.text(c.Doc); t != "" {
 			b.WriteString(" " + t)
 		}
@@ -358,6 +359,7 @@ func JSON(in Input) (Files, error) {
 		}
 		files[name] = append(data, '\n')
 	}
+	in.addNotice(files, "json")
 	if !in.Publish {
 		files["LOCAL-ONLY.md"] = in.localNotice("json")
 	}

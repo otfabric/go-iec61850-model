@@ -2,6 +2,8 @@
 
 package model
 
+import "strings"
+
 // CommonDataClass is a common data class (CDC), e.g. MV, WYE or SPS.
 //
 // A CDC contains sub data objects (each typed by another CDC) and data
@@ -10,6 +12,11 @@ package model
 type CommonDataClass struct {
 	// Name is the CDC name, e.g. "MV".
 	Name string `json:"name"`
+	// Variant distinguishes definitions of the same CDC, e.g. SP, SG
+	// and SE for the settings CDC SPG. A data object names the CDC
+	// only; which variant applies is chosen by the functional
+	// constraint of the realization.
+	Variant string `json:"variant,omitempty"`
 	// SubDataObjects are the sub data objects, e.g. phsA of WYE.
 	SubDataObjects []DataObject `json:"subDataObjects,omitempty"`
 	// DataAttributes are the data attributes, e.g. mag of MV.
@@ -33,6 +40,14 @@ type CommonDataClass struct {
 	Doc         Doc  `json:"doc,omitzero"`
 	// Source is the namespace that defines the CDC.
 	Source NamespaceID `json:"source"`
+}
+
+// Key returns the name, or "name/variant" for a variant, e.g. "SPG/SG".
+func (c *CommonDataClass) Key() string {
+	if c.Variant == "" {
+		return c.Name
+	}
+	return c.Name + "/" + c.Variant
 }
 
 // SubDataObject returns the sub data object with the given name.
@@ -94,6 +109,12 @@ func (c *ConstructedAttribute) SubDataAttribute(name string) (*DataAttribute, bo
 	return a, a != nil
 }
 
+// BaseName returns the attribute name without leading underscores. Some
+// namespaces keep per-FC copies of an attribute unique that way, e.g.
+// setMag, _setMag and __setMag for the FCs SP, SG and SE; on a device
+// each is named setMag.
+func (a *DataAttribute) BaseName() string { return strings.TrimLeft(a.Name, "_") }
+
 // DataAttribute is a data attribute of a CDC or a sub data attribute of
 // a constructed attribute type.
 type DataAttribute struct {
@@ -124,6 +145,11 @@ type DataAttribute struct {
 	Dupd bool `json:"dupd,omitempty"`
 	// DefaultValue is the declared default value, verbatim.
 	DefaultValue string `json:"defaultValue,omitempty"`
+	// MinValue and MaxValue bound the value, verbatim, when declared.
+	MinValue string `json:"minValue,omitempty"`
+	MaxValue string `json:"maxValue,omitempty"`
+	// MinIndex is the declared minimum array index, verbatim.
+	MinIndex string `json:"minIndex,omitempty"`
 	// Deprecated marks an attribute kept for compatibility.
 	Deprecated bool `json:"deprecated,omitempty"`
 	// Informative marks an attribute that is informative only.

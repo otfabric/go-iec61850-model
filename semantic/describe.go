@@ -197,9 +197,11 @@ func component(d *Descriptor, attrs []resolver.Step) {
 }
 
 // FindMeasurements returns the descriptors of every mapped data object
-// of a logical node class, including inherited ones, in model order.
-// Data objects of WYE and DEL are expanded into one descriptor per
-// phase. Data objects without a rule are skipped.
+// of a logical node class, including inherited ones and those of
+// extension classes, in model order. Data objects of WYE and DEL are
+// expanded into one descriptor per phase. Data objects without a rule
+// are skipped, also when the profile cannot resolve them; a mapped data
+// object that cannot be resolved is an error.
 func FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, error) {
 	return Default.FindMeasurements(l, lnClass)
 }
@@ -211,11 +213,25 @@ func (m *Mapper) FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, erro
 	if err != nil {
 		return nil, err
 	}
+	chain, err := l.Inheritance(lnClass)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, len(chain))
+	for i, c := range chain {
+		names[i] = c.Name
+	}
 	r := resolver.New(l)
 	var out []*Descriptor
 	for _, ido := range dos {
 		res, err := r.ResolvePath(lnClass, []string{ido.Name}, "")
 		if err != nil {
+			// A data object the profile cannot resolve (e.g. its CDC is
+			// defined by a namespace that is not loaded) is skipped
+			// unless a rule maps it.
+			if _, _, mapped := m.find(names, ido.Name); !mapped {
+				continue
+			}
 			return nil, err
 		}
 		d, err := m.describe(l, res)

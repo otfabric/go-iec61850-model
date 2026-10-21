@@ -38,7 +38,14 @@ func Validate(ns *model.Namespace) model.Diagnostics {
 	v.unique("/NS/ConstructedAttributes", "ConstructedAttribute", len(ns.ConstructedAttributes), func(i int) string {
 		return ns.ConstructedAttributes[i].Name
 	})
-	v.unique("/NS/CDCs", "CDC", len(ns.CDCs), func(i int) string { return ns.CDCs[i].Name })
+	v.unique("/NS/CDCs", "CDC", len(ns.CDCs), func(i int) string { return ns.CDCs[i].Key() })
+	for i := range ns.CDCs {
+		c := &ns.CDCs[i]
+		vs := ns.CDCVariants(c.Name)
+		if len(vs) > 1 && c.Variant == "" {
+			v.add("missing-variant", elemPath("/NS/CDCs", "CDC", c.Name), "CDC is defined more than once and this definition has no variant")
+		}
+	}
 
 	// Abstract and concrete classes share one name space.
 	lns := make([]*model.LogicalNodeClass, 0, len(ns.AbstractLNClasses)+len(ns.LNClasses))
@@ -73,7 +80,7 @@ func Validate(ns *model.Namespace) model.Diagnostics {
 	}
 	for i := range ns.CDCs {
 		c := &ns.CDCs[i]
-		p := elemPath("/NS/CDCs", "CDC", c.Name)
+		p := elemPath("/NS/CDCs", "CDC", c.Key())
 		names := make([]string, 0, len(c.SubDataObjects)+len(c.DataAttributes))
 		for _, d := range c.SubDataObjects {
 			names = append(names, d.Name)

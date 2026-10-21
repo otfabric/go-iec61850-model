@@ -27,7 +27,7 @@ import (
 // FormatVersion is the version of the generated output format. It
 // changes whenever the generator would write different bytes for the
 // same input.
-const FormatVersion = 2
+const FormatVersion = 3
 
 // Marker identifies files written by the generator. Write and Check
 // only replace or remove files that contain it near the top.
@@ -107,6 +107,9 @@ func (in Input) headerLines(kind string) []string {
 	for _, l := range in.sourceLines() {
 		lines = append(lines, "  "+l)
 	}
+	if in.noticeFile(kind) != nil {
+		lines = append(lines, "Attribution: derived from IEC code components, © IEC; see NOTICE.md for the notices and license.")
+	}
 	return lines
 }
 
@@ -115,6 +118,53 @@ func orDev(v string) string {
 		return "dev"
 	}
 	return v
+}
+
+// noticeFile lists, per source namespace, the attribution and the
+// copyright notice and license its NSD document declares. The IEC Code
+// Components license requires redistributed code components to retain
+// the notice and to be attributed to IEC and the source standard. It
+// returns nil when no namespace declares a copyright.
+func (in Input) noticeFile(kind string) []byte {
+	var b bytes.Buffer
+	found := false
+	for _, ns := range in.Profile.Namespaces() {
+		if ns.Copyright.IsZero() {
+			continue
+		}
+		if !found {
+			b.WriteString("<!-- " + Marker + " generate " + kind + "; DO NOT EDIT. -->\n\n")
+			b.WriteString("# Notices\n\n")
+			b.WriteString("This output is derived from IEC code components. Each is attributed to IEC and\n")
+			b.WriteString("the standard it is taken from, with the copyright notice and license it declares.\n")
+			found = true
+		}
+		fmt.Fprintf(&b, "\n## %s\n\nSource: IEC code component %s, © IEC.\n", ns.ID, ns.ID)
+		if c := ns.Copyright; c.LicenseURI != "" {
+			fmt.Fprintf(&b, "License: %s (%s).\n", c.LicenseURI, orDash(c.LicenseKind))
+		}
+		if ns.Copyright.Notice != "" {
+			b.WriteString("\n> " + ns.Copyright.Notice + "\n")
+		}
+	}
+	if !found {
+		return nil
+	}
+	return b.Bytes()
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
+// addNotice adds NOTICE.md to files when the sources declare notices.
+func (in Input) addNotice(files Files, kind string) {
+	if n := in.noticeFile(kind); n != nil {
+		files["NOTICE.md"] = n
+	}
 }
 
 // localNotice is added to local-only output.

@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official clean
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-clean clean
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -18,8 +18,20 @@ PKGS         := ./...
 COVERAGE_MIN := 90
 FUZZTIME     ?= 15s
 
+# Official IEC NSD packages: temporary inputs, never committed. NSD_CACHE must be
+# outside the repository or the git-ignored .nsd-cache; generated output goes to
+# GENERATED_DIR (git-ignored, and dot-named so that ./... never compiles it) and
+# is local-only unless the lock permits publishing.
+NSD_CACHE     ?= .nsd-cache
+NSD_TIERS     ?= all
+NSD_PROFILE   ?=
+GENERATED_DIR ?= .generated
+GO_PACKAGE    ?= iec61850names
+NSDCTL        := go run ./cmd/nsdctl
+NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
+
 DIST      := dist
-PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
+PLATFORMS := linux/amd64 linux/arm64 linux/arm/v7 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 PREFIX    ?= /usr/local
 
 VERSION    ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -110,25 +122,54 @@ build: ## Build all packages and bin/nsdctl
 	@echo "  BUILD nsdctl $(VERSION) -> bin/nsdctl"
 	@go build -ldflags '$(LDFLAGS)' -o bin/nsdctl ./cmd/nsdctl
 
-build-all: ## Cross-compile nsdctl for all platforms into dist/
-	@echo "Cross-compiling nsdctl"
+build-all: ## Cross-compile nsdctl for every release target into dist/ (names as in the releases)
+	@echo "Cross-compiling nsdctl $(VERSION)"
 	@mkdir -p $(DIST)
 	@for target in $(PLATFORMS); do \
-		os=$${target%/*}; arch=$${target#*/}; \
+		os=$$(echo $$target | cut -d/ -f1); arch=$$(echo $$target | cut -d/ -f2); arm=$$(echo $$target | cut -s -d/ -f3 | tr -d v); \
+		label=$$os-$$arch; [ -n "$$arm" ] && label=$$os-armv$$arm; \
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
-		out=$(DIST)/nsdctl-$$os-$$arch$$ext; \
-		echo "  BUILD nsdctl $(VERSION) $$target -> $$out"; \
-		GOOS=$$os GOARCH=$$arch go build -ldflags '$(LDFLAGS)' -o $$out ./cmd/nsdctl || exit 1; \
+		out=$(DIST)/nsdctl-$(VERSION)-$$label$$ext; \
+		echo "  BUILD $$target -> $$out"; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch GOARM=$$arm go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/nsdctl || exit 1; \
 	done
 
 install: build ## Install nsdctl to PREFIX/bin (default /usr/local/bin)
 	@echo "Installing nsdctl to $(PREFIX)/bin"
 	@sudo install -m 755 bin/nsdctl $(PREFIX)/bin/nsdctl
 
-official: ## Test against official packages in NSD_DIR (read in place, never copied)
-	@test -n "$(NSD_DIR)" || { echo "Set NSD_DIR to the directory holding the official NSD packages"; exit 1; }
-	@echo "Testing against official packages in $(NSD_DIR)"
-	@NSD_DIR="$(abspath $(NSD_DIR))" go test -count=1 -v -run TestOfficialPackages ./cmd/nsdctl
+nsd-fetch: ## Download the tracked IEC NSD packages into NSD_CACHE, verified against the lock
+	@echo "Fetching IEC NSD packages ($(NSD_TIERS)) into $(NSD_CACHE)"
+	@$(NSDCTL) sources fetch --dest "$(NSD_CACHE)" --tiers "$(NSD_TIERS)"
+
+nsd-lock: ## Pin the digests and statuses of the packages in NSD_CACHE into sources/nsd.lock.json
+	@echo "Pinning packages in $(NSD_CACHE)"
+	@$(NSDCTL) sources lock --packages "$(NSD_CACHE)" --write
+
+nsd-check: ## Check package coverage and validate the namespaces in NSD_CACHE
+	@echo "Checking packages in $(NSD_CACHE)"
+	@$(NSDCTL) sources check --packages "$(NSD_CACHE)" --tiers "$(NSD_TIERS)"
+	@$(NSDCTL) validate "$(NSD_CACHE)"
+
+nsd-generate: ## Generate Go, docs and JSON from NSD_CACHE into GENERATED_DIR (local-only)
+	@echo "Generating from $(NSD_CACHE) into $(GENERATED_DIR)"
+	@$(NSDCTL) $(NSD_SOURCE) generate go -o "$(GENERATED_DIR)/go" --package "$(GO_PACKAGE)"
+	@$(NSDCTL) $(NSD_SOURCE) generate docs -o "$(GENERATED_DIR)/docs"
+	@$(NSDCTL) $(NSD_SOURCE) generate json -o "$(GENERATED_DIR)/json"
+
+nsd-generate-check: ## Fail if GENERATED_DIR differs from what NSD_CACHE generates
+	@$(NSDCTL) $(NSD_SOURCE) generate go -o "$(GENERATED_DIR)/go" --package "$(GO_PACKAGE)" --check
+	@$(NSDCTL) $(NSD_SOURCE) generate docs -o "$(GENERATED_DIR)/docs" --check
+	@$(NSDCTL) $(NSD_SOURCE) generate json -o "$(GENERATED_DIR)/json" --check
+
+nsd-clean: ## Remove downloaded packages and generated output
+	@echo "Removing $(NSD_CACHE) and $(GENERATED_DIR)"
+	@rm -rf "$(NSD_CACHE)" "$(GENERATED_DIR)"
+
+official: ## Test against the official packages in NSD_DIR (default NSD_CACHE), read in place
+	@test -d "$(or $(NSD_DIR),$(NSD_CACHE))" || { echo "No packages in $(or $(NSD_DIR),$(NSD_CACHE)); run make nsd-fetch"; exit 1; }
+	@echo "Testing against official packages in $(or $(NSD_DIR),$(NSD_CACHE))"
+	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" go test -count=1 -v -run TestOfficialPackages ./cmd/nsdctl
 
 golden: ## Regenerate testdata/golden after an intentional generator output change
 	@echo "Regenerating golden generator output"
