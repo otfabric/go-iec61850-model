@@ -367,23 +367,28 @@ func TestOverlappingDefinitions(t *testing.T) {
 	}
 	pkg := typeCheck(t, files)
 	src := string(files[GoFileName])
-	for _, want := range []string{"DBAT_Beh", "DBAT_One", "DBAT_Both", "DBAT_Two", "KindE_x", "KindE_y", "KindE_z", "LN_DBAT"} {
+	for _, want := range []string{"DBAT_Beh", "DBAT_One", "DBAT_Both", "DBAT_Two", "LN_DBAT", "KindE_A_x", "KindE_B_z"} {
 		if pkg.Scope().Lookup(want) == nil {
 			t.Errorf("missing %s", want)
 		}
 	}
-	for _, unwanted := range []string{"LN_DBAT_2", "DBAT_Both_2", "KindE_2"} {
+	for _, unwanted := range []string{"LN_DBAT_2", "DBAT_Both_2", "KindE", "KindE_x"} {
 		if pkg.Scope().Lookup(unwanted) != nil {
-			t.Errorf("duplicate %s", unwanted)
+			t.Errorf("%s must not exist: definitions are not merged and none takes precedence", unwanted)
 		}
 	}
-	for _, note := range []string{"DBAT is defined by A:1, B:1; its data objects are the union", "KindE.y is 2 in one definition and 3 in B:1; 2 is kept", "KindE is defined by A:1, B:1"} {
-		if !strings.Contains(src, note) {
-			t.Errorf("header lacks %q", note)
+	for _, want := range []string{
+		"DBAT is defined by A:1, B:1; the constants name the data objects of each definition, with its namespace; the definitions are not merged",
+		"KindE is defined by several namespaces; KindE_A is the definition of A:1",
+		`DBAT_Both DataObjectRef = "DBAT.Both" // MV, - (A:1); MV, - (B:1)`,
+		`DBAT_Beh  DataObjectRef = "DBAT.Beh"  // MV, - (A:1)`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("output lacks %q", want)
 		}
 	}
 	test := string(files[GoTestFileName])
-	if !strings.Contains(test, `{KindE_x.String(), "x"}`) || strings.Contains(test, `{KindE_z.String()`) || !strings.Contains(test, `{KindE(3).String(), "KindE(3)"}`) {
+	if !strings.Contains(test, `{KindE_A_y.String(), "y"}`) || !strings.Contains(test, `{KindE_B_y.String(), "y"}`) {
 		t.Errorf("generated test:\n%s", test)
 	}
 }

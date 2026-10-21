@@ -26,6 +26,19 @@ type Lookup interface {
 	ConstructedAttribute(name string) (*model.ConstructedAttribute, error)
 	Enumeration(name string) (*model.Enumeration, error)
 	BasicType(name string) (*model.BasicType, error)
+
+	// Qualified lookups: the definition of one namespace.
+	LogicalNodeIn(ns model.NamespaceID, name string) (*model.LogicalNodeClass, error)
+	InheritanceIn(ns model.NamespaceID, name string) ([]*model.LogicalNodeClass, error)
+	DataObjectIn(ns model.NamespaceID, lnClass, name string) (catalog.InheritedDataObject, error)
+	DataObjectsIn(ns model.NamespaceID, lnClass string) ([]catalog.InheritedDataObject, error)
+
+	// Scoped lookups: a name referenced from a definition of namespace
+	// from, resolved in that namespace and its dependencies first.
+	CDCVariantsFrom(from model.NamespaceID, name string) ([]*model.CommonDataClass, error)
+	ConstructedAttributeFrom(from model.NamespaceID, name string) (*model.ConstructedAttribute, error)
+	EnumerationFrom(from model.NamespaceID, name string) (*model.Enumeration, error)
+	BasicTypeFrom(from model.NamespaceID, name string) (*model.BasicType, error)
 }
 
 // DefaultMaxDepth bounds the nesting depth the resolver follows when it
@@ -34,13 +47,30 @@ const DefaultMaxDepth = 32
 
 // Resolver resolves references and model paths against a [Lookup],
 // usually a namespace profile. It is safe for concurrent use.
+//
+// The logical node class of a path is looked up unqualified, unless the
+// resolver is restricted to a namespace with [Resolver.In]. Every other
+// reference (CDCs, constructed types, enumerations, basic types, base
+// classes) is resolved in the scope of the namespace that declares it,
+// so a name that two namespaces define does not make paths through the
+// other one ambiguous.
 type Resolver struct {
 	l        Lookup
 	maxDepth int
+	ns       *model.NamespaceID
 }
 
 // New returns a resolver for the given lookup.
 func New(l Lookup) *Resolver { return &Resolver{l: l, maxDepth: DefaultMaxDepth} }
+
+// In returns a resolver that looks up logical node classes in namespace
+// ns only, e.g. DBAT as IEC 61850-7-420 defines it when IEC TR 61850-90-9
+// defines DBAT too. The ID may be partial ("IEC 61850-7-420").
+func (r *Resolver) In(ns model.NamespaceID) *Resolver {
+	cp := *r
+	cp.ns = &ns
+	return &cp
+}
 
 // StepKind is the kind of one element of a resolved path.
 type StepKind string
@@ -217,6 +247,9 @@ func (r *Resolver) ResolveCDC(name string) (*model.CommonDataClass, error) { ret
 // ResolveInheritance returns the class chain of a logical node class,
 // from the class itself to its root class.
 func (r *Resolver) ResolveInheritance(lnClass string) ([]*model.LogicalNodeClass, error) {
+	if r.ns != nil {
+		return r.l.InheritanceIn(*r.ns, lnClass)
+	}
 	return r.l.Inheritance(lnClass)
 }
 
@@ -240,7 +273,7 @@ func (r *Resolver) ResolvePath(lnClass string, path []string, fc model.Functiona
 		}
 	}
 	if fc != "" && !w.res.IsAttribute() && len(w.res.Steps) > 1 {
-		ok, err := r.hasFC(w.cdc.Name, fc, map[string]bool{})
+		ok, err := r.hasFC(w.cdc.Source, w.cdc.Name, fc, map[string]bool{})
 		if err != nil {
 			return nil, err
 		}
@@ -264,10 +297,20 @@ type walker struct {
 	cdcs []*model.CommonDataClass // all variants of cdc
 	do   *model.DataObject
 	attr *Step
+	// doFrom is the namespace that declares the current data object;
+	// typeFrom the namespace from which the type of the current
+	// attribute is referenced. Lookups are scoped to them.
+	doFrom, typeFrom model.NamespaceID
 }
 
 func (r *Resolver) start(lnClass string) (*walker, error) {
-	ln, err := r.l.LogicalNode(lnClass)
+	var ln *model.LogicalNodeClass
+	var err error
+	if r.ns != nil {
+		ln, err = r.l.LogicalNodeIn(*r.ns, lnClass)
+	} else {
+		ln, err = r.l.LogicalNode(lnClass)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -337,9 +380,13 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		if err != nil {
 			return err
 		}
-		typ, kind, param, err := w.r.attrType(da, cdc, w.do)
+		typ, kind, param, err := w.r.attrType(da, cdc, w.do, w.doFrom)
 		if err != nil {
 			return w.annotate(err, name)
+		}
+		w.typeFrom = cdc.Source
+		if param {
+			w.typeFrom = w.doFrom
 		}
 		w.cdc = cdc
 		w.res.CDC, w.res.Attribute = cdc, da
@@ -359,7 +406,7 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		if cur.TypeKind != model.TypeKindConstructed {
 			return w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("attribute %s of type %s has no members", cur.Name, cur.Type), "", "")
 		}
-		ca, err := w.r.l.ConstructedAttribute(cur.Type)
+		ca, err := w.r.l.ConstructedAttributeFrom(w.typeFrom, cur.Type)
 		if err != nil {
 			return w.annotate(err, name)
 		}
@@ -367,10 +414,11 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		if !ok {
 			return w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("type %s has no member %s", ca.Name, name), "", "")
 		}
-		typ, kind, err := w.r.memberType(sda)
+		typ, kind, err := w.r.memberType(sda, ca.Source)
 		if err != nil {
 			return w.annotate(err, name)
 		}
+		w.typeFrom = ca.Source
 		w.res.Attribute = sda
 		w.res.Steps = append(w.res.Steps, Step{
 			Name: name, Kind: StepSubDataAttribute, Type: typ, TypeKind: kind, FC: cur.FC, Presence: sda.Presence,
@@ -386,7 +434,7 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 // ("Ind" with a presence condition such as Omulti) when the class has
 // no data object with the full name.
 func (r *Resolver) dataObject(lnClass, name string) (catalog.InheritedDataObject, string, error) {
-	ido, err := r.l.DataObject(lnClass, name)
+	ido, err := r.lookupDataObject(lnClass, name)
 	if err == nil || !errors.Is(err, model.ErrUnknownDataObject) {
 		return ido, "", err
 	}
@@ -397,11 +445,18 @@ func (r *Resolver) dataObject(lnClass, name string) (catalog.InheritedDataObject
 	if i == len(name) || i == 0 {
 		return ido, "", err
 	}
-	base, berr := r.l.DataObject(lnClass, name[:i])
+	base, berr := r.lookupDataObject(lnClass, name[:i])
 	if berr != nil || !IsMultiInstance(base.Presence) {
 		return ido, "", err
 	}
 	return base, name[i:], nil
+}
+
+func (r *Resolver) lookupDataObject(lnClass, name string) (catalog.InheritedDataObject, error) {
+	if r.ns != nil {
+		return r.l.DataObjectIn(*r.ns, lnClass, name)
+	}
+	return r.l.DataObject(lnClass, name)
 }
 
 // IsMultiInstance reports whether a presence condition allows numbered
@@ -456,7 +511,7 @@ func (w *walker) selectAttribute(name string, fc model.FunctionalConstraint) (*m
 }
 
 func (w *walker) enterDataObject(do *model.DataObject, kind StepKind, declaredIn string, src model.NamespaceID) error {
-	cdcs, err := w.r.l.CDCVariants(do.Type)
+	cdcs, err := w.r.l.CDCVariantsFrom(src, do.Type)
 	if err != nil {
 		return w.annotate(err, do.Name)
 	}
@@ -464,7 +519,7 @@ func (w *walker) enterDataObject(do *model.DataObject, kind StepKind, declaredIn
 	if kind == StepDataObject {
 		w.res.DataObject = do
 	}
-	w.cdc, w.cdcs, w.do = cdc, cdcs, do
+	w.cdc, w.cdcs, w.do, w.doFrom = cdc, cdcs, do, src
 	w.res.CDC = cdc
 	w.res.Steps = append(w.res.Steps, Step{
 		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src,
@@ -481,13 +536,13 @@ func (w *walker) finish() error {
 	var err error
 	switch leaf.TypeKind {
 	case model.TypeKindEnumerated:
-		w.res.Enumeration, err = w.r.l.Enumeration(leaf.Type)
+		w.res.Enumeration, err = w.r.l.EnumerationFrom(w.typeFrom, leaf.Type)
 	case model.TypeKindConstructed:
-		w.res.Constructed, err = w.r.l.ConstructedAttribute(leaf.Type)
+		w.res.Constructed, err = w.r.l.ConstructedAttributeFrom(w.typeFrom, leaf.Type)
 	case model.TypeKindBasic:
-		w.res.Basic, err = w.r.l.BasicType(leaf.Type)
+		w.res.Basic, err = w.r.l.BasicTypeFrom(w.typeFrom, leaf.Type)
 	default:
-		if b, e := w.r.l.BasicType(leaf.Type); e == nil {
+		if b, e := w.r.l.BasicTypeFrom(w.typeFrom, leaf.Type); e == nil {
 			w.res.Basic = b
 		}
 	}
@@ -499,7 +554,7 @@ func (w *walker) finish() error {
 
 // attrType determines the type of a CDC data attribute, taking the
 // data object's underlying type for parameterized CDCs.
-func (r *Resolver) attrType(da *model.DataAttribute, cdc *model.CommonDataClass, do *model.DataObject) (string, model.TypeKind, bool, error) {
+func (r *Resolver) attrType(da *model.DataAttribute, cdc *model.CommonDataClass, do *model.DataObject, doFrom model.NamespaceID) (string, model.TypeKind, bool, error) {
 	typ, kind := da.Type, da.TypeKind
 	param := false
 	if typ == "" && (cdc.EnumParameterized || cdc.TypeKindParameterized || kind == model.TypeKindUndefined || kind == model.TypeKindEnumerated) {
@@ -517,22 +572,26 @@ func (r *Resolver) attrType(da *model.DataAttribute, cdc *model.CommonDataClass,
 	if typ == "" {
 		return "", "", false, &model.ResolutionError{Element: da.Name, Reason: "attribute has no type", Err: model.ErrUnknownType}
 	}
-	kind, err := r.kindOf(da.Name, typ, kind)
+	from := cdc.Source
+	if param {
+		from = doFrom
+	}
+	kind, err := r.kindOf(from, da.Name, typ, kind)
 	return typ, kind, param, err
 }
 
 // memberType determines the type of a sub data attribute.
-func (r *Resolver) memberType(sda *model.DataAttribute) (string, model.TypeKind, error) {
+func (r *Resolver) memberType(sda *model.DataAttribute, from model.NamespaceID) (string, model.TypeKind, error) {
 	if sda.Type == "" {
 		return "", "", &model.ResolutionError{Element: sda.Name, Reason: "attribute has no type", Err: model.ErrUnknownType}
 	}
-	kind, err := r.kindOf(sda.Name, sda.Type, sda.TypeKind)
+	kind, err := r.kindOf(from, sda.Name, sda.Type, sda.TypeKind)
 	return sda.Type, kind, err
 }
 
 // kindOf checks a declared type kind, or infers it when it is missing
 // or "undefined", from the definitions of the profile.
-func (r *Resolver) kindOf(element, typ string, kind model.TypeKind) (model.TypeKind, error) {
+func (r *Resolver) kindOf(from model.NamespaceID, element, typ string, kind model.TypeKind) (model.TypeKind, error) {
 	switch kind {
 	case model.TypeKindBasic, model.TypeKindEnumerated, model.TypeKindConstructed:
 		return kind, nil
@@ -542,13 +601,13 @@ func (r *Resolver) kindOf(element, typ string, kind model.TypeKind) (model.TypeK
 		return kind, nil
 	}
 	var found []model.TypeKind
-	if _, err := r.l.BasicType(typ); err == nil {
+	if _, err := r.l.BasicTypeFrom(from, typ); err == nil {
 		found = append(found, model.TypeKindBasic)
 	}
-	if _, err := r.l.Enumeration(typ); err == nil {
+	if _, err := r.l.EnumerationFrom(from, typ); err == nil {
 		found = append(found, model.TypeKindEnumerated)
 	}
-	if _, err := r.l.ConstructedAttribute(typ); err == nil {
+	if _, err := r.l.ConstructedAttributeFrom(from, typ); err == nil {
 		found = append(found, model.TypeKindConstructed)
 	}
 	switch len(found) {
@@ -564,13 +623,13 @@ func (r *Resolver) kindOf(element, typ string, kind model.TypeKind) (model.TypeK
 // hasFC reports whether a CDC (any of its variants), or a CDC of one of
 // its sub data objects, has a data attribute with the functional
 // constraint.
-func (r *Resolver) hasFC(cdcName string, fc model.FunctionalConstraint, visiting map[string]bool) (bool, error) {
+func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.FunctionalConstraint, visiting map[string]bool) (bool, error) {
 	if visiting[cdcName] {
 		return false, &model.ResolutionError{Element: cdcName, Reason: "CDC contains itself", Err: model.ErrCycle}
 	}
 	visiting[cdcName] = true
 	defer delete(visiting, cdcName)
-	variants, err := r.l.CDCVariants(cdcName)
+	variants, err := r.l.CDCVariantsFrom(from, cdcName)
 	if err != nil {
 		return false, err
 	}
@@ -582,7 +641,7 @@ func (r *Resolver) hasFC(cdcName string, fc model.FunctionalConstraint, visiting
 		}
 	}
 	for i := range variants[0].SubDataObjects {
-		ok, err := r.hasFC(variants[0].SubDataObjects[i].Type, fc, visiting)
+		ok, err := r.hasFC(variants[0].Source, variants[0].SubDataObjects[i].Type, fc, visiting)
 		if err != nil || ok {
 			return ok, err
 		}
@@ -605,7 +664,13 @@ func (r *Resolver) Leaves(lnClass string, path []string, fc model.FunctionalCons
 	}
 	var out []*Resolution
 	if len(base.Steps) == 1 {
-		dos, err := r.l.DataObjects(lnClass)
+		var dos []catalog.InheritedDataObject
+		var err error
+		if r.ns != nil {
+			dos, err = r.l.DataObjectsIn(*r.ns, lnClass)
+		} else {
+			dos, err = r.l.DataObjects(lnClass)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -633,7 +698,7 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 	switch {
 	case !res.IsAttribute():
 		typeKey = "cdc:" + res.CDC.Name
-		ms, err := r.cdcMembers(res.CDC.Name, fc)
+		ms, err := r.cdcMembers(res.CDC.Source, res.CDC.Name, fc)
 		if err != nil {
 			return nil, err
 		}
@@ -676,8 +741,8 @@ type member struct {
 // in document order, over all its variants, by device name and FC
 // (setMag[SP], setMag[SG], ...). With fc, only data attributes with that
 // FC are included.
-func (r *Resolver) cdcMembers(name string, fc model.FunctionalConstraint) ([]member, error) {
-	variants, err := r.l.CDCVariants(name)
+func (r *Resolver) cdcMembers(from model.NamespaceID, name string, fc model.FunctionalConstraint) ([]member, error) {
+	variants, err := r.l.CDCVariantsFrom(from, name)
 	if err != nil {
 		return nil, err
 	}

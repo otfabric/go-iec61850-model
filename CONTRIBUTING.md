@@ -83,14 +83,17 @@ long lines yourself.
 `internal/generator` output is a contract: `TestGolden` compares it with
 [testdata/golden](testdata/golden). After an intentional change, bump
 `generator.FormatVersion`, run `make golden` and review the diff. Never commit
-output generated from official IEC files.
+other output generated from official IEC files.
 
-### The names package
+### The committed generated output
 
-[`names/`](names) is generated from the official packages; never edit it by
-hand. After a change of the lock (`make nsd-lock`) or of the Go generator
+[`names/`](names), [`official/`](official) (except the hand-written
+`official.go`, `doc.go` and `official_test.go`) and
+[`docs/reference/`](docs/reference/index.md) are generated from the official
+packages; never edit them by hand. After a change of the lock (`make nsd-lock`) or of the Go generator
 output, run `make nsd-fetch nsd-publish` and commit the result together with
-the change. The `nsd.yml` workflow fails when it is out of date.
+the change. The `nsd.yml` workflow fails when it is out of date. The
+downloaded packages themselves are never committed.
 
 ### Errors
 

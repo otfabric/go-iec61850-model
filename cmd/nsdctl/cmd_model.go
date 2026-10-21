@@ -21,8 +21,15 @@ import (
 func (a *app) modelCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "model",
-		Short: "Explore the model of a profile (needs --source)",
+		Short: "Explore the model of a profile (the embedded official catalog without --source)",
+		Long: `Explore the model of a profile: classes, data objects, CDCs, types and paths.
+
+Without --source, the commands use the official catalog embedded in nsdctl.
+A name that two namespaces of the profile define (DBAT in IEC 61850-7-420
+and IEC TR 61850-90-9 in the extended profile) is ambiguous: select the
+namespace with --ns. Definitions are never merged.`,
 	}
+	cmd.PersistentFlags().StringVar(&a.ns, "ns", "", "Namespace to look names up in, e.g. \"IEC 61850-7-420\" or \"7-420\" (default: the whole profile)")
 	cmd.AddCommand(a.modelShowCmd(), a.modelListCmd(), a.modelSearchCmd(), a.modelDescribeCmd(), a.modelMeasurementsCmd(), a.modelLeavesCmd())
 	return cmd
 }
@@ -82,22 +89,29 @@ func (a *app) modelShowCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name, w := args[0], cmd.OutOrStdout()
-			if strings.ContainsAny(name, "./$[") {
-				return a.showPath(w, p, name)
-			}
-			if ln, err := p.LogicalNode(name); err == nil {
-				return a.showClass(w, p, ln)
-			} else if !errors.Is(err, model.ErrUnknownLogicalNode) {
+			ns, err := a.namespace(p)
+			if err != nil {
 				return err
 			}
-			if cs, err := p.CDCVariants(name); err == nil {
-				return a.showCDC(w, cs)
+			name, w := args[0], cmd.OutOrStdout()
+			if strings.ContainsAny(name, "./$[") {
+				return a.showPath(w, p, ns, name)
 			}
-			if c, err := p.ConstructedAttribute(name); err == nil {
+			l := lookupIn(p, ns)
+			if ln, err := l.logicalNode(name); err == nil {
+				return a.showClass(w, p, ln)
+			} else if !errors.Is(err, model.ErrUnknownLogicalNode) {
+				return ambiguous(err)
+			}
+			if cs, err := l.cdcVariants(name); err == nil {
+				return a.showCDC(w, cs)
+			} else if !errors.Is(err, model.ErrUnknownCDC) {
+				return ambiguous(err)
+			}
+			if c, err := l.constructedAttribute(name); err == nil {
 				return a.output(w, c, func() error { return showMembers(w, "constructed attribute", c.Name, c.Source, c.SubDataAttributes) })
 			}
-			if e, err := p.Enumeration(name); err == nil {
+			if e, err := l.enumeration(name); err == nil {
 				return a.output(w, e, func() error {
 					_, _ = fmt.Fprintf(w, "enumeration %s (%s)\n", e.Name, e.Source)
 					if e.InheritedFrom != "" {
@@ -110,12 +124,79 @@ func (a *app) modelShowCmd() *cobra.Command {
 					return table(w, "VALUE\tLITERAL", rows)
 				})
 			}
-			if b, err := p.BasicType(name); err == nil {
+			if b, err := l.basicType(name); err == nil {
 				return a.output(w, b, func() error { _, err := fmt.Fprintf(w, "basic type %s (%s)\n", b.Name, b.Source); return err })
+			}
+			if ns != nil {
+				return withCode(exitUsage, "no definition named %q in %s", name, ns)
 			}
 			return withCode(exitUsage, "no definition named %q in profile %s", name, p)
 		},
 	}
+}
+
+// namespace resolves --ns against the profile; nil without --ns.
+func (a *app) namespace(p *catalog.Profile) (*model.NamespaceID, error) {
+	if a.ns == "" {
+		return nil, nil
+	}
+	id, err := resolveNamespace(p, "--ns", a.ns)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+// ambiguous turns an ambiguity into a usage error that names the flag
+// selecting a namespace.
+func ambiguous(err error) error {
+	var ae *model.AmbiguityError
+	if errors.As(err, &ae) {
+		return &exitError{code: exitUsage, err: fmt.Errorf("%w; select one with --ns", err)}
+	}
+	return err
+}
+
+// lookups are the name lookups of model show, in the whole profile or
+// in one namespace (--ns).
+type lookups struct {
+	logicalNode          func(string) (*model.LogicalNodeClass, error)
+	cdcVariants          func(string) ([]*model.CommonDataClass, error)
+	constructedAttribute func(string) (*model.ConstructedAttribute, error)
+	enumeration          func(string) (*model.Enumeration, error)
+	basicType            func(string) (*model.BasicType, error)
+}
+
+func lookupIn(p *catalog.Profile, ns *model.NamespaceID) lookups {
+	if ns == nil {
+		return lookups{p.LogicalNode, p.CDCVariants, p.ConstructedAttribute, p.Enumeration, p.BasicType}
+	}
+	id := *ns
+	return lookups{
+		logicalNode:          func(n string) (*model.LogicalNodeClass, error) { return p.LogicalNodeIn(id, n) },
+		cdcVariants:          func(n string) ([]*model.CommonDataClass, error) { return p.CDCVariantsIn(id, n) },
+		constructedAttribute: func(n string) (*model.ConstructedAttribute, error) { return p.ConstructedAttributeIn(id, n) },
+		enumeration:          func(n string) (*model.Enumeration, error) { return p.EnumerationIn(id, n) },
+		basicType:            func(n string) (*model.BasicType, error) { return p.BasicTypeFrom(id, n) },
+	}
+}
+
+// usage reports a lookup failure as a usage error, with the --ns hint
+// for an ambiguous name.
+func usage(err error) error {
+	if e := ambiguous(err); e != err {
+		return e
+	}
+	return withCode(exitUsage, "%v", err)
+}
+
+// resolverFor returns a resolver for the profile, scoped to --ns.
+func resolverFor(p *catalog.Profile, ns *model.NamespaceID) *resolver.Resolver {
+	r := resolver.New(p)
+	if ns != nil {
+		r = r.In(*ns)
+	}
+	return r
 }
 
 // output writes v as JSON or runs text.
@@ -127,7 +208,7 @@ func (a *app) output(w io.Writer, v any, text func() error) error {
 }
 
 func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeClass) error {
-	chain, err := p.Inheritance(ln.Name)
+	chain, err := p.InheritanceIn(ln.Source, ln.Name)
 	if err != nil {
 		return err
 	}
@@ -138,12 +219,12 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 	for _, c := range chain {
 		v.Inheritance = append(v.Inheritance, c.Name)
 	}
-	dos, err := p.DataObjects(ln.Name)
+	dos, err := p.DataObjectsIn(ln.Source, ln.Name)
 	if err != nil {
 		return err
 	}
 	sem := map[string]string{}
-	if ds, err := semantic.FindMeasurements(p, ln.Name); err == nil {
+	if ds, err := semantic.FindMeasurementsIn(p, ln.Source, ln.Name); err == nil {
 		sem = semanticsOf(ds)
 	}
 	for _, do := range dos {
@@ -224,10 +305,10 @@ type pathView struct {
 	Semantics *semantic.Descriptor `json:"semantics,omitempty"`
 }
 
-func (a *app) showPath(w io.Writer, p *catalog.Profile, ref string) error {
-	res, err := resolver.New(p).ResolveString(ref)
+func (a *app) showPath(w io.Writer, p *catalog.Profile, ns *model.NamespaceID, ref string) error {
+	res, err := resolverFor(p, ns).ResolveString(ref)
 	if err != nil {
-		return withCode(exitUsage, "%v", err)
+		return usage(err)
 	}
 	v := pathView{Path: res.Path(), Type: res.Type(), TypeKind: string(res.TypeKind()), FC: string(res.FC()), Steps: res.Steps}
 	if d, err := semantic.Default.DescribeResolution(p, res); err == nil {
@@ -406,7 +487,15 @@ func (a *app) modelDescribeCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			d, err := semantic.Describe(p, args[0])
+			ns, err := a.namespace(p)
+			if err != nil {
+				return err
+			}
+			res, err := resolverFor(p, ns).ResolveString(args[0])
+			if err != nil {
+				return usage(err)
+			}
+			d, err := semantic.Default.DescribeResolution(p, res)
 			if err != nil {
 				return withCode(exitUsage, "%v", err)
 			}
@@ -430,9 +519,18 @@ func (a *app) modelMeasurementsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ds, err := semantic.FindMeasurements(p, args[0])
+			ns, err := a.namespace(p)
 			if err != nil {
-				return withCode(exitUsage, "%v", err)
+				return err
+			}
+			var ds []*semantic.Descriptor
+			if ns != nil {
+				ds, err = semantic.FindMeasurementsIn(p, *ns, args[0])
+			} else {
+				ds, err = semantic.FindMeasurements(p, args[0])
+			}
+			if err != nil {
+				return usage(err)
 			}
 			w := cmd.OutOrStdout()
 			if ds == nil {
@@ -461,10 +559,14 @@ func (a *app) modelLeavesCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			parts := strings.Split(args[0], ".")
-			leaves, err := resolver.New(p).Leaves(parts[0], parts[1:], model.FunctionalConstraint(fc))
+			ns, err := a.namespace(p)
 			if err != nil {
-				return withCode(exitUsage, "%v", err)
+				return err
+			}
+			parts := strings.Split(args[0], ".")
+			leaves, err := resolverFor(p, ns).Leaves(parts[0], parts[1:], model.FunctionalConstraint(fc))
+			if err != nil {
+				return usage(err)
 			}
 			type leaf struct {
 				Path     string `json:"path"`

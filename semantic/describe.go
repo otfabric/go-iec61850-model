@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/model"
 	"github.com/otfabric/go-iec61850-model/resolver"
 )
@@ -98,7 +99,7 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 	if res.DataObject == nil {
 		return nil, noMapping(path, "a logical node class is not a measured value")
 	}
-	chain, err := l.Inheritance(res.LNClass.Name)
+	chain, err := l.InheritanceIn(res.LNClass.Source, res.LNClass.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -209,11 +210,39 @@ func FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, error) {
 // FindMeasurements is like the package-level [FindMeasurements], with
 // the rules and overrides of m.
 func (m *Mapper) FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, error) {
-	dos, err := l.DataObjects(lnClass)
-	if err != nil {
-		return nil, err
+	return m.findMeasurements(l, nil, lnClass)
+}
+
+// FindMeasurementsIn is like [Mapper.FindMeasurements] for the class as
+// namespace ns defines it, e.g. DBAT of IEC 61850-7-420 when IEC TR
+// 61850-90-9 defines DBAT too.
+func (m *Mapper) FindMeasurementsIn(l Lookup, ns model.NamespaceID, lnClass string) ([]*Descriptor, error) {
+	return m.findMeasurements(l, &ns, lnClass)
+}
+
+// FindMeasurementsIn is like [FindMeasurements] for the class as
+// namespace ns defines it.
+func FindMeasurementsIn(l Lookup, ns model.NamespaceID, lnClass string) ([]*Descriptor, error) {
+	return Default.FindMeasurementsIn(l, ns, lnClass)
+}
+
+func (m *Mapper) findMeasurements(l Lookup, ns *model.NamespaceID, lnClass string) ([]*Descriptor, error) {
+	var dos []catalog.InheritedDataObject
+	var chain []*model.LogicalNodeClass
+	var err error
+	r := resolver.New(l)
+	if ns != nil {
+		r = r.In(*ns)
+		dos, err = l.DataObjectsIn(*ns, lnClass)
+		if err == nil {
+			chain, err = l.InheritanceIn(*ns, lnClass)
+		}
+	} else {
+		dos, err = l.DataObjects(lnClass)
+		if err == nil {
+			chain, err = l.Inheritance(lnClass)
+		}
 	}
-	chain, err := l.Inheritance(lnClass)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +250,6 @@ func (m *Mapper) FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, erro
 	for i, c := range chain {
 		names[i] = c.Name
 	}
-	r := resolver.New(l)
 	var out []*Descriptor
 	for _, ido := range dos {
 		res, err := r.ResolvePath(lnClass, []string{ido.Name}, "")
@@ -293,9 +321,10 @@ func (c Criteria) Matches(d *Descriptor) bool {
 }
 
 // Match returns the descriptors of every logical node class of the
-// model that satisfy c, ordered by class name and then model order.
-// Use it to answer "which objects carry phase A line-to-neutral
-// voltage?".
+// model that satisfy c, ordered by class name, namespace and model
+// order. A class that several namespaces define is searched per
+// definition. Use it to answer "which objects carry phase A
+// line-to-neutral voltage?".
 func Match(l Lookup, c Criteria) ([]*Descriptor, error) { return Default.Match(l, c) }
 
 // Match is like the package-level [Match], with the rules and
@@ -306,7 +335,7 @@ func (m *Mapper) Match(l Lookup, c Criteria) ([]*Descriptor, error) {
 		if c.LNClass != "" && ln.Name != c.LNClass {
 			continue
 		}
-		ds, err := m.FindMeasurements(l, ln.Name)
+		ds, err := m.FindMeasurementsIn(l, ln.Source, ln.Name)
 		if err != nil {
 			return nil, err
 		}

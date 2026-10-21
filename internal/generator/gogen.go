@@ -4,7 +4,6 @@ package generator
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/format"
 	"go/token"
@@ -118,26 +117,26 @@ func Go(in Input, pkg string) (Files, error) {
 	w("// DataObjectRef is a class-level data object reference, e.g. \"MMXU.Hz\".\ntype DataObjectRef string\n\n")
 	var notes []string
 	for _, c := range classes {
-		dos, note := classDataObjects(p, c)
+		refs, note := classDataObjects(p, c)
 		if note != "" {
 			notes = append(notes, note)
 		}
-		if len(dos) == 0 {
+		if len(refs) == 0 {
 			continue
 		}
 		w("// Data objects of %s (%s), including inherited ones.\nconst (\n", c.name, c.sources())
-		for _, do := range dos {
-			w("\t%s DataObjectRef = %q // %s, %s\n", ids.assign(c.name+"_", do.Name), c.name+"."+do.Name, do.Type, presence(do.Presence))
+		for _, ref := range refs {
+			w("\t%s DataObjectRef = %q // %s\n", ids.assign(c.name+"_", ref.name), c.name+"."+ref.name, strings.Join(ref.notes, "; "))
 		}
 		w(")\n\n")
 	}
 
-	enums, enumNotes := mergeEnumerations(p.ListEnumerations())
+	enums, enumNotes := splitEnumerations(p.ListEnumerations())
 	notes = append(notes, enumNotes...)
 	var tests []enumTest
 	for _, e := range enums {
-		typ := ids.assign("", e.name)
-		w("// %s is the enumeration %s (%s).\ntype %s int32\n\n", typ, e.name, e.sources, typ)
+		typ := ids.assign("", e.typeName)
+		w("// %s is the enumeration %s (%s).\ntype %s int32\n\n", typ, e.name, e.source, typ)
 		if len(e.literals) == 0 {
 			continue
 		}
@@ -204,7 +203,7 @@ func Go(in Input, pkg string) (Files, error) {
 	return files, nil
 }
 
-func hasLiterals(enums []mergedEnum) bool {
+func hasLiterals(enums []enumType) bool {
 	for _, e := range enums {
 		if len(e.literals) > 0 {
 			return true
@@ -266,89 +265,6 @@ func groupClasses(lns []*model.LogicalNodeClass) []class {
 	return out
 }
 
-// classDataObjects returns the data objects of a class: for a class
-// defined by several namespaces, the union over the definitions in
-// first-seen order, with a note naming the definitions.
-func classDataObjects(p *catalog.Profile, c class) ([]catalog.InheritedDataObject, string) {
-	if len(c.defs) == 1 {
-		dos, err := dataObjects(p, c.defs[0])
-		if err != nil {
-			return dos, fmt.Sprintf("%s (%s): %v; only its own data objects are declared", c.name, c.defs[0].Source, err)
-		}
-		return dos, ""
-	}
-	var out []catalog.InheritedDataObject
-	seen := map[string]bool{}
-	for _, def := range c.defs {
-		dos := ownAndInherited(p, def)
-		for _, do := range dos {
-			if !seen[do.Name] {
-				seen[do.Name] = true
-				out = append(out, do)
-			}
-		}
-	}
-	return out, fmt.Sprintf("%s is defined by %s; its data objects are the union of the definitions", c.name, c.sources())
-}
-
-// ownAndInherited returns the data objects a definition declares and,
-// when its base classes resolve unambiguously, the inherited ones.
-func ownAndInherited(p *catalog.Profile, def *model.LogicalNodeClass) []catalog.InheritedDataObject {
-	var out []catalog.InheritedDataObject
-	if def.Base != "" {
-		if base, err := p.DataObjects(def.Base); err == nil {
-			out = append(out, base...)
-		}
-	}
-	for i := range def.DataObjects {
-		out = append(out, catalog.InheritedDataObject{DataObject: &def.DataObjects[i], DeclaredIn: def})
-	}
-	return out
-}
-
-// mergedEnum is an enumeration name with the literals of all its
-// definitions in the profile.
-type mergedEnum struct {
-	name     string
-	sources  string
-	literals []model.Literal
-}
-
-// mergeEnumerations merges enumerations defined by several namespaces:
-// literals are joined by name; a name with different values keeps the
-// first and is reported.
-func mergeEnumerations(enums []*model.Enumeration) ([]mergedEnum, []string) {
-	var out []mergedEnum
-	var notes []string
-	index := map[string]int{}
-	for _, e := range enums {
-		i, ok := index[e.Name]
-		if !ok {
-			index[e.Name] = len(out)
-			out = append(out, mergedEnum{name: e.Name, sources: e.Source.String(), literals: append([]model.Literal(nil), e.Literals...)})
-			continue
-		}
-		m := &out[i]
-		m.sources += ", " + e.Source.String()
-		notes = append(notes, fmt.Sprintf("%s is defined by %s; its literals are merged", e.Name, m.sources))
-		for _, l := range e.Literals {
-			found := false
-			for _, have := range m.literals {
-				if have.Name == l.Name {
-					found = true
-					if have.Value != l.Value {
-						notes = append(notes, fmt.Sprintf("%s.%s is %d in one definition and %d in %s; %d is kept", e.Name, l.Name, have.Value, l.Value, e.Source, have.Value))
-					}
-				}
-			}
-			if !found {
-				m.literals = append(m.literals, l)
-			}
-		}
-	}
-	return out, notes
-}
-
 func presence(p model.PresenceCondition) string {
 	if p.IsZero() {
 		return "-"
@@ -356,21 +272,85 @@ func presence(p model.PresenceCondition) string {
 	return p.String()
 }
 
-// dataObjects returns the data objects of a class including inherited
-// ones. When a name on the inheritance chain is ambiguous in the
-// profile, it falls back to the data objects the class declares itself
-// and returns the error as a note.
-func dataObjects(p *catalog.Profile, ln *model.LogicalNodeClass) ([]catalog.InheritedDataObject, error) {
-	dos, err := p.DataObjects(ln.Name)
-	if err == nil {
-		return dos, nil
+// doRef is a data object name of a class with, per definition that
+// declares it, its CDC, presence and namespace.
+type doRef struct {
+	name  string
+	notes []string
+}
+
+// classDataObjects returns the data object names of a class. For a class
+// that several namespaces define, the names of every definition are
+// listed with the namespace of each in the note; the definitions are
+// not merged.
+func classDataObjects(p *catalog.Profile, c class) ([]doRef, string) {
+	var refs []doRef
+	index := map[string]int{}
+	var note string
+	for _, def := range c.defs {
+		dos, err := p.DataObjectsIn(def.Source, c.name)
+		if err != nil {
+			note = fmt.Sprintf("%s (%s): %v; only its own data objects are declared", c.name, def.Source, err)
+			dos = nil
+			for i := range def.DataObjects {
+				dos = append(dos, catalog.InheritedDataObject{DataObject: &def.DataObjects[i], DeclaredIn: def})
+			}
+		}
+		for _, do := range dos {
+			text := do.Type + ", " + presence(do.Presence)
+			if len(c.defs) > 1 {
+				text += " (" + def.Source.String() + ")"
+			}
+			i, ok := index[do.Name]
+			if !ok {
+				index[do.Name] = len(refs)
+				refs = append(refs, doRef{name: do.Name})
+				i = len(refs) - 1
+			}
+			refs[i].notes = append(refs[i].notes, text)
+		}
 	}
-	if !errors.Is(err, model.ErrAmbiguousReference) {
-		return nil, err
+	if len(c.defs) > 1 {
+		note = fmt.Sprintf("%s is defined by %s; the constants name the data objects of each definition, with its namespace; the definitions are not merged (nsdctl catalog overlaps)", c.name, c.sources())
 	}
-	own := make([]catalog.InheritedDataObject, len(ln.DataObjects))
-	for i := range ln.DataObjects {
-		own[i] = catalog.InheritedDataObject{DataObject: &ln.DataObjects[i], DeclaredIn: ln}
+	return refs, note
+}
+
+// enumType is one enumeration definition with its Go type name.
+type enumType struct {
+	name, typeName string
+	source         model.NamespaceID
+	literals       []model.Literal
+}
+
+// splitEnumerations keeps every definition separate. An enumeration that
+// several namespaces define gets one type per definition, named after
+// the namespace (BatteryTypeKind_7_420, BatteryTypeKind_90_9), so no
+// definition takes precedence.
+func splitEnumerations(enums []*model.Enumeration) ([]enumType, []string) {
+	count := map[string]int{}
+	for _, e := range enums {
+		count[e.Name]++
 	}
-	return own, err
+	var out []enumType
+	var notes []string
+	for _, e := range enums {
+		t := enumType{name: e.Name, typeName: e.Name, source: e.Source, literals: e.Literals}
+		if count[e.Name] > 1 {
+			t.typeName = e.Name + "_" + namespaceToken(e.Source)
+			notes = append(notes, fmt.Sprintf("%s is defined by several namespaces; %s is the definition of %s", e.Name, t.typeName, e.Source))
+		}
+		out = append(out, t)
+	}
+	return out, notes
+}
+
+// namespaceToken derives an identifier part from a namespace, e.g.
+// "7_420" for IEC 61850-7-420 and "90_9" for (Tr)IEC 61850-90-9.
+func namespaceToken(id model.NamespaceID) string {
+	std := strings.ReplaceAll(id.Standard, " ", "")
+	if i := strings.LastIndex(std, "61850-"); i >= 0 {
+		std = std[i+len("61850-"):]
+	}
+	return sanitize(strings.ReplaceAll(std, "-", "_"))
 }

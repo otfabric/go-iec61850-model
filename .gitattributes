@@ -4,3 +4,6 @@ testdata/** -text
 
 # Generated from the official IEC packages by make nsd-publish.
 names/** linguist-generated=true
+official/*_gen.* linguist-generated=true
+official/NOTICE.md linguist-generated=true
+docs/reference/** linguist-generated=true

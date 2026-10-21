@@ -18,10 +18,13 @@ namespace releases, or explain the model in a UI. It contains no MMS, GOOSE,
 Sampled Values or SCL runtime; those depend on this library, not the other way
 round.
 
-> **IEC content is not included.** The library ships no NSD files and no text
-> from the standards. You load officially obtained NSD packages at run time.
-> The tests run on small, independently authored fixtures. See
-> [docs/licensing.md](docs/licensing.md).
+> **IEC content.** The repository ships no NSD files and no text from the
+> standards. It commits what is generated from the 12 official NSD namespaces
+> (identifiers, types and structure; no documentation texts), under the IEC
+> Code Components license with the attribution in `NOTICE.md`: the embedded
+> catalog [`official`](official), the constants [`names`](names) and the
+> [model reference](docs/reference/index.md). You can also load officially
+> obtained NSD packages at run time. See [docs/licensing.md](docs/licensing.md).
 
 ---
 
@@ -57,8 +60,10 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 | Type resolution (`resolver`) | Implemented |
 | Semantic mapping (`semantic`) | Implemented: MMXU, MMXN, MMTR rules, overrides, unit handling |
 | Ontology helpers (`ontology`) | Implemented: concept graph, traversal, JSON export |
-| Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the 14 tracked packages, with IEC attribution |
-| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, diff, generate (go, docs, json) with license gate, sources fetch/check/lock, schema, version; binaries for Linux, macOS and Windows |
+| Embedded catalog (`official`) | Committed: the 12 official NSD namespaces with the profiles `default` and `extended`, with IEC attribution |
+| Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the default profile, with IEC attribution |
+| Model reference ([docs/reference](docs/reference/index.md)) | Committed: every class, CDC and type of the extended profile |
+| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, catalog (profiles, overlaps), diff, generate (go, docs, json, catalog) with license gate, sources fetch/check/lock, schema, version; binaries for Linux, macOS and Windows |
 | NSD update monitor | Planned (M5) |
 
 **Standards coverage.** The importer targets the NSD format of IEC 61850-7-7
@@ -66,11 +71,9 @@ and is tested against the 14 tracked official packages: 7-2, 7-3, 7-4
 (2007B6), 7-410 (2024A4) and 7-420 (2019A4) (required), 90-9 and 90-14
 (recommended), 90-6, 90-3, 90-4, 90-11, 90-21 and 8-1 (optional), and the 7-7
 schema. They load and validate together; 93% of the concrete data objects
-resolve to leaf types, the rest hit upstream gaps. See
-[docs/nsd-sources.md](docs/nsd-sources.md). No official NSD package has
-been parsed and validated yet, so this module claims support for **no**
-specific namespace release. [docs/nsd-sources.md](docs/nsd-sources.md) tracks
-what is published, available, parsed and validated.
+resolve to leaf types, the rest hit upstream gaps.
+[docs/nsd-sources.md](docs/nsd-sources.md) tracks what is published,
+available, parsed and validated.
 
 ## Installation
 
@@ -83,6 +86,29 @@ packages use the standard library only; `cmd/nsdctl` adds
 [cobra](https://github.com/spf13/cobra).
 
 ## Quick start
+
+The embedded official catalog needs no files:
+
+```go
+p, err := official.Default() // IEC 61850-7-2, 7-3, 7-4, 7-410 and 7-420
+if err != nil {
+	log.Fatal(err)
+}
+dos, _ := p.DataObjects("MMXU") // what MMXU holds, inherited data objects included
+res, _ := resolver.New(p).ResolveString("LD0/MMXU1.Hz.mag.f[MX]")
+fmt.Println(len(dos), res.Type()) // FLOAT32
+```
+
+The `extended` profile adds the technical reports. A name that two of its
+namespaces define is never merged; look it up with its namespace:
+
+```go
+x, _ := official.Extended()
+_, err = x.LogicalNode("DBAT") // errors.Is(err, model.ErrAmbiguousSymbol): 7-420 and 90-9
+dbat, _ := x.LogicalNodeIn(model.NamespaceID{Standard: "IEC 61850-7-420"}, "DBAT")
+```
+
+Or load officially obtained packages yourself:
 
 ```go
 package main
@@ -153,11 +179,12 @@ files of [catalog](catalog/example_test.go), [resolver](resolver/example_test.go
 | --- | --- | --- |
 | [`model`](model) | Typed model: namespaces, LN classes, DOs, CDCs, DAs, enumerations, FCs, presence conditions, provenance, diagnostics, errors | `Namespace`, `NamespaceID`, `LogicalNodeClass`, `CommonDataClass`, `Diagnostic`, sentinels |
 | [`nsd`](nsd) | Secure importer for NSD XML, NSDoc and ZIP packages | `Parse`, `LoadZIP`, `ReadZIP`, `LoadFile`, `LoadDir`, `ReadManifest`, `Validate`, `ApplyDoc` |
-| [`catalog`](catalog) | Immutable multi-release index, explicit profiles, search, diff | `New`, `Catalog.Profile`, `LogicalNode`, `DataObjects`, `Search`, `Diff` |
+| [`catalog`](catalog) | Immutable multi-release index, explicit profiles, namespace-qualified lookups, overlap reports, search, diff | `New`, `Catalog.Profile`, `LogicalNode`, `LogicalNodeIn`, `DataObjects`, `Overlaps`, `Search`, `Diff` |
 | [`reference`](reference) | Instance and class references, LN name parts, MMS form | `Parse`, `ParseClass`, `ParseLNName`, `Normalize`, `FromMMS` |
 | [`resolver`](resolver) | Path and type resolution with provenance | `New`, `Resolve`, `ResolveString`, `ResolvePath`, `Leaves` |
 | [`semantic`](semantic) | Quantity, phase, reference, component and unit hints from explicit rules | `Describe`, `FindMeasurements`, `Match`, `NormalizeUnit`, `DeviceUnit`, `Mapper` |
-| [`names`](names) | Generated from the official packages: `LN_*`, `CDC_*`, `<Class>_<DataObject>` constants and one type per enumeration | `names.MMXU_Hz`, `names.BehaviourModeKind_on` |
+| [`official`](official) | Generated: the official namespaces, embedded, with the named profiles | `Default`, `Extended`, `Open`, `Catalog`, `Profiles` |
+| [`names`](names) | Generated from the default profile: `LN_*`, `CDC_*`, `<Class>_<DataObject>` constants and one type per enumeration | `names.MMXU_Hz`, `names.BehaviourModeKind_on` |
 | [`ontology`](ontology) | Typed concept graph with deterministic traversal and JSON export | `BuildGraph`, `Relations`, `Incoming`, `FindConcepts`, `Walk`, `ExportJSON` |
 
 The import direction is `model` ← `nsd`, `catalog` ← `resolver` (which also
@@ -184,9 +211,15 @@ The library keeps three things apart:
 
 A `catalog.Catalog` may hold several releases of the same namespace. It never
 picks the "latest": a lookup of a name that two loaded namespaces define fails
-with `model.ErrAmbiguousReference`. A `catalog.Profile` selects at most one
-release per standard and adds dependencies when exactly one loaded release
-satisfies them. See [docs/namespaces.md](docs/namespaces.md).
+with `model.ErrAmbiguousSymbol` (`ErrAmbiguousReference`). A `catalog.Profile`
+selects at most one release per standard and adds dependencies when exactly
+one loaded release satisfies them.
+
+Namespace identity is part of a definition's identity. IEC TR 61850-90-9 and
+IEC 61850-7-420 both define `DBAT`, `DSTO` and `SBAT`, differently; the default
+profile therefore leaves 90-9 out, and the extended profile keeps both
+definitions, reachable with `LogicalNodeIn` and compared by `Overlaps` (`nsdctl
+catalog overlaps`). See [docs/namespaces.md](docs/namespaces.md).
 
 ## Install nsdctl
 
@@ -337,16 +370,19 @@ nsdctl sources check --packages .nsd-cache   # coverage of the 14 tracked packag
 nsdctl validate .nsd-cache
 nsdctl -s .nsd-cache model show MMXU
 nsdctl -s .nsd-cache model describe 'LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]'
-nsdctl -s .nsd-cache -p "IEC 61850-7-420" model show DBAT
+nsdctl model show DBAT                                 # embedded catalog, default profile
+nsdctl -p extended model show DBAT --ns 90-9            # the 90-9 definition
+nsdctl catalog overlaps --left IEC_61850-7-420 --right IEC_TR_61850-90-9
 nsdctl diff --exit-code ./old/ ./new/
 nsdctl -s .nsd-cache generate go -o .generated/go --package iec61850names
 nsdctl schema .nsd-cache/IEC_61850-7-7.2017.NSD.2017A.full.zip
 nsdctl version
 ```
 
-Text or `--json` output; exit codes 0 ok, 1 usage, 2 source error,
-3 validation, 4 differences, 5 refused by the license policy. Generated output
-is local-only unless the lock file permits publishing it.
+Without `--source`, the `model` and `catalog` commands use the embedded
+official catalog. Text or `--json` output; exit codes 0 ok, 1 usage, 2 source
+error, 3 validation, 4 differences, 5 refused by the license policy. Generated
+output is local-only unless the lock file permits publishing it.
 [docs/cli.md](docs/cli.md) walks through every command with real output from
 the official packages; [docs/generation.md](docs/generation.md) covers the
 generator.
@@ -381,18 +417,22 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [docs/coverage.md](docs/coverage.md) | Published, available, parsed and validated coverage |
 | [docs/nsd-sources.md](docs/nsd-sources.md) | Official sources, acquisition, provenance, coverage |
 | [docs/licensing.md](docs/licensing.md) | IEC content and redistribution limits |
+| [docs/reference](docs/reference/index.md) | Generated model reference of the official namespaces |
 | [ERRORS.md](ERRORS.md) | Error taxonomy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Workflow, checks and source policy |
 | [REQUIREMENTS.md](REQUIREMENTS.md), [PLAN.md](PLAN.md), [PROGRESS.md](PROGRESS.md) | Scope, plan and progress |
 
 ## Official packages
 
-The repository commits one derivative of the official packages: the generated
-Go package [`names`](names) (typed constants for classes, data objects, CDCs
-and enumerations), published under the IEC Code Components license with the
-attribution in [`names/NOTICE.md`](names/NOTICE.md); see
-[docs/licensing.md](docs/licensing.md#decision). Everything else derived from
-the packages stays local.
+The generated output is the core of the library and is committed, under the
+IEC Code Components license with the attribution in each `NOTICE.md` (see
+[docs/licensing.md](docs/licensing.md#decision)):
+
+| Directory | Content | Profile |
+| --- | --- | --- |
+| [`official/`](official) | Embedded catalog, profiles `default` and `extended` | extended |
+| [`names/`](names) | Typed constants for classes, data objects, CDCs and enumerations | default |
+| [`docs/reference/`](docs/reference/index.md) | Model reference | extended |
 
 ```go
 import "github.com/otfabric/go-iec61850-model/names"
@@ -408,7 +448,7 @@ committed:
 ```bash
 make nsd-fetch nsd-check official   # download into .nsd-cache/, validate, integration test
 make nsd-generate                   # Go, docs and JSON into .generated/ (git-ignored)
-make nsd-publish                    # regenerate the committed names/ package
+make nsd-publish                    # regenerate the committed names/, official/ and docs/reference/
 ```
 
 The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
@@ -427,8 +467,9 @@ Run `make` for all targets.
 ## License
 
 MIT — see [LICENSE](LICENSE). The license covers the code of this repository.
-The generated package [`names/`](names) is derived from IEC code components and
-published under the IEC Code Components license, with the attribution and
-notices in [`names/NOTICE.md`](names/NOTICE.md). Nothing here grants rights to
+The generated output in [`names/`](names), [`official/`](official) and
+[`docs/reference/`](docs/reference/index.md) is derived from IEC code
+components and published under the IEC Code Components license, with the
+attribution and notices in the `NOTICE.md` of each directory. Nothing here grants rights to
 the IEC standards or to NSD files you load; see
 [docs/licensing.md](docs/licensing.md).

@@ -75,7 +75,7 @@ make nsd-check            # every tracked package present and loadable; validate
 make official             # integration test against the packages
 make nsd-generate         # Go, docs and JSON into .generated/ (git-ignored, local-only)
 make nsd-generate-check   # .generated/ is up to date
-make nsd-publish          # regenerate the committed names/ package (redistribution permitted)
+make nsd-publish          # regenerate the committed names/, official/ and docs/reference/
 make nsd-clean            # remove .nsd-cache/ and .generated/
 ```
 
@@ -93,8 +93,8 @@ make nsd-lock                                         # pin digests and statuses
 The workflow [`.github/workflows/nsd.yml`](../.github/workflows/nsd.yml) runs
 the same steps on pull requests and pushes that touch the importer or the
 sources, weekly, and on demand. It works in `$RUNNER_TEMP`, uses no caches and
-uploads no artifacts, checks that the committed `names/` package matches the
-pinned packages, deletes everything at the end, writes a metadata-only
+uploads no artifacts, checks that the committed `names/`, `official/` and
+`docs/reference/` match the pinned packages, deletes everything at the end, writes a metadata-only
 summary, and opens (or closes) a tracking issue when the weekly run fails, for
 instance because a package changed upstream. The regular CI never downloads
 IEC packages.
@@ -110,8 +110,11 @@ Findings from importing the 14 packages, reflected in the importer:
 - **Abstract classes listed among concrete ones** (`AbstractLNClass` inside
   `LNClasses`).
 - **Extension classes** (`isExtension="true"`): 7-420 and 90-6 add data objects
-  to `MMXU`, 90-3 to `ZBAT`, 7-410 to `KPMP` and others. They are merged into
-  the class of the same name.
+  to `MMXU`, 90-3 to `ZBAT`, 7-410 to `KPMP` and others. They declare that
+  they extend the class of the same name and are applied to it; this is the
+  only case in which two definitions combine. Two full definitions of a name
+  (DBAT in 90-9 and 7-420) stay separate (see
+  [namespaces.md](namespaces.md#namespace-identity)).
 - **CDC variants**: settings CDCs such as `SPG` are defined three times with
   `variant` SP, SG and SE; data objects name only the CDC, and the FC selects
   the variant.
@@ -176,7 +179,7 @@ namespace release, only metadata that may be committed: standard and
 publication, namespace ID, official source location, retrieval time, SHA-256,
 package kind, package file, dependencies, validation status and the
 redistribution decision. All 14 tracked packages are pinned; the 12 NSD
-namespaces the `names` package is generated from are `permitted`, the 8-1
+namespaces the committed output is generated from are `permitted`, the 8-1
 service namespace and the 7-7 schema `local-only` (see
 [licensing.md](licensing.md#decision)).
 

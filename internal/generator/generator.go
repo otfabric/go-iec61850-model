@@ -27,7 +27,7 @@ import (
 // FormatVersion is the version of the generated output format. It
 // changes whenever the generator would write different bytes for the
 // same input.
-const FormatVersion = 4
+const FormatVersion = 5
 
 // Marker identifies files written by the generator. Write and Check
 // only replace or remove files that contain it near the top.

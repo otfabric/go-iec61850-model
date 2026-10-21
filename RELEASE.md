@@ -109,16 +109,30 @@ fixtures only; no official namespace release is claimed as supported yet.
 
 ### Generated names package
 
+- **Package `official`** — the 12 official NSD namespaces embedded (no
+  documentation texts) with the profiles `default` and `extended`:
+  `official.Default()`, `official.Extended()`, `official.Open(name)`,
+  `official.Notice()`.
 - **Package `names`** — committed Go constants for every logical node class
   (`LN_MMXU`), data object (`MMXU_Hz`), CDC (`CDC_WYE`) and enumeration
-  (`BehaviourModeKind_on`, with `String`) of the 12 NSD namespaces, generated
+  (`BehaviourModeKind_on`, with `String`) of the default profile, generated
   from the official packages; `names/NOTICE.md` attributes them to IEC with the
-  license and copyright notices. Regenerated with `make nsd-publish`; CI checks
-  it against the pinned packages.
+  license and copyright notices.
+- **Model reference** — `docs/reference/`, generated for the extended profile.
+- The three are regenerated with `make nsd-publish`; CI checks them against the
+  pinned packages.
+- **Namespace policy** — IEC TR 61850-90-9 is left out of the default profile
+  and kept in `extended`. Definitions of the same name in two namespaces are
+  never merged: unqualified lookups return `ErrAmbiguousSymbol`, qualified
+  lookups (`LogicalNodeIn` and the other `…In` lookups, `Resolver.In`) select
+  one, and `Overlaps` / `nsdctl catalog overlaps` compares them.
+- **nsdctl** — uses the embedded catalog without `--source`; `--ns`, named
+  profiles, `catalog profiles`, `catalog overlaps`, `generate catalog`,
+  `notice`.
 - **Lock** — the 12 NSD namespaces are `permitted` (decision recorded in
   docs/licensing.md); 8-1 and 7-7 stay `local-only`.
-- **Generator** — output format 4: names defined by several namespaces get one
-  set of constants (union of data objects, merged literals), and the Go output
-  comes with a generated test.
+- **Generator** — output format 5: names defined by several namespaces are not
+  merged (per-definition comments, one Go type per enumeration definition), and
+  the Go output comes with a generated test.
 - **Fix** — namespaces loaded from a directory of archives record the digest of
   their archive, which the license gate compares with the lock.

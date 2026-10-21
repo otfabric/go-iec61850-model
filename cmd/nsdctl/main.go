@@ -4,9 +4,11 @@
 // packages, explores the model they define, generates Go declarations,
 // documentation and JSON exports from it, and checks the source lock.
 //
-// It reads official packages you obtained yourself and never downloads
-// anything. Output derived from them is local-only unless the lock file
-// permits publishing it (see docs/licensing.md).
+// Without --source, the model and catalog commands use the official
+// catalog embedded in the binary (package official). nsdctl never
+// downloads anything. Output derived from packages you load is
+// local-only unless the lock file permits publishing it (see
+// docs/licensing.md).
 package main
 
 import (
@@ -17,6 +19,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -24,8 +27,10 @@ import (
 
 	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/internal/generator"
+	"github.com/otfabric/go-iec61850-model/internal/sources"
 	"github.com/otfabric/go-iec61850-model/model"
 	"github.com/otfabric/go-iec61850-model/nsd"
+	"github.com/otfabric/go-iec61850-model/official"
 )
 
 // Build metadata set at build time via -ldflags.
@@ -105,6 +110,7 @@ type app struct {
 	profile  []string
 	strict   bool
 	language string
+	ns       string
 }
 
 func newRootCmd() *cobra.Command {
@@ -119,8 +125,12 @@ explores the model (logical node classes, data objects, CDCs, types),
 compares releases, generates Go declarations, documentation and JSON
 exports, and checks the source lock.
 
-nsdctl never downloads IEC packages. Output derived from them is
-local-only unless the lock file permits publishing it.
+Without --source, the model and catalog commands use the official IEC
+namespaces embedded in nsdctl (the default profile: IEC 61850-7-2, 7-3,
+7-4, 7-410 and 7-420; --profile extended adds the technical reports).
+
+nsdctl never downloads IEC packages. Output derived from packages you
+load is local-only unless the lock file permits publishing it.
 
 Exit codes: 0 ok, 1 usage or unknown name, 2 source error, 3 validation
 error, 4 differences found, 5 refused by the license policy.`,
@@ -136,7 +146,7 @@ error, 4 differences found, 5 refused by the license policy.`,
 	pf.StringVar(&a.language, "lang", "en", "NSDoc language to apply (empty: none)")
 
 	root.AddCommand(a.inspectCmd(), a.validateCmd(), a.dependenciesCmd(), a.modelCmd(), a.diffCmd(),
-		a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd())
+		a.catalogCmd(), a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd(), noticeCmd())
 	return root
 }
 
@@ -195,30 +205,96 @@ func (a *app) loadCatalog(paths []string) (*catalog.Catalog, []*nsd.Package, err
 	return c, pkgs, nil
 }
 
-// loadProfile builds the profile selected by --profile from --source.
+// loadProfile builds the profile selected by --profile from --source,
+// or from the embedded official catalog without --source.
 func (a *app) loadProfile() (*catalog.Profile, error) {
-	c, _, err := a.loadCatalog(a.sources)
+	c, err := a.modelCatalog()
 	if err != nil {
 		return nil, err
 	}
 	return a.selectProfile(c)
 }
 
+// modelCatalog loads --source, or the embedded official catalog when no
+// source is given.
+func (a *app) modelCatalog() (*catalog.Catalog, error) {
+	if len(a.sources) == 0 {
+		c, err := official.Catalog()
+		if err != nil {
+			return nil, &exitError{code: exitSource, err: err}
+		}
+		return c, nil
+	}
+	c, _, err := a.loadCatalog(a.sources)
+	return c, err
+}
+
+// namespaceSet is a catalog or profile whose namespaces can be named.
+type namespaceSet interface {
+	IDs() []model.NamespaceID
+	ResolveNamespace(id model.NamespaceID) (model.NamespaceID, error)
+}
+
+// resolveNamespace resolves a namespace argument: a full or partial
+// namespace ID ("IEC 61850-7-420:2019A4", "IEC 61850-7-420"), the
+// package spelling ("IEC_61850-7-420", "IEC_TR_61850-90-9") or the part
+// alone ("7-420").
+func resolveNamespace(set namespaceSet, flag, s string) (model.NamespaceID, error) {
+	id, err := model.ParseNamespaceID(strings.ReplaceAll(s, "_", " "))
+	if err != nil {
+		return model.NamespaceID{}, withCode(exitUsage, "%s %q: %v", flag, s, err)
+	}
+	got, err := set.ResolveNamespace(id)
+	if errors.Is(err, model.ErrUnknownNamespace) {
+		// Another spelling of the standard: match on the part.
+		part := id.Standard
+		if i := strings.Index(part, "61850-"); i >= 0 {
+			part = part[i+len("61850-"):]
+		}
+		var standards []string
+		for _, ns := range set.IDs() {
+			if sources.MatchesPart(ns.Standard, part) && !slices.Contains(standards, ns.Standard) {
+				standards = append(standards, ns.Standard)
+			}
+		}
+		if len(standards) == 1 {
+			id.Standard = standards[0]
+			got, err = set.ResolveNamespace(id)
+		}
+	}
+	if err != nil {
+		return model.NamespaceID{}, withCode(exitUsage, "%s %q: %v", flag, s, err)
+	}
+	return got, nil
+}
+
 func (a *app) selectProfile(c *catalog.Catalog) (*catalog.Profile, error) {
 	if len(a.profile) == 0 {
+		// The named default profile, when the sources carry its parts;
+		// otherwise the only release of each loaded standard.
+		if ids, ok := namedProfile(c, "default"); ok {
+			return c.Profile(ids...)
+		}
 		p, err := c.DefaultProfile()
 		if err != nil {
 			return nil, withCode(exitUsage, "%v; select releases with --profile", err)
 		}
 		return p, nil
 	}
-	ids := make([]model.NamespaceID, len(a.profile))
-	for i, s := range a.profile {
+	var ids []model.NamespaceID
+	for _, s := range a.profile {
+		if named, ok := namedProfile(c, s); ok {
+			ids = append(ids, named...)
+			continue
+		}
+		if _, known := profileParts(s); known {
+			return nil, withCode(exitUsage, "--profile %s: the sources do not carry exactly one release of each of its parts", s)
+		}
 		id, err := model.ParseNamespaceID(s)
 		if err != nil {
 			return nil, withCode(exitUsage, "--profile %q: %v", s, err)
 		}
-		ids[i] = id
+		ids = append(ids, id)
 	}
 	p, err := c.Profile(ids...)
 	if err != nil {
@@ -229,6 +305,20 @@ func (a *app) selectProfile(c *catalog.Catalog) (*catalog.Profile, error) {
 		return nil, withCode(exitUsage, "%v", err)
 	}
 	return p, nil
+}
+
+// namedProfile resolves a profile name (default, extended) to the loaded
+// namespaces of its parts.
+func namedProfile(c *catalog.Catalog, name string) ([]model.NamespaceID, bool) {
+	parts, ok := profileParts(name)
+	if !ok {
+		return nil, false
+	}
+	ids, err := sources.NamespacesForParts(c.Namespaces(), parts)
+	if err != nil {
+		return nil, false
+	}
+	return ids, true
 }
 
 // writeJSON writes v as indented JSON.
@@ -278,6 +368,18 @@ func (a *app) versionCmd() *cobra.Command {
 			}
 			_, _ = fmt.Fprint(out, v.String())
 			return nil
+		},
+	}
+}
+
+func noticeCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "notice",
+		Short: "Print the IEC attribution and notices of the embedded official catalog",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			_, err := fmt.Fprint(cmd.OutOrStdout(), official.Notice())
+			return err
 		},
 	}
 }
@@ -346,3 +448,20 @@ func currentVersion(info *debug.BuildInfo) versionInfo {
 	}
 	return v
 }
+
+// profileParts returns the parts of a named profile: from the source
+// registry when nsdctl runs in the repository, otherwise from the
+// profiles embedded with the official catalog.
+func profileParts(name string) ([]string, bool) {
+	if idx, err := sources.LoadIndex(registryPath); err == nil {
+		parts, err := idx.ProfileParts(name)
+		return parts, err == nil
+	}
+	if p, ok := official.Lookup(name); ok {
+		return p.Parts, true
+	}
+	return nil, false
+}
+
+// registryPath is the source registry nsdctl reads named profiles from.
+var registryPath = "sources/index.json"

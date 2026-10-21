@@ -286,14 +286,53 @@ Licensing decision recorded in docs/licensing.md: the 12 NSD namespaces are
   license gate checks every namespace and digest) and the Go toolchain of
   go.mod; `nsd.yml` fails when it is out of date.
 - Generator output format 4: one set of constants per class and enumeration
-  name, with the union of data objects and merged literals for names that
-  several namespaces define (reported in the header); a generated
+  name (replaced by the namespace policy below: no merging); a generated
   `names_gen_test.go` covers every `String` method (100% coverage).
 - Fixed: namespaces loaded from a directory of archives now record the digest
   of their archive, which the license gate compares with the lock.
 
 The package declares 451 logical node classes, 17,692 data object references
 and the enumerations of all 12 namespaces.
+
+## Namespace policy and the embedded catalog
+
+**Date:** 2026-10-21
+
+IEC TR 61850-90-9 transitional namespace policy (REQUIREMENTS.md, section
+5.2.1): namespace identity is part of a definition's identity.
+
+- **Profiles** `default` (7-2, 7-3, 7-4, 7-410, 7-420) and `extended` (plus the
+  technical reports) in `sources/index.json`; `nsdctl --profile` takes their
+  names.
+- **No merging.** The catalog keeps every definition with its namespace; an
+  unqualified lookup of a name two namespaces define fails with
+  `ErrAmbiguousSymbol` (alias of `ErrAmbiguousReference`). Qualified lookups
+  (`LogicalNodeIn`, `InheritanceIn`, `DataObjectsIn`, `DataObjectIn`, `CDCIn`,
+  `CDCVariantsIn`, `EnumerationIn`, `ConstructedAttributeIn`) and
+  `Resolver.In(ns)` select one. References resolve in the definition's own
+  namespace, then its dependencies level by level; two namespaces at the same
+  level are an ambiguity.
+- **Overlap report** `Overlaps(left, right)` / `nsdctl catalog overlaps`:
+  identical, compatible-extension or conflicting, with the differing data
+  objects, CDCs, presence and inheritance. 7-420 vs 90-9: DBAT, DSTO,
+  DER_StorageLN and BatteryTypeKind conflict, SBAT and two abstract classes are
+  compatible extensions, StorageUnitLN and ChargeSourceKind are identical. The
+  default profile has one overlap, FSCH (7-4 and the deprecated 7-410 class).
+- **Committed output.** Only the downloaded packages stay outside source
+  control: `official/` (embedded catalog of the extended profile, with the
+  profiles; `official.Default()`, `official.Extended()`, `official.Notice()`),
+  `names/` (default profile) and `docs/reference/` (extended profile), all
+  checked by `make nsd-publish-check` in `nsd.yml`.
+- **nsdctl** uses the embedded catalog without `--source`; new `--ns`,
+  `catalog profiles`, `catalog overlaps`, `generate catalog` and `notice`.
+- **Generator** output format 5: per-definition data object comments for
+  ambiguous classes, one Go type per definition for ambiguous enumerations
+  (`BatteryTypeKind_7_420`, `BatteryTypeKind_90_9`).
+- `names/` now declares the 377 logical node classes and 15,464 data object
+  references of the default profile.
+- Regression tests: the default profile is unambiguous, the extended profile
+  preserves both definitions, qualified lookups work and unqualified ones
+  return the typed error (`catalog`, `official`, `cmd/nsdctl`).
 
 ## Next
 

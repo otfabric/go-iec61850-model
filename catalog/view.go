@@ -14,6 +14,7 @@ import (
 // several yields a [*model.AmbiguityError].
 type view struct {
 	namespaces []*model.Namespace
+	scopes     map[model.NamespaceID][][]model.NamespaceID
 	lns        map[string][]*model.LogicalNodeClass
 	cdcs       map[string][]*model.CommonDataClass
 	cas        map[string][]*model.ConstructedAttribute
@@ -33,6 +34,7 @@ func newView(nss []*model.Namespace) view {
 		basics:     map[string][]*model.BasicType{},
 		fcs:        map[model.FunctionalConstraint][]*model.FunctionalConstraintDef{},
 		presence:   map[string][]*model.PresenceConditionDef{},
+		scopes:     computeScopes(nss),
 	}
 	for _, ns := range nss {
 		for i := range ns.AbstractLNClasses {

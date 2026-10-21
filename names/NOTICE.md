@@ -5,55 +5,6 @@
 This output is derived from IEC code components. Each is attributed to IEC and
 the standard it is taken from, with the copyright notice and license it declares.
 
-## (Tr)IEC 61850-90-11:2019A2
-
-Source: IEC code component (Tr)IEC 61850-90-11:2019A2, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-11:2020 Edition 1.0; see the IEC_TR_61850-90-11:2020 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC 61850-90-14:2020A3
-
-Source: IEC code component (Tr)IEC 61850-90-14:2020A3, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-14:2021 Edition 1.0; see the IEC_TR_61850-90-14:2021 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC 61850-90-21:2022A2
-
-Source: IEC code component (Tr)IEC 61850-90-21:2022A2, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-21:2023 Edition 1.0; see the IEC_TR_61850-90-21:2023 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC 61850-90-4:2018A
-
-Source: IEC code component (Tr)IEC 61850-90-4:2018A, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-4:2019 Edition 2.0; see the IEC_TR_61850-90-4:2019 Edition 2.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC 61850-90-9:2018A3
-
-Source: IEC code component (Tr)IEC 61850-90-9:2018A3, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-9:2020 Edition 1.0; see the IEC_TR_61850-90-9:2020 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC61850-90-3:2015B
-
-Source: IEC code component (Tr)IEC61850-90-3:2015B, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-3:2016 Edition 1.0; see the IEC_TR_61850-90-3:2016 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
-## (Tr)IEC61850-90-6:2018B
-
-Source: IEC code component (Tr)IEC61850-90-6:2018B, © IEC.
-License: www.iec.ch/CCv1 (Standard).
-
-> COPYRIGHT (c) IEC, 2019. This version of this NSD is part of IEC_TR_61850-90-6:2018 Edition 1.1; see the IEC_TR_61850-90-6:2018 Edition 1.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
-
 ## IEC 61850-7-2:2007B6
 
 Source: IEC code component IEC 61850-7-2:2007B6, © IEC.
