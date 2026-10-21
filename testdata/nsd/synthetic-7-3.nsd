@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test fixture: independently authored, not IEC content. -->
+<NS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-7-3" version="2007" revision="B" release="1" publicationStage="IS">
+  <DependsOn id="IEC 61850-7-2" version="2007" revision="B"/>
+  <Enumerations>
+    <Enumeration name="BehaviourModeKind">
+      <Literal name="on" literalVal="1"/>
+      <Literal name="blocked" literalVal="2"/>
+      <Literal name="test" literalVal="3"/>
+      <Literal name="test/blocked" literalVal="4"/>
+      <Literal name="off" literalVal="5"/>
+    </Enumeration>
+    <Enumeration name="HealthKind">
+      <Literal name="Ok" literalVal="1"/>
+      <Literal name="Warning" literalVal="2"/>
+      <Literal name="Alarm" literalVal="3"/>
+    </Enumeration>
+    <Enumeration name="SIUnitKind">
+      <Literal name="A" literalVal="5"/>
+      <Literal name="V" literalVal="29"/>
+      <Literal name="Hz" literalVal="33"/>
+      <Literal name="W" literalVal="38"/>
+      <Literal name="VA" literalVal="61"/>
+      <Literal name="VAr" literalVal="63"/>
+    </Enumeration>
+    <Enumeration name="MultiplierKind">
+      <Literal name="m" literalVal="-3"/>
+      <Literal name="" literalVal="0"/>
+      <Literal name="k" literalVal="3"/>
+      <Literal name="M" literalVal="6"/>
+    </Enumeration>
+  </Enumerations>
+  <ConstructedAttributes>
+    <ConstructedAttribute name="AnalogueValue">
+      <SubDataAttribute name="i" type="INT32" typeKind="BASIC" presCond="AtLeastOne" presCondArgs="1"/>
+      <SubDataAttribute name="f" type="FLOAT32" typeKind="BASIC" presCond="AtLeastOne" presCondArgs="1"/>
+    </ConstructedAttribute>
+    <ConstructedAttribute name="Vector">
+      <SubDataAttribute name="mag" type="AnalogueValue" typeKind="CONSTRUCTED" presCond="M"/>
+      <SubDataAttribute name="ang" type="AnalogueValue" typeKind="CONSTRUCTED" presCond="O"/>
+    </ConstructedAttribute>
+    <ConstructedAttribute name="Unit">
+      <SubDataAttribute name="SIUnit" type="SIUnitKind" typeKind="ENUMERATED" presCond="M"/>
+      <SubDataAttribute name="multiplier" type="MultiplierKind" typeKind="ENUMERATED" presCond="O"/>
+    </ConstructedAttribute>
+  </ConstructedAttributes>
+  <CDCs>
+    <CDC name="MV" statistics="true">
+      <DataAttribute name="instMag" fc="MX" type="AnalogueValue" typeKind="CONSTRUCTED" presCond="O"/>
+      <DataAttribute name="mag" fc="MX" type="AnalogueValue" typeKind="CONSTRUCTED" presCond="M" dchg="true" dupd="true"/>
+      <DataAttribute name="q" fc="MX" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="MX" type="Timestamp" typeKind="BASIC" presCond="M"/>
+      <DataAttribute name="units" fc="CF" type="Unit" typeKind="CONSTRUCTED" presCond="O" dchg="true"/>
+      <DataAttribute name="d" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="O"/>
+    </CDC>
+    <CDC name="CMV">
+      <DataAttribute name="cVal" fc="MX" type="Vector" typeKind="CONSTRUCTED" presCond="M" dchg="true"/>
+      <DataAttribute name="q" fc="MX" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="MX" type="Timestamp" typeKind="BASIC" presCond="M"/>
+      <DataAttribute name="units" fc="CF" type="Unit" typeKind="CONSTRUCTED" presCond="O"/>
+    </CDC>
+    <CDC name="WYE">
+      <SubDataObject name="phsA" type="CMV" presCond="O"/>
+      <SubDataObject name="phsB" type="CMV" presCond="O"/>
+      <SubDataObject name="phsC" type="CMV" presCond="O"/>
+      <SubDataObject name="neut" type="CMV" presCond="O"/>
+      <SubDataObject name="net" type="CMV" presCond="O"/>
+      <DataAttribute name="d" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="O"/>
+    </CDC>
+    <CDC name="DEL">
+      <SubDataObject name="phsAB" type="CMV" presCond="O"/>
+      <SubDataObject name="phsBC" type="CMV" presCond="O"/>
+      <SubDataObject name="phsCA" type="CMV" presCond="O"/>
+      <DataAttribute name="d" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="O"/>
+    </CDC>
+    <CDC name="SPS">
+      <DataAttribute name="stVal" fc="ST" type="BOOLEAN" typeKind="BASIC" presCond="M" dchg="true"/>
+      <DataAttribute name="q" fc="ST" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="ST" type="Timestamp" typeKind="BASIC" presCond="M"/>
+    </CDC>
+    <CDC name="ENS" enumParameterized="true">
+      <DataAttribute name="stVal" fc="ST" typeKind="ENUMERATED" presCond="M" dchg="true"/>
+      <DataAttribute name="q" fc="ST" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="ST" type="Timestamp" typeKind="BASIC" presCond="M"/>
+    </CDC>
+    <CDC name="INS">
+      <DataAttribute name="stVal" fc="ST" type="INT32" typeKind="BASIC" presCond="M" dchg="true"/>
+      <DataAttribute name="q" fc="ST" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="ST" type="Timestamp" typeKind="BASIC" presCond="M"/>
+    </CDC>
+    <CDC name="LPL">
+      <DataAttribute name="vendor" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="M"/>
+      <DataAttribute name="swRev" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="M"/>
+      <DataAttribute name="d" fc="DC" type="VisibleString255" typeKind="BASIC" presCond="O"/>
+    </CDC>
+    <CDC name="BCR">
+      <DataAttribute name="actVal" fc="ST" type="INT64" typeKind="BASIC" presCond="M" dchg="true"/>
+      <DataAttribute name="q" fc="ST" type="Quality" typeKind="BASIC" presCond="M" qchg="true"/>
+      <DataAttribute name="t" fc="ST" type="Timestamp" typeKind="BASIC" presCond="M"/>
+      <DataAttribute name="units" fc="CF" type="Unit" typeKind="CONSTRUCTED" presCond="O"/>
+      <DataAttribute name="pulsQty" fc="CF" type="FLOAT32" typeKind="BASIC" presCond="M"/>
+    </CDC>
+  </CDCs>
+</NS>

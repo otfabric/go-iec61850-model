@@ -1,0 +1,14 @@
+# Codecov configuration for go-iec61850-model.
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+
+ignore:
+  # Test helper that loads the synthetic fixtures.
+  - "internal/fixtures"

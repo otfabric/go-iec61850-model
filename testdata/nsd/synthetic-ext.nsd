@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test fixture: independently authored, not IEC content. -->
+<NS xmlns="http://www.iec.ch/61850/2016/NSD" id="OTF TEST-EXT" version="2026" revision="A" release="1" publicationStage="IS">
+  <DependsOn id="IEC 61850-7-4" version="2007" revision="B"/>
+  <Enumerations>
+    <Enumeration name="TestStateKind">
+      <Literal name="idle" literalVal="1"/>
+      <Literal name="running" literalVal="2"/>
+    </Enumeration>
+  </Enumerations>
+  <LNClasses>
+    <LNClass name="DTST" base="StatisticsLN">
+      <DataObject name="State" type="ENS" underlyingType="TestStateKind" underlyingTypeKind="ENUMERATED" presCond="M"/>
+      <DataObject name="OutW" type="MV" presCond="O"/>
+    </LNClass>
+  </LNClasses>
+</NS>

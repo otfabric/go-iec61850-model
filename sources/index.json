@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "registries": [
+    {
+      "name": "IEC 61850 Code Components",
+      "url": "https://iec61850.dvl.iec.ch/61850-resources/61850-code-components/",
+      "kind": "official",
+      "verified": false
+    },
+    {
+      "name": "IEC webstore",
+      "url": "https://webstore.iec.ch/",
+      "kind": "official",
+      "verified": false
+    }
+  ],
+  "parts": [
+    {"part": "7-2", "role": "Abstract model definitions", "baseline": "Ed. 2.1 (2010 + AMD1:2020)"},
+    {"part": "7-3", "role": "Common data classes and attributes", "baseline": "Ed. 2.1 (2010 + AMD1:2020)"},
+    {"part": "7-4", "role": "General logical node classes", "baseline": "Ed. 2.1 (2010 + AMD1:2020)"},
+    {"part": "7-410", "role": "Hydropower and generation extensions", "baseline": "Ed. 3.0 (2026), only if a corresponding NSD is available"},
+    {"part": "7-420", "role": "Distributed energy resources", "baseline": "Ed. 2.0 (2021)"},
+    {"part": "7-7", "role": "NSD XML schema", "baseline": "Ed. 1.1 (2017B6 per the 2025 corrigendum)"},
+    {"part": "8-1", "role": "MMS mapping definitions", "baseline": "current edition"},
+    {"part": "90-3", "role": "Condition monitoring", "baseline": "IEC TR 61850-90-3"},
+    {"part": "90-4", "role": "Network engineering", "baseline": "IEC TR 61850-90-4"},
+    {"part": "90-6", "role": "Distribution automation", "baseline": "IEC TR 61850-90-6"},
+    {"part": "90-9", "role": "Electrical energy storage", "baseline": "IEC TR 61850-90-9"},
+    {"part": "90-11", "role": "Logic modeling", "baseline": "IEC TR 61850-90-11"},
+    {"part": "90-14", "role": "Power converters, FACTS, HVDC", "baseline": "IEC TR 61850-90-14"},
+    {"part": "90-21", "role": "Travelling-wave fault location", "baseline": "IEC TR 61850-90-21"}
+  ],
+  "packages": [
+    {"tier": "required", "part": "7-2", "name": "IEC_61850-7-2.NSD.2007B6.light", "release": "2007B6", "kind": "nsd", "content": "light", "purpose": "Abstract services, basic types, functional constraints, presence conditions", "verified": false},
+    {"tier": "required", "part": "7-3", "name": "IEC_61850-7-3.NSD.2007B6.Light", "release": "2007B6", "kind": "nsd", "content": "light", "purpose": "Common data classes, constructed attributes, enumerations", "verified": false},
+    {"tier": "required", "part": "7-4", "name": "IEC_61850-7-4.NSD.2007B6.Light", "release": "2007B6", "kind": "nsd", "content": "light", "purpose": "Logical node classes and data objects", "verified": false},
+    {"tier": "required", "part": "7-410", "name": "IEC_61850-7-410.NSD.2024A4.Light.zip", "release": "2024A4", "kind": "nsd", "content": "light", "purpose": "Hydropower and generation logical nodes", "verified": false},
+    {"tier": "required", "part": "7-420", "name": "IEC_61850-7-420.NSD.2019A4.Light.zip", "release": "2019A4", "kind": "nsd", "content": "light", "purpose": "Distributed energy resources, inverters, storage", "verified": false},
+    {"tier": "recommended", "part": "90-9", "name": "IEC_TR_61850-90-9.NSD.2018A3.Light.zip", "release": "2018A3", "kind": "nsd", "content": "light", "purpose": "Electrical energy storage systems and batteries", "verified": false},
+    {"tier": "recommended", "part": "90-14", "name": "IEC_TR_61850-90-14.NSD.2020A3.Light.zip", "release": "2020A3", "kind": "nsd", "content": "light", "purpose": "Power converters, FACTS and HVDC", "verified": false},
+    {"tier": "optional", "part": "90-6", "name": "IEC_61850-90-6.NSD.2018B.light.zip", "release": "2018B", "kind": "nsd", "content": "light", "purpose": "Distribution automation, fault isolation and restoration", "verified": false},
+    {"tier": "optional", "part": "90-3", "name": "IEC_TR_61850-90-3.NSD.2015B.Light.zip", "release": "2015B", "kind": "nsd", "content": "light", "purpose": "Condition monitoring, diagnostics, asset health", "verified": false},
+    {"tier": "optional", "part": "90-4", "name": "IEC_TR_61850-90-4.NSD.2018A.Light.zip", "release": "2018A", "kind": "nsd", "content": "light", "purpose": "Network engineering, bridges, clocks", "verified": false},
+    {"tier": "optional", "part": "90-11", "name": "IEC_TR_61850-90-11.NSD.2019A2.light.zip", "release": "2019A2", "kind": "nsd", "content": "light", "purpose": "Logic modeling for automation applications", "verified": false},
+    {"tier": "optional", "part": "90-21", "name": "IEC_TR_61850-90-21.NSD.2022A2.Light", "release": "2022A2", "kind": "nsd", "content": "light", "purpose": "Travelling-wave fault location", "verified": false},
+    {"tier": "optional", "part": "8-1", "name": "IEC_61850-8-1.NSD.2003A4.Light", "release": "2003A4", "kind": "nsd", "content": "light", "purpose": "MMS mapping definitions and functional constraints", "verified": false},
+    {"tier": "optional", "part": "7-7", "name": "IEC_61850-7-7.2017.NSD.2017A.full.zip", "release": "2017A", "kind": "schema", "content": "full", "purpose": "NSD XML schema; check importer coverage with nsdctl schema (2017B6 announced in the 2025 corrigendum)", "verified": false}
+  ]
+}

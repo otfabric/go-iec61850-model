@@ -1,0 +1,36 @@
+# Binaries
+/bin/
+/dist/
+/nsdctl
+
+# Test / fuzz
+*.test
+*.out
+testdata/fuzz/
+
+# Coverage
+coverage.*
+
+# Official IEC source material must never be committed (see docs/licensing.md).
+# Synthetic fixtures under testdata/ are the only NSD-shaped files in Git.
+*.nsd
+*.nsdoc
+*.snsd
+*.zip
+*.xsd
+*.pdf
+!testdata/**/*.nsd
+!testdata/**/*.nsdoc
+/work/
+/scratch/
+/nsd-work/
+/generated/
+/generated-docs/
+.nsd-cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

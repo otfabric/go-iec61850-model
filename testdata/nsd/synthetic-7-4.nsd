@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test fixture: independently authored, not IEC content. -->
+<NS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-7-4" version="2007" revision="B" release="1" publicationStage="IS" titleID="test.ns.title">
+  <DependsOn id="IEC 61850-7-3" version="2007" revision="B"/>
+  <AbstractLNClasses>
+    <AbstractLNClass name="DomainLN" titleID="test.DomainLN.title">
+      <DataObject name="Beh" type="ENS" underlyingType="BehaviourModeKind" underlyingTypeKind="ENUMERATED" presCond="M"/>
+      <DataObject name="Health" type="ENS" underlyingType="HealthKind" underlyingTypeKind="ENUMERATED" presCond="O"/>
+      <DataObject name="NamPlt" type="LPL" presCond="O"/>
+    </AbstractLNClass>
+    <AbstractLNClass name="StatisticsLN" base="DomainLN">
+      <DataObject name="ClcExp" type="SPS" presCond="O"/>
+    </AbstractLNClass>
+  </AbstractLNClasses>
+  <LNClasses>
+    <LNClass name="LLN0" base="DomainLN" canHaveLOG="true">
+      <DataObject name="Mod" type="ENS" underlyingType="BehaviourModeKind" underlyingTypeKind="ENUMERATED" presCond="M"/>
+    </LNClass>
+    <LNClass name="LPHD" base="DomainLN">
+      <DataObject name="PhyHealth" type="ENS" underlyingType="HealthKind" underlyingTypeKind="ENUMERATED" presCond="M"/>
+    </LNClass>
+    <LNClass name="MMXU" base="StatisticsLN" titleID="test.MMXU.title" descID="test.MMXU.desc">
+      <DataObject name="TotW" type="MV" presCond="O" descID="test.MMXU.TotW.desc"/>
+      <DataObject name="TotVAr" type="MV" presCond="O"/>
+      <DataObject name="TotVA" type="MV" presCond="O"/>
+      <DataObject name="Hz" type="MV" presCond="O" descID="test.MMXU.Hz.desc"/>
+      <DataObject name="PPV" type="DEL" presCond="O"/>
+      <DataObject name="PNV" type="WYE" presCond="O"/>
+      <DataObject name="PhV" type="WYE" presCond="O"/>
+      <DataObject name="A" type="WYE" presCond="O"/>
+      <DataObject name="W" type="WYE" presCond="O"/>
+    </LNClass>
+    <LNClass name="GGIO" base="DomainLN">
+      <DataObject name="Ind" type="SPS" presCond="Omulti"/>
+      <DataObject name="IntIn" type="INS" presCond="Omulti"/>
+    </LNClass>
+    <LNClass name="MMTR" base="StatisticsLN">
+      <DataObject name="TotWh" type="BCR" presCond="O"/>
+      <DataObject name="TotVArh" type="BCR" presCond="O"/>
+      <DataObject name="SupWh" type="BCR" presCond="O"/>
+      <DataObject name="DmdWh" type="BCR" presCond="O"/>
+    </LNClass>
+  </LNClasses>
+</NS>
