@@ -236,3 +236,24 @@ func TestNamespaceDocs(t *testing.T) {
 		t.Error("Docs() must return pointers into the namespace")
 	}
 }
+
+func TestCDCVariants(t *testing.T) {
+	ns := &Namespace{CDCs: []CommonDataClass{
+		{Name: "SPG", Variant: "SP"}, {Name: "SPG", Variant: "SG"}, {Name: "MV"},
+	}}
+	vs := ns.CDCVariants("SPG")
+	if len(vs) != 2 || vs[0].Key() != "SPG/SP" || vs[1].Key() != "SPG/SG" {
+		t.Errorf("CDCVariants(SPG) = %v", vs)
+	}
+	if c, ok := ns.CDC("MV"); !ok || c.Key() != "MV" {
+		t.Errorf("CDC(MV) = %v", c)
+	}
+	if vs := ns.CDCVariants("WYE"); len(vs) != 0 {
+		t.Errorf("CDCVariants(WYE) = %v", vs)
+	}
+	for name, want := range map[string]string{"setMag": "setMag", "_setMag": "setMag", "__setMag": "setMag"} {
+		if got := (&DataAttribute{Name: name}).BaseName(); got != want {
+			t.Errorf("BaseName(%s) = %s", name, got)
+		}
+	}
+}
