@@ -45,3 +45,24 @@ exact name and records the number in `Step.Instance`.
 Every top-level definition has a `Source` namespace ID. `Namespace.Provenance`
 records the input name and SHA-256 digests. `Diagnostic` values locate findings
 by source and XML path, e.g. `/NS/LNClasses/LNClass[MMXU]/DataObject[Hz]`.
+
+## Official-package specifics
+
+- **CDC variants.** `CommonDataClass.Variant` (`Key()` gives `SPG/SG`). Lookups
+  by name return the CDC (first variant); `CDCVariants` returns all. The resolver
+  selects the variant by FC; without an FC, an attribute whose FC differs between
+  variants resolves with an empty FC and lists the alternatives in
+  `Step.Variants`.
+- **Per-FC copies.** `DataAttribute.BaseName()` strips leading underscores
+  (`__setMag` → `setMag`); the resolver accepts the device name and selects the
+  copy by FC; leaf expansion reports device names.
+- **Extension classes.** `LogicalNodeClass.IsExtension`; `Extensions(name)` lists
+  them, `DataObjects`/`DataObject` include their data objects, and `LogicalNode`
+  returns the base definition.
+- **Namespace metadata.** `Copyright` (notice, license), `Changes`, `NSDVersion`,
+  `NamespaceType`, `AppVersion`, `DependencyTypes`; `FunctionalConstraintDef`
+  carries `Services` and `DataSetMemberOf`; `DataAttribute` carries `MinValue`,
+  `MaxValue`, `MinIndex`.
+- **Service namespaces.** ServiceNS documents (IEC 61850-8-1) are recognized;
+  `nsd.Package.ServiceNamespaces()` lists their IDs. Their content is not modeled
+  yet.

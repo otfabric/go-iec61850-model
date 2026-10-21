@@ -4,6 +4,7 @@ package catalog_test
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
@@ -337,4 +338,107 @@ func TestConcurrentReads(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestExtensionClasses(t *testing.T) {
+	base := model.NamespaceID{Standard: "B", Version: "1"}
+	ext := model.NamespaceID{Standard: "E", Version: "1"}
+	orphanNS := model.NamespaceID{Standard: "O", Version: "1"}
+	nsB := &model.Namespace{ID: base,
+		CDCs:              []model.CommonDataClass{{Name: "MV", Source: base}},
+		AbstractLNClasses: []model.LogicalNodeClass{{Name: "Root", Abstract: true, Source: base, DataObjects: []model.DataObject{{Name: "Beh", Type: "MV"}}}},
+		LNClasses:         []model.LogicalNodeClass{{Name: "MMXU", Base: "Root", Source: base, DataObjects: []model.DataObject{{Name: "Hz", Type: "MV"}}}},
+	}
+	nsE := &model.Namespace{ID: ext, Dependencies: []model.NamespaceID{{Standard: "B", Version: "1"}},
+		LNClasses: []model.LogicalNodeClass{{Name: "MMXU", IsExtension: true, Source: ext, DataObjects: []model.DataObject{{Name: "Added", Type: "MV"}}}},
+	}
+	nsO := &model.Namespace{ID: orphanNS,
+		LNClasses: []model.LogicalNodeClass{{Name: "ZZZZ", IsExtension: true, Source: orphanNS, DataObjects: []model.DataObject{{Name: "X", Type: "MV"}}}},
+	}
+	c, err := catalog.New(nsB, nsE, nsO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := c.Profile(ext, orphanNS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ln, err := p.LogicalNode("MMXU")
+	if err != nil || ln.Source != base {
+		t.Fatalf("base definition: %v %v", ln, err)
+	}
+	if exts := p.Extensions("MMXU"); len(exts) != 1 || exts[0].Source != ext {
+		t.Errorf("extensions %v", exts)
+	}
+	dos, err := p.DataObjects("MMXU")
+	if err != nil || len(dos) != 3 || dos[2].Name != "Added" || dos[2].DeclaredIn.Source != ext {
+		t.Errorf("merged data objects %+v %v", dos, err)
+	}
+	if do, err := p.DataObject("MMXU", "Added"); err != nil || do.DeclaredIn.Source != ext {
+		t.Errorf("extension data object lookup: %v", err)
+	}
+	var names []string
+	for _, l := range p.ListLogicalNodes() {
+		names = append(names, l.Name+"@"+l.Source.Standard)
+	}
+	if strings.Join(names, ",") != "MMXU@B,ZZZZ@O" {
+		t.Errorf("listing hides merged extensions, keeps orphans: %v", names)
+	}
+	if orphan, err := p.LogicalNode("ZZZZ"); err != nil || !orphan.IsExtension {
+		t.Errorf("orphan extension: %v", err)
+	}
+	if dos, err := p.DataObjects("ZZZZ"); err != nil || len(dos) != 1 {
+		t.Errorf("orphan data objects: %v %v", dos, err)
+	}
+	found := false
+	for _, d := range p.Diagnostics() {
+		if strings.Contains(d.Message, "extension class without a base class") && d.Path == "ZZZZ" {
+			found = true
+		}
+		if d.Code == "conflicting-definition" {
+			t.Errorf("extensions are not conflicts: %v", d)
+		}
+	}
+	if !found {
+		t.Errorf("orphan extension not reported: %v", p.Diagnostics())
+	}
+	res := p.Search(catalog.Query{Name: "Added", Kinds: []catalog.Kind{catalog.KindDataObject}})
+	if len(res) != 1 || !res[0].Extension {
+		t.Errorf("search marks extension data objects: %+v", res)
+	}
+	changes := catalog.Diff(nsB, nsE)
+	if len(changes) == 0 || !strings.Contains(fmt.Sprint(changes), "MMXU (extension in E)") {
+		t.Errorf("diff keys extensions separately: %v", changes)
+	}
+}
+
+func TestCDCVariantsLookup(t *testing.T) {
+	a := model.NamespaceID{Standard: "A", Version: "1"}
+	b := model.NamespaceID{Standard: "B", Version: "1"}
+	nsA := &model.Namespace{ID: a, CDCs: []model.CommonDataClass{{Name: "SPG", Variant: "SP", Source: a}, {Name: "SPG", Variant: "SG", Source: a}}}
+	nsB := &model.Namespace{ID: b, CDCs: []model.CommonDataClass{{Name: "SPG", Source: b}}}
+	c, _ := catalog.New(nsA)
+	if cdc, err := c.CDC("SPG"); err != nil || cdc.Variant != "SP" {
+		t.Errorf("first variant: %v %v", cdc, err)
+	}
+	if got := c.ListCDCs(); len(got) != 2 || got[1].Key() != "SPG/SP" && got[1].Key() != "SPG/SG" {
+		t.Errorf("listing %v", got)
+	}
+	both, _ := catalog.New(nsA, nsB)
+	if _, err := both.CDCVariants("SPG"); !errors.Is(err, model.ErrAmbiguousReference) {
+		t.Errorf("same name in two namespaces: %v", err)
+	}
+	p, _ := both.Profile(a, b)
+	conflicts := 0
+	for _, d := range p.Diagnostics() {
+		if d.Code == "conflicting-definition" {
+			conflicts++
+		}
+	}
+	if conflicts != 1 {
+		t.Errorf("variants of one namespace are one CDC; two namespaces conflict once: %v", p.Diagnostics())
+	}
+	if r := both.Search(catalog.Query{Kinds: []catalog.Kind{catalog.KindCDC}}); len(r) != 3 || r[1].Variant == "" && r[0].Variant == "" {
+		t.Errorf("search reports variants: %+v", r)
+	}
 }

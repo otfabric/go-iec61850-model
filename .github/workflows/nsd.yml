@@ -1,0 +1,188 @@
+name: IEC NSD packages
+run-name: "IEC NSD packages (${{ github.event_name }}) on ${{ github.ref_name }}"
+
+# Downloads the official IEC NSD packages listed in sources/index.json from
+# their official locations, verifies them against the digests pinned in
+# sources/nsd.lock.json, validates them, runs the integration test and
+# generates Go, docs and JSON from them, twice, to prove the output is
+# deterministic.
+#
+# The packages and the local-only output generated from them are temporary:
+# they live in $RUNNER_TEMP, outside the checkout, and are deleted at the end.
+# This workflow never commits them, never caches them (actions/cache, setup-go
+# cache) and never uploads them as artifacts. The committed derivatives,
+# names/, official/ and docs/reference/ (redistribution permitted in the lock,
+# with NOTICE.md), are only checked here: the run fails when they differ from
+# the packages. Its summary contains metadata only (namespace IDs, statuses,
+# digests, counts).
+#
+# The regular CI (ci.yml) never downloads IEC packages.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sources/**"
+      - "nsd/**"
+      - "model/**"
+      - "catalog/**"
+      - "resolver/**"
+      - "semantic/**"
+      - "ontology/**"
+      - "internal/**"
+      - "cmd/**"
+      - "names/**"
+      - "official/**"
+      - "docs/reference/**"
+      - "Makefile"
+      - ".github/workflows/nsd.yml"
+  pull_request:
+    paths:
+      - "sources/**"
+      - "nsd/**"
+      - "model/**"
+      - "catalog/**"
+      - "resolver/**"
+      - "semantic/**"
+      - "ontology/**"
+      - "internal/**"
+      - "cmd/**"
+      - "names/**"
+      - "official/**"
+      - "docs/reference/**"
+      - "Makefile"
+      - ".github/workflows/nsd.yml"
+  schedule:
+    # Mondays at 05:17 UTC: detect packages that changed or disappeared upstream.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nsd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages:
+    name: Fetch, validate, generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOWORK: off
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Temporary directories outside the checkout
+        run: |
+          echo "NSD_CACHE=$RUNNER_TEMP/nsd-packages" >> "$GITHUB_ENV"
+          echo "GENERATED_DIR=$RUNNER_TEMP/nsd-generated" >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          # No caches: nothing derived from IEC packages may persist.
+          cache: false
+
+      - name: Fetch packages (verified against the lock)
+        run: make nsd-fetch NSD_CACHE="$NSD_CACHE"
+
+      - name: Check coverage and validate
+        run: make nsd-check NSD_CACHE="$NSD_CACHE"
+
+      - name: Integration test against the official packages
+        run: make official NSD_DIR="$NSD_CACHE"
+
+      - name: Generate
+        run: make nsd-generate NSD_CACHE="$NSD_CACHE" GENERATED_DIR="$GENERATED_DIR"
+
+      - name: Generated output is deterministic
+        run: make nsd-generate-check NSD_CACHE="$NSD_CACHE" GENERATED_DIR="$GENERATED_DIR"
+
+      - name: Committed output is up to date
+        # names/, official/ and docs/reference/ are generated from the
+        # packages pinned in the lock, whose redistribution is permitted;
+        # they must match them exactly.
+        run: make nsd-publish-check NSD_CACHE="$NSD_CACHE"
+
+      - name: Generated Go compiles
+        run: |
+          set -euo pipefail
+          mod="$RUNNER_TEMP/nsd-compile"
+          mkdir -p "$mod"
+          cp "$GENERATED_DIR/go/names_gen.go" "$mod/"
+          printf 'module example.com/iec61850names\n\ngo 1.24\n' > "$mod/go.mod"
+          (cd "$mod" && go vet ./...)
+
+      - name: Summary (metadata only)
+        if: always()
+        run: |
+          set -uo pipefail
+          {
+            echo "## IEC NSD packages"
+            echo
+            echo '```text'
+            go run ./cmd/nsdctl sources check --packages "$NSD_CACHE" 2>&1 | grep -v '^discovery' || true
+            echo '```'
+            if [ -f "$GENERATED_DIR/docs/coverage.md" ]; then
+              echo
+              echo "### Coverage"
+              echo
+              sed -n '/^| Namespace/,$p' "$GENERATED_DIR/docs/coverage.md"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove packages and generated output
+        if: always()
+        run: rm -rf "$NSD_CACHE" "$GENERATED_DIR" "$RUNNER_TEMP/nsd-compile"
+
+  report:
+    name: Track scheduled failures
+    needs: packages
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE_TITLE: "IEC NSD packages: weekly check failed"
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      RESULT: ${{ needs.packages.result }}
+    steps:
+      - name: Open, update or close the tracking issue
+        shell: bash
+        run: |
+          set -euo pipefail
+          number="$(gh issue list --state open --search "\"${ISSUE_TITLE}\" in:title" --json number,title \
+            --jq "[.[] | select(.title == env.ISSUE_TITLE)][0].number // empty")"
+          if [ "$RESULT" = "success" ]; then
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "The weekly check passes again: ${RUN_URL}"
+            fi
+            exit 0
+          fi
+          body="The weekly check of the official IEC NSD packages failed: ${RUN_URL}
+
+          Possible causes: a package was removed or renamed upstream, its content changed
+          (digest differs from sources/nsd.lock.json), or it no longer validates.
+
+          To investigate locally:
+
+          \`\`\`sh
+          make nsd-fetch      # fails on digest mismatch
+          make nsd-check
+          make official
+          \`\`\`
+
+          After reviewing an intentional upstream change, pin it with \`make nsd-lock\` and
+          open a pull request with the updated lock (metadata only)."
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "Still failing: ${RUN_URL}"
+          else
+            gh issue create --title "$ISSUE_TITLE" --body "$body"
+          fi

@@ -279,6 +279,8 @@ type Options struct {
 
 // builder collects concepts and relations.
 type builder struct {
+	// cdcKeys maps a CDC name to the keys of its variants ("SPG/SG").
+	cdcKeys   map[string][]string
 	concepts  map[string]Concept
 	rels      map[Relation]bool
 	conflicts []string
@@ -314,8 +316,9 @@ func LogicalNodeID(name string) string { return "ln:" + name }
 // DataObjectID returns the concept ID of a data object of a class.
 func DataObjectID(lnClass, name string) string { return "do:" + lnClass + "." + name }
 
-// CDCID returns the concept ID of a CDC.
-func CDCID(name string) string { return "cdc:" + name }
+// CDCID returns the concept ID of a CDC, or of one variant of it when
+// key is "name/variant", e.g. "cdc:SPG/SG".
+func CDCID(key string) string { return "cdc:" + key }
 
 // MeasurementID returns the concept ID of a measurement, e.g.
 // "measurement:MMXU.PNV.phsA".
@@ -339,8 +342,16 @@ func PhaseID(p semantic.Phase) string { return "phase:" + string(p) }
 // by more than one namespace keep their first definition and are listed
 // by [Graph.Conflicts].
 func BuildGraph(p *catalog.Profile, opts Options) (*Graph, error) {
-	b := &builder{concepts: map[string]Concept{}, rels: map[Relation]bool{}}
+	b := &builder{concepts: map[string]Concept{}, rels: map[Relation]bool{}, cdcKeys: map[string][]string{}}
 	nss := p.Namespaces()
+	for _, ns := range nss {
+		for i := range ns.CDCs {
+			c := &ns.CDCs[i]
+			if !slices.Contains(b.cdcKeys[c.Name], c.Key()) {
+				b.cdcKeys[c.Name] = append(b.cdcKeys[c.Name], c.Key())
+			}
+		}
+	}
 	for _, ns := range nss {
 		if err := b.add(Concept{ID: nsID(ns.ID), Kind: KindNamespace, Name: ns.ID.String(), Label: ns.Doc.Title, Namespace: ns.ID}); err != nil {
 			return nil, err
@@ -351,6 +362,7 @@ func BuildGraph(p *catalog.Profile, opts Options) (*Graph, error) {
 			return nil, err
 		}
 	}
+	b.addOrphans(nss)
 	for _, ns := range nss {
 		b.relateNamespace(ns)
 	}
@@ -380,6 +392,17 @@ func (b *builder) addNamespace(ns *model.Namespace) error {
 	for _, lns := range [][]model.LogicalNodeClass{ns.AbstractLNClasses, ns.LNClasses} {
 		for i := range lns {
 			ln := &lns[i]
+			if ln.IsExtension {
+				// Extension classes add data objects to the class of the
+				// same name; the class concept comes from its base
+				// definition (or, for an orphan, from addOrphans).
+				for j := range ln.DataObjects {
+					do := &ln.DataObjects[j]
+					props := append(presenceProps(do.Presence), Property{Name: "extension", Value: "true"})
+					add(Concept{ID: DataObjectID(ln.Name, do.Name), Kind: KindDataObject, Name: do.Name, Properties: props})
+				}
+				continue
+			}
 			c := Concept{ID: LogicalNodeID(ln.Name), Kind: KindLogicalNode, Name: ln.Name, Label: ln.Doc.Title}
 			if ln.Abstract {
 				c.Properties = append(c.Properties, Property{Name: "abstract", Value: "true"})
@@ -395,15 +418,19 @@ func (b *builder) addNamespace(ns *model.Namespace) error {
 	}
 	for i := range ns.CDCs {
 		c := &ns.CDCs[i]
-		add(Concept{ID: CDCID(c.Name), Kind: KindCDC, Name: c.Name, Label: c.Doc.Title})
+		cc := Concept{ID: CDCID(c.Key()), Kind: KindCDC, Name: c.Name, Label: c.Doc.Title}
+		if c.Variant != "" {
+			cc.Properties = []Property{{Name: "variant", Value: c.Variant}}
+		}
+		add(cc)
 		for j := range c.SubDataObjects {
 			s := &c.SubDataObjects[j]
-			add(Concept{ID: "sdo:" + c.Name + "." + s.Name, Kind: KindSubDataObject, Name: s.Name, Properties: presenceProps(s.Presence)})
+			add(Concept{ID: "sdo:" + c.Key() + "." + s.Name, Kind: KindSubDataObject, Name: s.Name, Properties: presenceProps(s.Presence)})
 		}
 		for j := range c.DataAttributes {
 			a := &c.DataAttributes[j]
 			props := append([]Property{{Name: "fc", Value: string(a.FC)}}, presenceProps(a.Presence)...)
-			add(Concept{ID: "da:" + c.Name + "." + a.Name, Kind: KindDataAttribute, Name: a.Name, Properties: props})
+			add(Concept{ID: "da:" + c.Key() + "." + a.Name, Kind: KindDataAttribute, Name: a.Name, Properties: props})
 		}
 	}
 	for i := range ns.ConstructedAttributes {
@@ -423,6 +450,22 @@ func (b *builder) addNamespace(ns *model.Namespace) error {
 		add(Concept{ID: "basic:" + t.Name, Kind: KindBasicType, Name: t.Name})
 	}
 	return err
+}
+
+// addOrphans adds class concepts for extension classes whose base class
+// is not in the profile.
+func (b *builder) addOrphans(nss []*model.Namespace) {
+	for _, ns := range nss {
+		for i := range ns.LNClasses {
+			ln := &ns.LNClasses[i]
+			if id := LogicalNodeID(ln.Name); ln.IsExtension {
+				if _, ok := b.concepts[id]; !ok {
+					b.concepts[id] = Concept{ID: id, Kind: KindLogicalNode, Name: ln.Name, Namespace: ns.ID,
+						Properties: []Property{{Name: "extension", Value: "true"}}}
+				}
+			}
+		}
+	}
 }
 
 // typeTarget returns the concept ID of a type name, by declared kind
@@ -447,6 +490,13 @@ func (b *builder) typeTarget(name string, kind model.TypeKind) string {
 	return ""
 }
 
+// relateUses links a data object to its CDC, or to every variant of it.
+func (b *builder) relateUses(from, cdc string) {
+	for _, key := range b.cdcKeys[cdc] {
+		b.relateIfExists(from, Uses, CDCID(key))
+	}
+}
+
 func (b *builder) relateIfExists(from string, p Predicate, to string) {
 	if to == "" {
 		return
@@ -469,13 +519,15 @@ func (b *builder) relateNamespace(ns *model.Namespace) {
 		for i := range lns {
 			ln := &lns[i]
 			id := LogicalNodeID(ln.Name)
-			b.relate(id, DefinedIn, nid)
+			if !ln.IsExtension {
+				b.relate(id, DefinedIn, nid)
+			}
 			b.relateIfExists(id, InheritsFrom, LogicalNodeID(ln.Base))
 			for j := range ln.DataObjects {
 				do := &ln.DataObjects[j]
 				did := DataObjectID(ln.Name, do.Name)
 				b.relate(id, Contains, did)
-				b.relateIfExists(did, Uses, CDCID(do.Type))
+				b.relateUses(did, do.Type)
 				if do.UnderlyingType != "" {
 					b.relateIfExists(did, HasType, b.typeTarget(do.UnderlyingType, do.UnderlyingTypeKind))
 				}
@@ -484,17 +536,17 @@ func (b *builder) relateNamespace(ns *model.Namespace) {
 	}
 	for i := range ns.CDCs {
 		c := &ns.CDCs[i]
-		id := CDCID(c.Name)
+		id := CDCID(c.Key())
 		b.relate(id, DefinedIn, nid)
 		for j := range c.SubDataObjects {
 			s := &c.SubDataObjects[j]
-			sid := "sdo:" + c.Name + "." + s.Name
+			sid := "sdo:" + c.Key() + "." + s.Name
 			b.relate(id, Contains, sid)
-			b.relateIfExists(sid, Uses, CDCID(s.Type))
+			b.relateUses(sid, s.Type)
 		}
 		for j := range c.DataAttributes {
 			a := &c.DataAttributes[j]
-			aid := "da:" + c.Name + "." + a.Name
+			aid := "da:" + c.Key() + "." + a.Name
 			b.relate(id, Contains, aid)
 			if a.Type != "" {
 				b.relateIfExists(aid, HasType, b.typeTarget(a.Type, a.TypeKind))
@@ -546,7 +598,9 @@ func (b *builder) addMeasurements(p *catalog.Profile, m *semantic.Mapper) error 
 			}
 			if d.SubDataObject != "" {
 				path += "." + d.SubDataObject
-				carrier = "sdo:" + d.CDC + "." + d.SubDataObject
+				if keys := b.cdcKeys[d.CDC]; len(keys) > 0 {
+					carrier = "sdo:" + keys[0] + "." + d.SubDataObject
+				}
 			}
 			id := MeasurementID(path)
 			label := d.Quantity.Label()

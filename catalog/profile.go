@@ -100,10 +100,11 @@ func (c *Catalog) Profile(ids ...model.NamespaceID) (*Profile, error) {
 	return p, nil
 }
 
-// Diagnostics returns the findings of the profile check: names defined
-// by more than one namespace (warnings; lookups of those names are
-// ambiguous) and references to types, classes, functional constraints
-// or presence conditions that the profile does not define (errors).
+// Diagnostics returns the findings of the profile check, as warnings:
+// names defined by more than one namespace (lookups of those names are
+// ambiguous; extension classes do not count) and references to types,
+// classes, functional constraints or presence conditions that the
+// profile does not define.
 func (p *Profile) Diagnostics() model.Diagnostics { return append(model.Diagnostics(nil), p.diags...) }
 
 // String returns the IDs of the profile, separated by ", ".
@@ -116,25 +117,16 @@ func (p *Profile) String() string {
 }
 
 // Inheritance returns the class chain of a logical node class, starting
-// with the class itself and ending with its root class. It fails with
-// [model.ErrCycle] on cyclic inheritance and with
-// [model.ErrUnknownLogicalNode] when a base class is not defined.
+// with the class itself and ending with its root class. Base classes are
+// resolved in the scope of the namespace of each class (see Scope). It
+// fails with [model.ErrCycle] on cyclic inheritance and with
+// [model.ErrUnknownLogicalNode] when a class is not defined.
 func (v *view) Inheritance(name string) ([]*model.LogicalNodeClass, error) {
-	var chain []*model.LogicalNodeClass
-	seen := map[string]bool{}
-	for cur := name; cur != ""; {
-		if seen[cur] {
-			return nil, &model.ResolutionError{Element: name, Reason: "cyclic inheritance through " + cur, Err: model.ErrCycle}
-		}
-		seen[cur] = true
-		ln, err := v.LogicalNode(cur)
-		if err != nil {
-			return nil, err
-		}
-		chain = append(chain, ln)
-		cur = ln.Base
+	ln, err := v.LogicalNode(name)
+	if err != nil {
+		return nil, err
 	}
-	return chain, nil
+	return v.chainFrom(ln)
 }
 
 // InheritedDataObject is a data object of a logical node class together
@@ -142,47 +134,68 @@ func (v *view) Inheritance(name string) ([]*model.LogicalNodeClass, error) {
 type InheritedDataObject struct {
 	*model.DataObject
 	// DeclaredIn is the class that declares the data object: the class
-	// itself or one of its base classes.
+	// itself, one of its base classes, or an extension class.
 	DeclaredIn *model.LogicalNodeClass
 }
 
 // DataObjects returns every data object of a logical node class,
-// including inherited ones: those of the root class first, then each
-// subclass in turn, each in document order. A data object redeclared
-// by a subclass replaces the inherited one at its original position.
+// including inherited ones and those added by extension classes of
+// other namespaces: those of the root class first, then each subclass
+// in turn, each followed by its extensions, in document order. A data
+// object redeclared later replaces the earlier one at its position.
 func (v *view) DataObjects(lnClass string) ([]InheritedDataObject, error) {
 	chain, err := v.Inheritance(lnClass)
 	if err != nil {
 		return nil, err
 	}
+	return v.dataObjectsOf(chain), nil
+}
+
+func (v *view) dataObjectsOf(chain []*model.LogicalNodeClass) []InheritedDataObject {
 	var out []InheritedDataObject
 	pos := map[string]int{}
 	for i := len(chain) - 1; i >= 0; i-- {
-		ln := chain[i]
-		for j := range ln.DataObjects {
-			do := InheritedDataObject{DataObject: &ln.DataObjects[j], DeclaredIn: ln}
-			if k, ok := pos[do.Name]; ok {
-				out[k] = do
-				continue
+		for _, ln := range v.withExtensions(chain[i]) {
+			for j := range ln.DataObjects {
+				do := InheritedDataObject{DataObject: &ln.DataObjects[j], DeclaredIn: ln}
+				if k, ok := pos[do.Name]; ok {
+					out[k] = do
+					continue
+				}
+				pos[do.Name] = len(out)
+				out = append(out, do)
 			}
-			pos[do.Name] = len(out)
-			out = append(out, do)
 		}
 	}
-	return out, nil
+	return out
+}
+
+// withExtensions returns a class followed by its extension classes.
+func (v *view) withExtensions(ln *model.LogicalNodeClass) []*model.LogicalNodeClass {
+	if ln.IsExtension {
+		return []*model.LogicalNodeClass{ln}
+	}
+	return append([]*model.LogicalNodeClass{ln}, v.Extensions(ln.Name)...)
 }
 
 // DataObject returns the data object of a logical node class with the
-// given name, searching base classes too. It fails with
-// [model.ErrUnknownDataObject] when the class has no such data object.
+// given name, searching base classes and extension classes too. It
+// fails with [model.ErrUnknownDataObject] when the class has no such
+// data object.
 func (v *view) DataObject(lnClass, name string) (InheritedDataObject, error) {
 	chain, err := v.Inheritance(lnClass)
 	if err != nil {
 		return InheritedDataObject{}, err
 	}
-	for _, ln := range chain {
-		if do, ok := ln.DataObject(name); ok {
-			return InheritedDataObject{DataObject: do, DeclaredIn: ln}, nil
+	return v.dataObjectOf(chain, lnClass, name)
+}
+
+func (v *view) dataObjectOf(chain []*model.LogicalNodeClass, lnClass, name string) (InheritedDataObject, error) {
+	for _, cls := range chain {
+		for _, ln := range v.withExtensions(cls) {
+			if do, ok := ln.DataObject(name); ok {
+				return InheritedDataObject{DataObject: do, DeclaredIn: ln}, nil
+			}
 		}
 	}
 	return InheritedDataObject{}, &model.ResolutionError{
@@ -212,10 +225,16 @@ func (p *Profile) check() model.Diagnostics {
 		}
 	}
 	conflicts("logical node class", keys(p.lns), func(n string) []model.NamespaceID {
-		return sources(p.lns[n], func(l *model.LogicalNodeClass) model.NamespaceID { return l.Source })
+		var base []*model.LogicalNodeClass
+		for _, ln := range p.lns[n] {
+			if !ln.IsExtension {
+				base = append(base, ln)
+			}
+		}
+		return sources(base, func(l *model.LogicalNodeClass) model.NamespaceID { return l.Source })
 	})
 	conflicts("CDC", keys(p.cdcs), func(n string) []model.NamespaceID {
-		return sources(p.cdcs[n], func(c *model.CommonDataClass) model.NamespaceID { return c.Source })
+		return distinctSources(p.cdcs[n], func(c *model.CommonDataClass) model.NamespaceID { return c.Source })
 	})
 	conflicts("constructed attribute", keys(p.cas), func(n string) []model.NamespaceID {
 		return sources(p.cas[n], func(c *model.ConstructedAttribute) model.NamespaceID { return c.Source })
@@ -227,8 +246,12 @@ func (p *Profile) check() model.Diagnostics {
 		return sources(p.basics[n], func(b *model.BasicType) model.NamespaceID { return b.Source })
 	})
 
+	// Official namespaces reference definitions that no namespace of
+	// their profile provides (e.g. types of service namespaces). Such
+	// references are warnings: they do not affect other definitions,
+	// and resolving a path through one fails with a precise error.
 	unresolved := func(ns model.NamespaceID, path, msg string) {
-		ds = append(ds, model.Diagnostic{Severity: model.SeverityError, Code: "unresolved-reference", Namespace: ns, Path: path, Message: msg})
+		ds = append(ds, model.Diagnostic{Severity: model.SeverityWarning, Code: "unresolved-reference", Namespace: ns, Path: path, Message: msg})
 	}
 	hasFCs, hasPresence := len(p.fcs) > 0, len(p.presence) > 0
 	checkPresence := func(ns model.NamespaceID, path string, pc model.PresenceCondition) {
@@ -258,6 +281,9 @@ func (p *Profile) check() model.Diagnostics {
 		for _, lns := range [][]model.LogicalNodeClass{ns.AbstractLNClasses, ns.LNClasses} {
 			for i := range lns {
 				ln := &lns[i]
+				if ln.IsExtension && !p.hasBase(ln.Name) {
+					unresolved(ns.ID, ln.Name, "extension class without a base class in the profile")
+				}
 				if ln.Base != "" && len(p.lns[ln.Base]) == 0 {
 					unresolved(ns.ID, ln.Name, fmt.Sprintf("base class %q is not defined", ln.Base))
 				}

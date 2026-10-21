@@ -7,14 +7,51 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"path"
 	"strings"
 
 	"github.com/otfabric/go-iec61850-model/model"
 )
 
-// ManifestFileName is the file name of the package manifest inside an
-// official IEC code component archive.
-const ManifestFileName = "IECManifest.xml"
+// ManifestFileName is the file name of the package manifest inside
+// official IEC code component archives. Some packages name it
+// IECManifest.xml instead; both are recognized.
+const ManifestFileName = "Manifest.xml"
+
+// ManifestNamespace is the XML namespace of IEC code component
+// manifests.
+const ManifestNamespace = "http://www.iec.ch/CC/2017/IECManifest"
+
+// isManifestFile reports whether a file name is a package manifest.
+func isManifestFile(name string) bool {
+	b := path.Base(name)
+	return strings.EqualFold(b, ManifestFileName) || strings.EqualFold(b, "IECManifest.xml")
+}
+
+// License returns the uri and kind attributes of the manifest's License
+// element, e.g. "www.iec.ch/CCv1" and "Standard".
+func (m *Manifest) License() (uri, kind string, ok bool) {
+	for i := range m.Elements {
+		e := &m.Elements[i]
+		if path.Base(e.Path) == "License" {
+			uri, _ = e.Attr("uri")
+			kind, _ = e.Attr("kind")
+			return uri, kind, true
+		}
+	}
+	return "", "", false
+}
+
+// Notice returns the text of the manifest's copyright notice, which
+// must accompany redistributed code components.
+func (m *Manifest) Notice() string {
+	for i := range m.Elements {
+		if path.Base(m.Elements[i].Path) == "Notice" {
+			return normalizeSpace(m.Elements[i].Text)
+		}
+	}
+	return ""
+}
 
 // Manifest is the content of an IECManifest.xml package manifest.
 //

@@ -331,3 +331,94 @@ func TestIsMultiInstance(t *testing.T) {
 		}
 	}
 }
+
+func TestCDCVariants(t *testing.T) {
+	id := model.NamespaceID{Standard: "V", Version: "1"}
+	setting := func(variant string, fc model.FunctionalConstraint) model.CommonDataClass {
+		return model.CommonDataClass{Name: "SPG", Variant: variant, Source: id, DataAttributes: []model.DataAttribute{
+			{Name: "setVal", Type: "BOOLEAN", TypeKind: model.TypeKindBasic, FC: fc, Position: 0},
+			{Name: "d", Type: "BOOLEAN", TypeKind: model.TypeKindBasic, FC: model.FCDC, Position: 1},
+		}}
+	}
+	ns := &model.Namespace{
+		ID:         id,
+		BasicTypes: []model.BasicType{{Name: "BOOLEAN", Source: id}},
+		CDCs: []model.CommonDataClass{setting("SP", model.FCSP), setting("SG", model.FCSG), setting("SE", model.FCSE),
+			{Name: "WRAP", Source: id, SubDataObjects: []model.DataObject{{Name: "s", Type: "SPG"}, {Name: "o", Type: "ONLYDC", Position: 1}}},
+			{Name: "ONLYDC", Source: id, DataAttributes: []model.DataAttribute{{Name: "d", Type: "BOOLEAN", TypeKind: model.TypeKindBasic, FC: model.FCDC}}}},
+		LNClasses: []model.LogicalNodeClass{{Name: "PTST", Source: id, DataObjects: []model.DataObject{{Name: "StrVal", Type: "SPG"}, {Name: "W", Type: "WRAP"}}}},
+	}
+	c, err := catalog.New(ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := resolver.New(c)
+	res, err := r.ResolveString("PTST.StrVal.setVal[SG]")
+	if err != nil || res.FC() != model.FCSG || res.Leaf().Variant != "SG" || res.CDC.Key() != "SPG/SG" || res.Leaf().DeclaredIn != "SPG/SG" {
+		t.Fatalf("variant by FC: %+v %v", res, err)
+	}
+	open, err := r.ResolveString("PTST.StrVal.setVal")
+	if err != nil || open.FC() != "" || strings.Join(open.Leaf().Variants, ",") != "SPG/SP.setVal,SPG/SG.setVal,SPG/SE.setVal" {
+		t.Fatalf("FC open without request: %+v %v", open.Leaf(), err)
+	}
+	if d, err := r.ResolveString("PTST.StrVal.d"); err != nil || d.FC() != model.FCDC || len(d.Leaf().Variants) != 0 {
+		t.Errorf("same FC in every variant: %+v %v", d, err)
+	}
+	if _, err := r.ResolveString("PTST.StrVal.setVal[MX]"); !errors.Is(err, model.ErrUnknownAttribute) || !strings.Contains(err.Error(), "SP/SG/SE") {
+		t.Errorf("no variant with FC: %v", err)
+	}
+	if _, err := r.ResolveString("PTST.StrVal[SE]"); err != nil {
+		t.Errorf("FC on a data object with variants: %v", err)
+	}
+	leaves, err := r.Leaves("PTST", []string{"StrVal"}, model.FCSE)
+	if err != nil || len(leaves) != 1 || leaves[0].FC() != model.FCSE {
+		t.Errorf("leaves by FC: %v %v", leaves, err)
+	}
+	if leaves, err := r.Leaves("PTST", []string{"W"}, model.FCSG); err != nil || len(leaves) != 1 || leaves[0].Path() != "PTST.W.s.setVal" {
+		t.Errorf("sub data object without the FC contributes nothing: %v %v", leaves, err)
+	}
+	if vs, err := c.CDCVariants("SPG"); err != nil || len(vs) != 3 {
+		t.Errorf("CDCVariants: %v %v", vs, err)
+	}
+	all, err := r.Leaves("PTST", []string{"StrVal"}, "")
+	var got []string
+	for _, l := range all {
+		got = append(got, l.Path()+"["+string(l.FC())+"]")
+	}
+	if err != nil || strings.Join(got, " ") != "PTST.StrVal.setVal[SP] PTST.StrVal.setVal[SG] PTST.StrVal.setVal[SE] PTST.StrVal.d[DC]" {
+		t.Errorf("leaves over all variants: %v %v", got, err)
+	}
+}
+
+func TestPerFCAttributeCopies(t *testing.T) {
+	id := model.NamespaceID{Standard: "U", Version: "1"}
+	ns := &model.Namespace{
+		ID:         id,
+		BasicTypes: []model.BasicType{{Name: "FLOAT32", Source: id}},
+		CDCs: []model.CommonDataClass{{Name: "RST", Source: id, DataAttributes: []model.DataAttribute{
+			{Name: "setMag", Type: "FLOAT32", TypeKind: model.TypeKindBasic, FC: model.FCSP, Position: 0},
+			{Name: "_setMag", Type: "FLOAT32", TypeKind: model.TypeKindBasic, FC: model.FCSG, Position: 1},
+			{Name: "__setMag", Type: "FLOAT32", TypeKind: model.TypeKindBasic, FC: model.FCSE, Position: 2},
+		}}},
+		LNClasses: []model.LogicalNodeClass{{Name: "XTST", Source: id, DataObjects: []model.DataObject{{Name: "Rs", Type: "RST"}}}},
+	}
+	c, _ := catalog.New(ns)
+	r := resolver.New(c)
+	res, err := r.ResolveString("XTST.Rs.setMag[SE]")
+	if err != nil || res.Attribute.Name != "__setMag" || res.FC() != model.FCSE || res.Leaf().Name != "setMag" {
+		t.Fatalf("per-FC copy by base name: %+v %v", res, err)
+	}
+	if res, err := r.ResolveString("XTST.Rs._setMag"); err != nil || res.FC() != model.FCSG {
+		t.Errorf("exact model name: %v", err)
+	}
+	if res, _ := r.ResolveString("XTST.Rs.setMag"); len(res.Leaf().Variants) != 3 || res.FC() != "" {
+		t.Errorf("alternatives: %+v", res.Leaf())
+	}
+	leaves, err := r.Leaves("XTST", nil, "")
+	if err != nil || len(leaves) != 3 || leaves[2].Path() != "XTST.Rs.setMag" || leaves[2].FC() != model.FCSE {
+		t.Errorf("leaves use device names: %v %v", leaves, err)
+	}
+	if (&model.DataAttribute{Name: "__x"}).BaseName() != "x" {
+		t.Error("BaseName")
+	}
+}

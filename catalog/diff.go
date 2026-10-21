@@ -102,8 +102,13 @@ func collect(src Source) defs {
 			}
 		}
 		addAll(d.lns, ns.AbstractLNClasses, func(l *model.LogicalNodeClass) string { return l.Name })
-		addAll(d.lns, ns.LNClasses, func(l *model.LogicalNodeClass) string { return l.Name })
-		addAll(d.cdcs, ns.CDCs, func(c *model.CommonDataClass) string { return c.Name })
+		addAll(d.lns, ns.LNClasses, func(l *model.LogicalNodeClass) string {
+			if l.IsExtension {
+				return l.Name + " (extension in " + ns.ID.Standard + ")"
+			}
+			return l.Name
+		})
+		addAll(d.cdcs, ns.CDCs, func(c *model.CommonDataClass) string { return c.Key() })
 		addAll(d.cas, ns.ConstructedAttributes, func(c *model.ConstructedAttribute) string { return c.Name })
 		addAll(d.enums, ns.Enumerations, func(e *model.Enumeration) string { return e.Name })
 		addAll(d.basics, ns.BasicTypes, func(b *model.BasicType) string { return b.Name })

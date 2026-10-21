@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -37,7 +38,8 @@ func TestCommands(t *testing.T) {
 		code int
 		want []string
 	}{
-		{"version", []string{"version"}, exitOK, []string{"nsdctl dev"}},
+		{"version", []string{"version"}, exitOK, []string{"nsdctl version: ", "go version:  go", "platform:    "}},
+		{"notice", []string{"notice"}, exitOK, []string{"IEC 61850-7-420:2019A4", "www.iec.ch/CCv1"}},
 		{"inspect", []string{"inspect", fixtures.Dir()}, exitOK, []string{"IEC 61850-7-4:2007B2", "doc       IEC 61850-7-4:2007B1 (en, 6 texts)"}},
 		{"inspect file", []string{"inspect", fixtures.Path(fixtures.NS73)}, exitOK, []string{"sha256", "IEC 61850-7-3:2007B1"}},
 		{"inspect via --source", []string{"-s", fixtures.Path(fixtures.NS72), "inspect"}, exitOK, []string{"IEC 61850-7-2:2007B1"}},
@@ -48,7 +50,7 @@ func TestCommands(t *testing.T) {
 		{"diff", []string{"diff", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitOK, []string{"added    DataObject MMXU.TotPF added", "4 changes"}},
 		{"diff exit code", []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitDifferent, nil},
 		{"diff same", []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74)}, exitOK, []string{"0 changes"}},
-		{"show class", withProfile("model", "show", "MMXU"), exitOK, []string{"group        M Metering and measurement", "PNV          WYE  O         MMXU          voltage per phase, line-neutral"}},
+		{"show class", withProfile("model", "show", "MMXU"), exitOK, []string{"group        M Metering and measurement", "PNV          WYE  O         MMXU          IEC 61850-7-4:2007B1  voltage per phase, line-neutral"}},
 		{"show path", withProfile("model", "show", "LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]"), exitOK, []string{"→ FLOAT32 (BASIC) [MX]", "reference    line-neutral", "rule mmxu.pnv"}},
 		{"show cdc", withProfile("model", "show", "ENS"), exitOK, []string{"CDC ENS", "(ENUMERATED from data object)"}},
 		{"show ca", withProfile("model", "show", "Vector"), exitOK, []string{"constructed attribute Vector", "AnalogueValue"}},
@@ -74,7 +76,7 @@ func TestCommands(t *testing.T) {
 		{"measurements unknown", withProfile("model", "measurements", "XXXX"), exitUsage, nil},
 		{"leaves", withProfile("model", "leaves", "MMXU.Hz", "--fc", "MX"), exitOK, []string{"MMXU.Hz.mag.f", "FLOAT32"}},
 		{"leaves unknown", withProfile("model", "leaves", "MMXU.Nope"), exitUsage, nil},
-		{"no source", []string{"model", "list"}, exitUsage, nil},
+		{"no source", []string{"generate", "json", "-o", "unused"}, exitUsage, nil},
 		{"no profile", []string{"-s", fixtures.Dir(), "model", "list"}, exitUsage, nil},
 		{"bad profile id", []string{"-s", fixtures.Dir(), "-p", ":x", "model", "list"}, exitUsage, nil},
 		{"unknown profile", []string{"-s", fixtures.Dir(), "-p", "IEC 61850-7-9", "model", "list"}, exitUsage, nil},
@@ -82,7 +84,7 @@ func TestCommands(t *testing.T) {
 		{"missing source", []string{"inspect", "/no/such/file.zip"}, exitSource, nil},
 		{"unknown flag", []string{"inspect", "--nope"}, exitUsage, nil},
 		{"diff args", []string{"diff", "a"}, exitUsage, nil},
-		{"sources check", []string{"sources", "check", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json"}, exitOK, []string{"0 locked namespaces", "not verified yet"}},
+		{"sources check", []string{"sources", "check", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json"}, exitOK, []string{"14 locked namespaces", "IEC 61850-7-4:2007B6"}},
 		{"sources check missing", []string{"sources", "check", "--index", "nope.json"}, exitSource, nil},
 		{"generate without out", withProfile("generate", "go"), exitUsage, nil},
 	}
@@ -226,8 +228,24 @@ func TestExitCode(t *testing.T) {
 	}
 	version, tag, commit, buildDate = "v1.2.3", "v1.2.3", "0123456789abcdef", "2026-10-21"
 	defer func() { version, tag, commit, buildDate = "dev", "", "", "" }()
-	if got := versionString(); got != "nsdctl v1.2.3 (v1.2.3) commit 01234567 built 2026-10-21" {
-		t.Errorf("versionString = %s", got)
+	v := currentVersion(nil)
+	if v.Version != "v1.2.3" || v.Commit != "01234567" || !strings.Contains(v.String(), "tag:         v1.2.3\n") || !strings.Contains(v.String(), "build date:  2026-10-21\n") {
+		t.Errorf("version %+v\n%s", v, v)
+	}
+	if out, _, code := nsdctl(t, "--json", "version"); code != exitOK || !strings.Contains(out, `"version": "v1.2.3"`) || !strings.Contains(out, `"platform"`) {
+		t.Errorf("json version: %s", out)
+	}
+	version, tag, commit, buildDate = "dev", "", "", ""
+	info := &debug.BuildInfo{Main: debug.Module{Version: "v0.3.0"}, Settings: []debug.BuildSetting{{Key: "vcs.revision", Value: "abcdef0123456789"}}}
+	if v := currentVersion(info); v.Version != "v0.3.0" || v.Commit != "abcdef01" || strings.Contains(v.String(), "tag:") {
+		t.Errorf("go install version %+v", v)
+	}
+	if v := currentVersion(&debug.BuildInfo{Main: debug.Module{Version: "(devel)"}}); v.Version != "dev" {
+		t.Errorf("devel build %+v", v)
+	}
+	version = ""
+	if v := currentVersion(nil); v.Version != "(unknown)" {
+		t.Errorf("empty version %+v", v)
 	}
 }
 
@@ -246,5 +264,26 @@ func TestStrictAndLanguage(t *testing.T) {
 	}
 	if out, _, _ := nsdctl(t, withProfile("--lang", "", "model", "show", "MMXU")...); strings.Contains(out, "title") {
 		t.Error("--lang '' must not apply documentation")
+	}
+}
+
+func TestSourcesFetchGuards(t *testing.T) {
+	// cmd/nsdctl is inside the repository: only its root .nsd-cache is allowed.
+	if _, e, code := nsdctl(t, "sources", "fetch", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json", "--dest", "packages"); code != exitUsage || !strings.Contains(e, "inside the Git work tree") {
+		t.Errorf("destination in the repository: %d %s", code, e)
+	}
+	dir := t.TempDir()
+	bad := filepath.Join(dir, "index.json")
+	if err := os.WriteFile(bad, []byte(`{"schemaVersion":1,"registries":[],"parts":[],"packages":[{"tier":"required","part":"7-4","name":"IEC_61850-7-4.NSD.2007B6.Light.zip","release":"2007B6","kind":"nsd","content":"light","purpose":"x","url":"https://mirror.example.org/IEC_61850-7-4.NSD.2007B6.Light.zip","verified":false}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, code := nsdctl(t, "sources", "fetch", "--index", bad, "--lock", "../../sources/nsd.lock.json", "--dest", filepath.Join(dir, "cache")); code != exitValidation {
+		t.Errorf("unofficial URL in the registry: %d", code)
+	}
+	if _, _, code := nsdctl(t, "sources", "fetch", "--tiers", "nope"); code != exitUsage {
+		t.Error("bad tier")
+	}
+	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "missing.json", "--dest", filepath.Join(dir, "c2")); code != exitSource {
+		t.Error("missing index")
 	}
 }

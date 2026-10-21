@@ -20,6 +20,7 @@ type genFlags struct {
 	lock    string
 	docText bool
 	goPkg   string
+	index   string
 }
 
 func (a *app) generateCmd() *cobra.Command {
@@ -47,6 +48,25 @@ matches.`,
 		a.generateKindCmd("json", "JSON exports: catalog, ontology graph and coverage", func(*genFlags) func(generator.Input) (generator.Files, error) {
 			return generator.JSON
 		}),
+		a.generateKindCmd("catalog", "Embedded catalog of a Go package: the namespaces as JSON and the named profiles", func(f *genFlags) func(generator.Input) (generator.Files, error) {
+			return func(in generator.Input) (generator.Files, error) {
+				var specs []generator.ProfileSpec
+				if f.index != "" {
+					idx, err := sources.LoadIndex(f.index)
+					if err != nil {
+						return nil, err
+					}
+					for _, p := range idx.Profiles {
+						parts, err := idx.ProfileParts(p.Name)
+						if err != nil {
+							return nil, err
+						}
+						specs = append(specs, generator.ProfileSpec{Name: p.Name, Description: p.Description, Parts: parts})
+					}
+				}
+				return generator.Catalog(in, f.goPkg, specs)
+			}
+		}),
 	)
 	return cmd
 }
@@ -60,6 +80,9 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if f.out == "" {
 				return withCode(exitUsage, "--out is required")
+			}
+			if len(a.sources) == 0 {
+				return withCode(exitUsage, "no source given (use --source with the official packages)")
 			}
 			p, err := a.loadProfile()
 			if err != nil {
@@ -133,8 +156,12 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 	fl.BoolVar(&f.publish, "publish", false, "Produce publishable output; requires --lock permitting every namespace")
 	fl.StringVar(&f.lock, "lock", "", "Lock file for --publish, e.g. sources/nsd.lock.json")
 	fl.BoolVar(&f.docText, "include-doc-text", false, "Include NSDoc titles and descriptions (IEC text)")
-	if kind == "go" {
+	switch kind {
+	case "go":
 		fl.StringVar(&f.goPkg, "package", "iec61850names", "Go package name")
+	case "catalog":
+		fl.StringVar(&f.goPkg, "package", "official", "Go package name")
+		fl.StringVar(&f.index, "index", "sources/index.json", "Source registry with the named profiles (empty: none)")
 	}
 	return cmd
 }

@@ -1,4 +1,192 @@
 {
   "schemaVersion": 1,
-  "sources": []
+  "sources": [
+    {
+      "standard": "(Tr)IEC 61850-90-11",
+      "namespace": "(Tr)IEC 61850-90-11:2019A2",
+      "content": "light",
+      "package": "IEC_TR_61850-90-11.NSD.2019A2.light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-11.NSD.2019A2.light.zip",
+      "sha256": "63401cd1e065d4363554db52d6fc567e4407c8d68fec42814ef9781d61874724",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC 61850-90-14",
+      "namespace": "(Tr)IEC 61850-90-14:2020A3",
+      "content": "light",
+      "package": "IEC_TR_61850-90-14.NSD.2020A3.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-14.NSD.2020A3.Light.zip",
+      "sha256": "d6f06ace3eca3d7f9ad089f48c2407652dca8c479964bf051a4f22c92e652edd",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC 61850-90-21",
+      "namespace": "(Tr)IEC 61850-90-21:2022A2",
+      "content": "light",
+      "package": "IEC_TR_61850-90-21.NSD.2022A2.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-21.NSD.2022A2.Light.zip",
+      "sha256": "d6df9731479ae2a2cf053ca3e2e3b0efa1a0d72e53d3ea5be10f4435597126e6",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC 61850-90-4",
+      "namespace": "(Tr)IEC 61850-90-4:2018A",
+      "content": "light",
+      "package": "IEC_TR_61850-90-4.NSD.2018A.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-4.NSD.2018A.Light.zip",
+      "sha256": "99319b01bbe868fd5631150df168175c74f446b9e2cacc62544d111998cf984f",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC 61850-90-9",
+      "namespace": "(Tr)IEC 61850-90-9:2018A3",
+      "content": "light",
+      "package": "IEC_TR_61850-90-9.NSD.2018A3.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-9.NSD.2018A3.Light.zip",
+      "sha256": "68a86c06177ecf48e7fd2a580a81bec7f4a3dba5a0dddc259f4179da48213911",
+      "dependencies": [
+        "IEC 61850-7-420:2019A"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC61850-90-3",
+      "namespace": "(Tr)IEC61850-90-3:2015B",
+      "content": "light",
+      "package": "IEC_TR_61850-90-3.NSD.2015B.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-3.NSD.2015B.Light.zip",
+      "sha256": "813b32e8c5a20526f80c9cbf450cc4e5a983b90206885038d2c16c53c8e2e646",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "(Tr)IEC61850-90-6",
+      "namespace": "(Tr)IEC61850-90-6:2018B",
+      "content": "light",
+      "package": "IEC_TR_61850-90-6.NSD.2018B.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-6.NSD.2018B.Light.zip",
+      "sha256": "083347f18438d3fbb83c80622a2f31097b9224ac728ce97b62fa7758bfbc392b",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-2",
+      "namespace": "IEC 61850-7-2:2007B6",
+      "content": "light",
+      "package": "IEC_61850-7-2.NSD.2007B6.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B6.Light.zip",
+      "sha256": "d2ecb929472fcad26b2c38e4501ad10a3a3cde03b609d9363c0e5a41febb498b",
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-3",
+      "namespace": "IEC 61850-7-3:2007B6",
+      "content": "light",
+      "package": "IEC_61850-7-3.NSD.2007B6.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B6.Light.zip",
+      "sha256": "5305aa90706db1ceb06f48f7769e1744122ab6f58452aee338d3f163e20b7382",
+      "dependencies": [
+        "IEC 61850-7-2:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-410",
+      "namespace": "IEC 61850-7-410:2024A4",
+      "content": "light",
+      "package": "IEC_61850-7-410.NSD.2024A4.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-410.NSD.2024A4.Light.zip",
+      "sha256": "dd6231f14072d3d0d159da4664659fe3c4137c77eab9aba6214ff3a7e3cd6701",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-420",
+      "namespace": "IEC 61850-7-420:2019A4",
+      "content": "light",
+      "package": "IEC_61850-7-420.NSD.2019A4.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-420.NSD.2019A4.Light.zip",
+      "sha256": "0b6774ea69a00295d22ddf4409c819fd943dbfb7d24661e0a0db0a35b70451fe",
+      "dependencies": [
+        "IEC 61850-7-4:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-4",
+      "namespace": "IEC 61850-7-4:2007B6",
+      "content": "light",
+      "package": "IEC_61850-7-4.NSD.2007B6.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B6.Light.zip",
+      "sha256": "429c9b5cad3e6e804c1e6cc0efdc59659bf03096b9693ff3cf920ff5caf8203a",
+      "dependencies": [
+        "IEC 61850-7-3:2007B"
+      ],
+      "status": "nsd-validated",
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
+    },
+    {
+      "standard": "IEC 61850-7-7",
+      "namespace": "IEC 61850-7-7:2017A",
+      "content": "full",
+      "package": "IEC_61850-7-7.2017.NSD.2017A.full.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-7.2017.NSD.2017A.full.zip",
+      "sha256": "d6c5f7fdac0ff059d817542a7b5ed574850971e5d940723c738b6a6646b69c54",
+      "status": "nsd-available",
+      "redistribution": "local-only",
+      "notes": "schema package, 3 XSD files"
+    },
+    {
+      "standard": "IEC 61850-8-1",
+      "namespace": "IEC 61850-8-1:2003A4",
+      "content": "light",
+      "package": "IEC_61850-8-1.NSD.2003A4.Light.zip",
+      "source": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A4.Light.zip",
+      "sha256": "b5b54ab117319fa002276e3dc081c9fbadf0821148a46230ecf68cd95edf853b",
+      "status": "nsd-available",
+      "redistribution": "local-only",
+      "notes": "service namespace; recognized, not modeled yet"
+    }
+  ]
 }

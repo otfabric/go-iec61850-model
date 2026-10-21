@@ -230,12 +230,115 @@ exact official names and runs `sources check`, `sources lock`, `validate`,
 `TestOfficialPackages` (`make official NSD_DIR=...`) runs the same checks
 against the real packages in place.
 
+## Official packages: download, validation and generation
+
+**Date:** 2026-10-21
+
+All 14 tracked packages are downloadable from `https://assets.iec.ch/public/tc57/`
+(two names corrected: 7-2 is `….Light`, 90-6 is `IEC_TR_….Light`). `nsdctl
+sources fetch` downloads them into `.nsd-cache/` (or outside the repository),
+verified against digests pinned with `nsdctl sources lock`; Makefile targets
+`nsd-fetch`, `nsd-lock`, `nsd-check`, `nsd-generate`, `nsd-generate-check`,
+`nsd-clean`, `official`; workflow `.github/workflows/nsd.yml` (PRs touching the
+importer, weekly, on demand) in `$RUNNER_TEMP` without caches or artifacts,
+with a tracking issue for weekly failures.
+
+The first import of real data required:
+
+1. Abstract classes inside `LNClasses`.
+2. CDC variants (`variant`), selected by FC in the resolver.
+3. Per-FC attribute copies (`_setMag`), resolved by device name and FC.
+4. Extension classes (`isExtension`), merged into their base class.
+5. Manifest `Manifest.xml`; NS `Copyright`, `Changes`, NSD version,
+   namespace type, dependency types; FC applicable services; value bounds.
+6. ServiceNS / ApplicableServiceNS (`.snsd`, `.AppNS`) recognized; 8-1 counted.
+7. Identical nested copies imported once.
+8. Unresolved references downgraded to warnings: they are upstream gaps
+   (`PhyComAddr*`, `SCR`, 7-420 enumerations, `MFsg`), listed in
+   docs/nsd-sources.md.
+9. `FindMeasurements` skips unmapped data objects that cannot be resolved.
+10. Generated output carries `NOTICE.md` with the IEC notices and license
+    (CCv1); output format 3.
+
+Result: 12 namespaces validate together with 0 errors; 3336 of 3577 concrete
+data objects resolve to leaf types; generated Go (30k lines) compiles; the
+output is deterministic.
+
+## nsdctl distribution
+
+- Binary release for linux/amd64, linux/arm64, linux/armv7, darwin/amd64,
+  darwin/arm64, windows/amd64 and windows/arm64 through the shared
+  `go-binary-release.yml`, with SHA-256 checksums; `make build-all` builds the
+  same targets locally.
+- `nsdctl version` in the layout of the other otfabric CLIs, with `--json`.
+- README install instructions per platform; docs/cli.md walkthrough with real
+  output from the official packages.
+
+## Committed names package
+
+**Date:** 2026-10-21
+
+Licensing decision recorded in docs/licensing.md: the 12 NSD namespaces are
+`permitted` in the lock and the generated Go package `names/` is committed with
+`NOTICE.md` (IEC attribution, CCv1 license, copyright notices).
+
+- `make nsd-publish` / `nsd-publish-check` generate it with `--publish` (the
+  license gate checks every namespace and digest) and the Go toolchain of
+  go.mod; `nsd.yml` fails when it is out of date.
+- Generator output format 4: one set of constants per class and enumeration
+  name (replaced by the namespace policy below: no merging); a generated
+  `names_gen_test.go` covers every `String` method (100% coverage).
+- Fixed: namespaces loaded from a directory of archives now record the digest
+  of their archive, which the license gate compares with the lock.
+
+The package declares 451 logical node classes, 17,692 data object references
+and the enumerations of all 12 namespaces.
+
+## Namespace policy and the embedded catalog
+
+**Date:** 2026-10-21
+
+IEC TR 61850-90-9 transitional namespace policy (REQUIREMENTS.md, section
+5.2.1): namespace identity is part of a definition's identity.
+
+- **Profiles** `default` (7-2, 7-3, 7-4, 7-410, 7-420) and `extended` (plus the
+  technical reports) in `sources/index.json`; `nsdctl --profile` takes their
+  names.
+- **No merging.** The catalog keeps every definition with its namespace; an
+  unqualified lookup of a name two namespaces define fails with
+  `ErrAmbiguousSymbol` (alias of `ErrAmbiguousReference`). Qualified lookups
+  (`LogicalNodeIn`, `InheritanceIn`, `DataObjectsIn`, `DataObjectIn`, `CDCIn`,
+  `CDCVariantsIn`, `EnumerationIn`, `ConstructedAttributeIn`) and
+  `Resolver.In(ns)` select one. References resolve in the definition's own
+  namespace, then its dependencies level by level; two namespaces at the same
+  level are an ambiguity.
+- **Overlap report** `Overlaps(left, right)` / `nsdctl catalog overlaps`:
+  identical, compatible-extension or conflicting, with the differing data
+  objects, CDCs, presence and inheritance. 7-420 vs 90-9: DBAT, DSTO,
+  DER_StorageLN and BatteryTypeKind conflict, SBAT and two abstract classes are
+  compatible extensions, StorageUnitLN and ChargeSourceKind are identical. The
+  default profile has one overlap, FSCH (7-4 and the deprecated 7-410 class).
+- **Committed output.** Only the downloaded packages stay outside source
+  control: `official/` (embedded catalog of the extended profile, with the
+  profiles; `official.Default()`, `official.Extended()`, `official.Notice()`),
+  `names/` (default profile) and `docs/reference/` (extended profile), all
+  checked by `make nsd-publish-check` in `nsd.yml`.
+- **nsdctl** uses the embedded catalog without `--source`; new `--ns`,
+  `catalog profiles`, `catalog overlaps`, `generate catalog` and `notice`.
+- **Generator** output format 5: per-definition data object comments for
+  ambiguous classes, one Go type per definition for ambiguous enumerations
+  (`BatteryTypeKind_7_420`, `BatteryTypeKind_90_9`).
+- `names/` now declares the 377 logical node classes and 15,464 data object
+  references of the default profile.
+- Regression tests: the default profile is unambiguous, the extended profile
+  preserves both definitions, qualified lookups work and unqualified ones
+  return the typed error (`catalog`, `official`, `cmd/nsdctl`).
+
 ## Next
 
 - **M0** — verify official sources and the license; fill `sources/`.
-- **M1 exit** — download the 14 tracked packages, run `make official
-  NSD_DIR=...` and `nsdctl schema` on 7-7; model whatever the diagnostics
-  report; model the manifest; `nsdctl sources lock --write`.
+- **Service namespaces** — model ServiceNS (8-1) content, which likely defines
+  `PhyComAddrL2`/`PhyComAddrUDP`.
 - **M3 follow-up** — extend default rules for 7-420 DER and 7-410 classes once
   their official NSDs are loaded (only with rules whose CDCs are verified).
 - **M5** — `nsd-monitor.yml`: weekly discovery against verified official

@@ -204,3 +204,62 @@ func TestPackages(t *testing.T) {
 		t.Error("HashFile missing")
 	}
 }
+
+func TestProfiles(t *testing.T) {
+	idx := &Index{Profiles: []Profile{
+		{Name: "default", Parts: []string{"7-3", "7-4"}},
+		{Name: "extended", Inherits: "default", Parts: []string{"90-9"}},
+		{Name: "loop", Inherits: "loop"},
+		{Name: "orphan", Inherits: "missing"},
+	}}
+	if parts, err := idx.ProfileParts("extended"); err != nil || strings.Join(parts, ",") != "7-3,7-4,90-9" {
+		t.Errorf("ProfileParts(extended) = %v, %v", parts, err)
+	}
+	if _, err := idx.ProfileParts("loop"); !errors.Is(err, model.ErrInvalidNSD) {
+		t.Errorf("self-inheriting profile: %v", err)
+	}
+	if _, err := idx.ProfileParts("orphan"); !errors.Is(err, model.ErrUnknownNamespace) {
+		t.Errorf("unknown inherited profile: %v", err)
+	}
+	if _, err := idx.ProfileParts("nope"); !errors.Is(err, model.ErrUnknownNamespace) {
+		t.Errorf("unknown profile: %v", err)
+	}
+
+	for _, tc := range []struct {
+		standard, part string
+		want           bool
+	}{
+		{"IEC 61850-7-420", "7-420", true}, {"(Tr)IEC61850-90-9", "90-9", true}, {"(Tr)IEC 61850-90-9", "90-9", true},
+		{"IEC 61850-7-420", "7-4", false}, {"IEC 61850-7-4", "7-42", false},
+	} {
+		if got := MatchesPart(tc.standard, tc.part); got != tc.want {
+			t.Errorf("MatchesPart(%q, %q) = %v", tc.standard, tc.part, got)
+		}
+	}
+
+	ns := func(std string, rel int) *model.Namespace {
+		return &model.Namespace{ID: model.NamespaceID{Standard: std, Version: "2007", Revision: "B", Release: rel}}
+	}
+	nss := []*model.Namespace{ns("IEC 61850-7-3", 6), ns("IEC 61850-7-4", 5), ns("IEC 61850-7-4", 6), ns("(Tr)IEC 61850-90-9", 3)}
+	if ids, err := NamespacesForParts(nss, []string{"7-3", "90-9"}); err != nil || len(ids) != 2 || ids[1].Standard != "(Tr)IEC 61850-90-9" {
+		t.Errorf("NamespacesForParts = %v, %v", ids, err)
+	}
+	var ae *model.AmbiguityError
+	if _, err := NamespacesForParts(nss, []string{"7-4"}); !errors.As(err, &ae) || len(ae.Candidates) != 2 {
+		t.Errorf("two releases of a part: %v", err)
+	}
+	if _, err := NamespacesForParts(nss, []string{"7-420"}); !errors.Is(err, model.ErrMissingDependency) {
+		t.Errorf("part without a namespace: %v", err)
+	}
+
+	bad := &Index{SchemaVersion: 2, Profiles: []Profile{{Name: ""}, {Name: "a", Inherits: "b"}, {Name: "a"}}}
+	found := 0
+	for _, d := range bad.Validate().Errors() {
+		if strings.Contains(d.String(), "profiles[") {
+			found++
+		}
+	}
+	if found < 3 {
+		t.Errorf("profile validation found %d errors: %v", found, bad.Validate())
+	}
+}

@@ -1,6 +1,6 @@
 # Generation
 
-`nsdctl generate` (package `internal/generator`) produces three kinds of
+`nsdctl generate` (package `internal/generator`) produces four kinds of
 output from a profile:
 
 | Kind | Files | Content |
@@ -8,6 +8,7 @@ output from a profile:
 | `go` | `names_gen.go` | Typed constants: `LNClass` (`LN_MMXU`), `CDC` (`CDC_WYE`), `DataObjectRef` per class including inherited data objects (`MMXU_Hz = "MMXU.Hz"`), one `int32` type per enumeration with literal constants and a `String` method |
 | `docs` | `index.md`, `logical-nodes.md`, `cdcs.md`, `types.md`, `coverage.md` | Markdown reference grouped by logical node group, with inheritance, presence and semantic columns |
 | `json` | `catalog.json`, `ontology.json`, `coverage.json` | Normalized namespaces, the concept graph with measurements, and coverage counts |
+| `catalog` | `catalog_gen.json`, `catalog_gen.go` | The normalized namespaces (without NSDoc texts) embedded in a Go package with the named profiles of `sources/index.json`; the [`official`](../official) package |
 
 No Go struct is generated per device: device instances belong to SCL and
 discovery.
@@ -19,6 +20,7 @@ discovery.
 - Every file starts with a header naming the generator version, the output
   format version (`generator.FormatVersion`), the distribution status and the
   source namespaces with their digests.
+- The output format is version 5 (`generator.FormatVersion`).
 - `TestGolden` compares the output for the synthetic fixtures with
   [testdata/golden](../testdata/golden); `make golden` refreshes it after an
   intentional change (bump `FormatVersion` too).
@@ -40,12 +42,79 @@ header, so no collision is resolved silently.
 - `--check` writes nothing; it lists missing, changed and stale files and exits
   with code 4 when there are any.
 
+## The committed output
+
+The generated output is the core of the library and is committed to the
+repository under the [licensing decision](licensing.md#decision). Only the
+downloaded packages stay out of source control.
+
+| Directory | Command | Profile | Content |
+| --- | --- | --- | --- |
+| [`names/`](../names) | `generate go --package names` | `default` | Typed Go constants |
+| [`official/`](../official) | `generate catalog --package official` | `extended` | The embedded catalog with the profiles `default` and `extended` |
+| [`docs/reference/`](reference/index.md) | `generate docs` | `extended` | The Markdown model reference, every namespace |
+
+```bash
+make nsd-fetch        # the official packages, verified against the lock
+make nsd-publish      # regenerate the three (--publish, Go version of go.mod)
+make nsd-publish-check
+```
+
+`nsd-publish` runs with the Go toolchain of `go.mod`, as CI does, so the
+committed bytes do not depend on the local toolchain. The `nsd.yml` workflow
+fails when any of the three differs from what the pinned packages generate.
+Regenerate them whenever the lock or the generator output changes.
+
+`names/` is generated from the default profile, so its constants follow IEC
+61850-7-420 for storage and DER classes; the technical reports, IEC TR
+61850-90-9 among them, are available through `official.Extended()` (see
+[namespaces.md](namespaces.md#transitional-namespaces-iec-tr-61850-90-9)).
+
+The Go output comes with a generated test, `names_gen_test.go`, that checks
+every `String` method and the listings.
+
+```go
+import "github.com/otfabric/go-iec61850-model/names"
+
+names.LN_MMXU                     // LNClass "MMXU"
+names.MMXU_Hz                     // DataObjectRef "MMXU.Hz"
+names.CDC_WYE                     // CDC "WYE"
+names.BehaviourModeKind_on        // BehaviourModeKind 1
+names.BehaviourModeKind(5).String() // "off"
+```
+
+## Notices
+
+When the source namespaces declare a copyright (all official ones do), every
+output gets a `NOTICE.md` with, per namespace, the attribution to IEC and the
+standard, the license and the copyright notice, as the IEC Code Components
+license requires for redistribution. Generated Go headers point to it.
+
+## Variants, extensions and ambiguities
+
+- CDCs defined in variants (SPG for SP, SG, SE) get one `CDC_` constant.
+- Data objects of extension classes (e.g. those 7-420 adds to MMXU) are part of
+  the class's `DataObjectRef` constants.
+- Definitions are never merged. A class that two namespaces of the profile
+  define (FSCH in 7-4 and 7-410; DBAT in 90-9 and 7-420 in the extended
+  profile) gets one `LN_` constant and a `DataObjectRef` per data object name;
+  the comment of each constant gives the CDC and presence per definition, with
+  its namespace. The header lists every such name under "Ambiguous names";
+  `nsdctl catalog overlaps` shows how the definitions differ.
+- An enumeration that two namespaces define gets one Go type per definition,
+  named with the part of its namespace: `BatteryTypeKind_7_420` and
+  `BatteryTypeKind_90_9`.
+
 ## Documentation texts
 
 NSDoc titles and descriptions are IEC text. They are left out unless
 `--include-doc-text` is given; the JSON exports also drop local paths.
 
 ## License gate
+
+With the official packages, `make nsd-generate` writes Go, docs and JSON into
+the git-ignored `.generated/` and `make nsd-generate-check` verifies it is up to
+date; the `nsd.yml` workflow runs both.
 
 Output is **local-only** by default: the header says so and a `LOCAL-ONLY.md`
 notice is added. `--publish` removes the notice and is refused (exit code 5)

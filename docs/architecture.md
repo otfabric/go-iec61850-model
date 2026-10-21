@@ -26,11 +26,13 @@
 | --- | --- | --- |
 | `model` | standard library | Types, provenance, diagnostics, errors |
 | `nsd` | `model` | Parse NSD/NSDoc XML and ZIP packages safely, normalize into `model` |
-| `catalog` | `model` | Index namespaces, build profiles, search, diff |
+| `catalog` | `model` | Index namespaces, build profiles, qualified and scoped lookups, overlap reports, search, diff |
 | `reference` | `model` | Instance and class reference syntax |
 | `resolver` | `model`, `catalog`, `reference` | Resolve paths to types |
 | `semantic` | `model`, `resolver` | Describe elements in engineering terms from explicit rules |
 | `ontology` | `model`, `catalog`, `semantic` | Concept graph, traversal, JSON export |
+| `official` | `model`, `catalog` | Generated: the official namespaces embedded, with the named profiles |
+| `names` | standard library | Generated: typed constants of the default profile |
 
 `catalog` does not import `nsd`: it accepts any `catalog.Source` (something
 with `Namespaces() []*model.Namespace`), which `*nsd.Package`,
