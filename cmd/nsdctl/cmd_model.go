@@ -30,6 +30,7 @@ and IEC TR 61850-90-9 in the extended profile) is ambiguous: select the
 namespace with --ns. Definitions are never merged.`,
 	}
 	cmd.PersistentFlags().StringVar(&a.ns, "ns", "", "Namespace to look names up in, e.g. \"IEC 61850-7-420\" or \"7-420\" (default: the whole profile)")
+	completeValues(cmd, "ns", namespaceValues)
 	cmd.AddCommand(a.modelShowCmd(), a.modelListCmd(), a.modelSearchCmd(), a.modelDescribeCmd(), a.modelMeasurementsCmd(), a.modelLeavesCmd())
 	return cmd
 }
@@ -426,6 +427,7 @@ func (a *app) modelListCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&kind, "kind", "ln", "Kind: ln, abstract, cdc, ca, enum, basic")
+	completeValues(cmd, "kind", fixed("ln", "abstract", "cdc", "ca", "enum", "basic"))
 	return cmd
 }
 
@@ -480,6 +482,8 @@ func (a *app) modelSearchCmd() *cobra.Command {
 	f.StringVar(&group, "group", "", "Only logical node classes of this group letter")
 	f.BoolVar(&q.IncludeAbstract, "abstract", false, "Include abstract classes")
 	f.StringArrayVar(&kinds, "kind", nil, "Only these kinds: ln, do, cdc, da, ca, enum, basic (repeatable)")
+	completeValues(cmd, "kind", searchKindValues)
+	completeValues(cmd, "fc", fcValues)
 	return cmd
 }
 
@@ -595,5 +599,6 @@ func (a *app) modelLeavesCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&fc, "fc", "", "Only data attributes with this functional constraint")
+	completeValues(cmd, "fc", fcValues)
 	return cmd
 }
