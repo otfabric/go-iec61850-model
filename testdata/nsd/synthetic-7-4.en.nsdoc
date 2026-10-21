@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test fixture: independently authored, not IEC content. -->
+<NSDoc xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-7-4" version="2007" revision="B" release="1" lang="en">
+  <Doc id="test.ns.title">Synthetic test namespace</Doc>
+  <Doc id="test.DomainLN.title">Test base class</Doc>
+  <Doc id="test.MMXU.title">Test measurement class</Doc>
+  <Doc id="test.MMXU.desc">Test description of a <b>three-phase</b>
+    measurement class.</Doc>
+  <Doc id="test.MMXU.TotW.desc">Test text for total power.</Doc>
+  <Doc id="test.MMXU.Hz.desc">Test text for frequency.</Doc>
+</NSDoc>

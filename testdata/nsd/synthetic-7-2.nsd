@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test fixture: independently authored, not IEC content. -->
+<NS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-7-2" version="2007" revision="B" release="1" publicationStage="IS">
+  <BasicTypes>
+    <BasicType name="BOOLEAN"/>
+    <BasicType name="INT8"/>
+    <BasicType name="INT32"/>
+    <BasicType name="INT32U"/>
+    <BasicType name="INT64"/>
+    <BasicType name="FLOAT32"/>
+    <BasicType name="Timestamp"/>
+    <BasicType name="Quality"/>
+    <BasicType name="VisibleString255"/>
+    <BasicType name="Unicode255"/>
+  </BasicTypes>
+  <FunctionalConstraints>
+    <FunctionalConstraint abbreviation="ST"/>
+    <FunctionalConstraint abbreviation="MX"/>
+    <FunctionalConstraint abbreviation="CF"/>
+    <FunctionalConstraint abbreviation="DC"/>
+    <FunctionalConstraint abbreviation="SV"/>
+    <FunctionalConstraint abbreviation="EX"/>
+  </FunctionalConstraints>
+  <TriggerOptions>
+    <TriggerOption abbreviation="dchg"/>
+    <TriggerOption abbreviation="qchg"/>
+    <TriggerOption abbreviation="dupd"/>
+  </TriggerOptions>
+  <PresenceConditions>
+    <PresenceCondition name="M"/>
+    <PresenceCondition name="O"/>
+    <PresenceCondition name="AtLeastOne" argument="group number"/>
+    <PresenceCondition name="Omulti"/>
+  </PresenceConditions>
+</NS>
