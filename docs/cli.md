@@ -6,6 +6,10 @@ and `catalog` commands use the official catalog embedded in the binary (the
 packages you obtained yourself. Apart from `sources fetch`, it never downloads
 anything.
 
+For task-oriented examples — metering, battery storage, breakers, protection
+settings, decoding raw values, legacy 90-9 devices — see
+[use-cases.md](use-cases.md). This page is the command reference.
+
 Pre-built binaries for Linux, macOS and Windows are attached to every
 release; see [Install nsdctl](../README.md#install-nsdctl). With Go:
 
@@ -51,6 +55,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `schema [SOURCE...] [--exit-code]` | XSD constructs (e.g. of IEC 61850-7-7) that the importer does not model |
 | `version` | Version, tag, commit, build date, Go version, platform (`--json` too) |
 | `notice` | The IEC attribution and notices of the embedded catalog |
+| `completion bash\|zsh\|fish\|powershell` | Shell completion script |
 
 Examples:
 
@@ -68,6 +73,23 @@ nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" generate docs -o ./generated-docs
 ```
 
 Quote references with brackets in shells that glob (`zsh`).
+
+## Shell completion
+
+`nsdctl completion SHELL` prints a completion script:
+
+```bash
+source <(nsdctl completion bash)                        # Bash
+source <(nsdctl completion zsh)                         # Zsh
+nsdctl completion fish | source                         # Fish
+nsdctl completion powershell | Out-String | Invoke-Expression   # PowerShell
+```
+
+Add the line to your shell profile to keep it. Commands complete, and so do
+flags with a fixed set of values: `--profile` to the profile names and
+namespaces of the embedded catalog, `--ns`, `--left` and `--right` to its
+namespaces (by ID and by part, e.g. `7-420`), `--kind`, `--fc`, `--class` and
+`--tiers` to their values.
 
 ## Walkthrough with the official packages
 

@@ -63,7 +63,7 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 | Embedded catalog (`official`) | Committed: the 12 official NSD namespaces with the profiles `default` and `extended`, with IEC attribution |
 | Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the default profile, with IEC attribution |
 | Model reference ([docs/reference](docs/reference/index.md)) | Committed: every class, CDC and type of the extended profile |
-| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, catalog (profiles, overlaps), diff, generate (go, docs, json, catalog) with license gate, sources fetch/check/lock, schema, version; binaries for Linux, macOS and Windows |
+| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, catalog (profiles, overlaps), diff, generate (go, docs, json, catalog) with license gate, sources fetch/check/lock, schema, version, shell completion; binaries for Linux, macOS and Windows |
 | NSD update monitor | Planned (M5) |
 
 **Standards coverage.** The importer targets the NSD format of IEC 61850-7-7
@@ -364,6 +364,27 @@ go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@latest
 
 ## Command-line tool
 
+`nsdctl` answers integration questions straight from the official IEC models
+embedded in it — no download, no setup:
+
+```console
+$ nsdctl model describe 'LD0/MMXU1.PhV.phsA.cVal.mag.f[MX]'
+MMXU.PhV.phsA.cVal.mag.f
+quantity     voltage
+phase        A
+reference    line-ground
+component    magnitude
+unit hint    V
+mapping      rule mmxu.phv, rule, high confidence (otfabric-default)
+```
+
+[docs/use-cases.md](docs/use-cases.md) walks through real tasks with real
+output: what a power meter (`MMXU`) exposes and in which units, what a tag
+from an IED means, decoding `SIUnit = 38` and `multiplier = 3` into kW, the
+data objects of a battery system (`DBAT`, `DSTO`), a circuit breaker's
+position, protection settings per setting group, devices on the older IEC TR
+61850-90-9 storage model, and building a tag list with `--json`.
+
 ```bash
 nsdctl sources fetch                         # official packages into .nsd-cache/, digests verified
 nsdctl sources check --packages .nsd-cache   # coverage of the 14 tracked packages
@@ -377,6 +398,7 @@ nsdctl diff --exit-code ./old/ ./new/
 nsdctl -s .nsd-cache generate go -o .generated/go --package iec61850names
 nsdctl schema .nsd-cache/IEC_61850-7-7.2017.NSD.2017A.full.zip
 nsdctl version
+source <(nsdctl completion zsh)                         # shell completion (bash, zsh, fish, powershell)
 ```
 
 Without `--source`, the `model` and `catalog` commands use the embedded
@@ -412,6 +434,7 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [docs/reference.md](docs/reference.md) | Reference syntax, parsing, resolution |
 | [docs/semantic.md](docs/semantic.md) | Quantities, phases, units, rules and overrides |
 | [docs/ontology.md](docs/ontology.md) | Concept graph, relations, export |
+| [docs/use-cases.md](docs/use-cases.md) | Real tasks solved with `nsdctl`, with real output |
 | [docs/cli.md](docs/cli.md) | `nsdctl` commands, flags and exit codes |
 | [docs/generation.md](docs/generation.md) | Generated outputs, determinism and the license gate |
 | [docs/coverage.md](docs/coverage.md) | Published, available, parsed and validated coverage |

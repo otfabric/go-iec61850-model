@@ -169,6 +169,9 @@ Without --left and --right, every pair of namespaces of the catalog (or of
 	f.StringVar(&left, "left", "", "First namespace, e.g. \"IEC_61850-7-420\"")
 	f.StringVar(&right, "right", "", "Second namespace, e.g. \"IEC_TR_61850-90-9\"")
 	f.StringArrayVar(&classes, "class", nil, "Only overlaps of this class: identical, compatible-extension, conflicting (repeatable)")
+	completeValues(cmd, "class", overlapClassValues)
+	completeValues(cmd, "left", namespaceValues)
+	completeValues(cmd, "right", namespaceValues)
 	return cmd
 }
 

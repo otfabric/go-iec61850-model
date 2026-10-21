@@ -214,6 +214,7 @@ It does not contact any server.`,
 	f.StringVar(&lockPath, "lock", "sources/nsd.lock.json", "Version lock")
 	f.StringVar(&packages, "packages", "", "Directory holding the downloaded packages")
 	f.StringVar(&tierList, "tiers", "all", "Tiers that must be present: required, recommended, optional or all (comma-separated)")
+	completeValues(cmd, "tiers", tierValues)
 	return cmd
 }
 
@@ -573,6 +574,7 @@ reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
 	fl.StringVar(&lockPath, "lock", "sources/nsd.lock.json", "Version lock")
 	fl.StringVar(&dest, "dest", sources.CacheDirName, "Cache directory, outside the Git work tree or its .nsd-cache")
 	fl.StringVar(&tierList, "tiers", "all", "Tiers to fetch: required, recommended, optional or all (comma-separated)")
+	completeValues(cmd, "tiers", tierValues)
 	fl.BoolVar(&f.AllowUnpinned, "allow-unpinned", false, "Accept packages without a locked digest (first fetch before pinning)")
 	fl.BoolVar(&f.Refresh, "refresh", false, "Download even when a cached file matches the lock")
 	return cmd

@@ -134,20 +134,39 @@ load is local-only unless the lock file permits publishing it.
 
 Exit codes: 0 ok, 1 usage or unknown name, 2 source error, 3 validation
 error, 4 differences found, 5 refused by the license policy.`,
-		SilenceErrors:     true,
-		SilenceUsage:      true,
-		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
+		SilenceErrors: true,
+		SilenceUsage:  true,
 	}
 	pf := root.PersistentFlags()
 	pf.BoolVar(&a.json, "json", false, "Write machine-readable JSON")
 	pf.StringArrayVarP(&a.sources, "source", "s", nil, "NSD source: ZIP archive, directory or document (repeatable)")
-	pf.StringArrayVarP(&a.profile, "profile", "p", nil, "Namespace to select, e.g. \"IEC 61850-7-4:2007B5\" (repeatable; default: the only release of each standard)")
+	pf.StringArrayVarP(&a.profile, "profile", "p", nil, "Profile name (default, extended) or namespace to select, e.g. \"IEC 61850-7-4:2007B5\" (repeatable; default: the default profile)")
+	completeValues(root, "profile", profileValues)
 	pf.BoolVar(&a.strict, "strict", false, "Treat importer warnings as errors")
 	pf.StringVar(&a.language, "lang", "en", "NSDoc language to apply (empty: none)")
 
 	root.AddCommand(a.inspectCmd(), a.validateCmd(), a.dependenciesCmd(), a.modelCmd(), a.diffCmd(),
-		a.catalogCmd(), a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd(), noticeCmd())
+		a.catalogCmd(), a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd(), noticeCmd(), completionCmd())
+	showHelpOfGroups(root)
 	return root
+}
+
+// showHelpOfGroups makes command groups (model, catalog, generate,
+// sources) print their help when run without a subcommand, instead of
+// nothing.
+func showHelpOfGroups(c *cobra.Command) {
+	for _, sub := range c.Commands() {
+		if sub.HasSubCommands() && sub.Run == nil && sub.RunE == nil {
+			sub.Args = func(cmd *cobra.Command, args []string) error {
+				if len(args) > 0 {
+					return withCode(exitUsage, "unknown command %q for %q; run \"%s --help\"", args[0], cmd.CommandPath(), cmd.CommandPath())
+				}
+				return nil
+			}
+			sub.RunE = func(cmd *cobra.Command, _ []string) error { return cmd.Help() }
+		}
+		showHelpOfGroups(sub)
+	}
 }
 
 func (a *app) options(source string) []nsd.Option {
