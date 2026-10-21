@@ -57,6 +57,77 @@ type Index struct {
 	Registries    []Registry `json:"registries"`
 	Parts         []Part     `json:"parts"`
 	Packages      []Package  `json:"packages"`
+	Profiles      []Profile  `json:"profiles,omitempty"`
+}
+
+// Profile is a named selection of IEC parts, e.g. "default" for 7-2,
+// 7-3, 7-4, 7-410 and 7-420. Parts are resolved against the loaded
+// namespaces, so a profile survives release updates.
+type Profile struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// Inherits names a profile whose parts this one includes.
+	Inherits string   `json:"inherits,omitempty"`
+	Parts    []string `json:"parts"`
+}
+
+// ProfileParts returns the parts of a profile, inherited ones first.
+func (idx *Index) ProfileParts(name string) ([]string, error) {
+	var out []string
+	seen := map[string]bool{}
+	for cur := name; cur != ""; {
+		if seen[cur] {
+			return nil, fmt.Errorf("%w: profile %s inherits itself", model.ErrInvalidNSD, name)
+		}
+		seen[cur] = true
+		p, ok := idx.profile(cur)
+		if !ok {
+			return nil, fmt.Errorf("%w: profile %q", model.ErrUnknownNamespace, cur)
+		}
+		out = append(append([]string(nil), p.Parts...), out...)
+		cur = p.Inherits
+	}
+	return out, nil
+}
+
+func (idx *Index) profile(name string) (Profile, bool) {
+	for _, p := range idx.Profiles {
+		if p.Name == name {
+			return p, true
+		}
+	}
+	return Profile{}, false
+}
+
+// MatchesPart reports whether a namespace standard belongs to an IEC
+// part: "IEC 61850-7-420", "IEC TR 61850-90-9" and "(Tr)IEC61850-90-9"
+// belong to 7-420 and 90-9.
+func MatchesPart(standard, part string) bool {
+	return strings.HasSuffix(strings.ReplaceAll(standard, " ", ""), "61850-"+part)
+}
+
+// NamespacesForParts returns, per part, the one namespace of nss that
+// belongs to it. A part without a namespace, or with several (two
+// releases), is an error: select releases explicitly then.
+func NamespacesForParts(nss []*model.Namespace, parts []string) ([]model.NamespaceID, error) {
+	var out []model.NamespaceID
+	for _, part := range parts {
+		var found []model.NamespaceID
+		for _, ns := range nss {
+			if MatchesPart(ns.ID.Standard, part) {
+				found = append(found, ns.ID)
+			}
+		}
+		switch len(found) {
+		case 1:
+			out = append(out, found[0])
+		case 0:
+			return nil, fmt.Errorf("%w: no namespace of part %s is loaded", model.ErrMissingDependency, part)
+		default:
+			return nil, &model.AmbiguityError{Kind: "namespace of part", Name: part, Candidates: found}
+		}
+	}
+	return out, nil
 }
 
 // Package tiers, in priority order.
@@ -122,8 +193,7 @@ func (p Package) MatchesNamespace(id model.NamespaceID) bool {
 	if err != nil {
 		return false
 	}
-	std := strings.ReplaceAll(id.Standard, " ", "")
-	if !strings.HasSuffix(std, "61850-"+p.Part) {
+	if !MatchesPart(id.Standard, p.Part) {
 		return false
 	}
 	return id.Version == v && strings.EqualFold(id.Revision, r) && (rel == 0 || id.Release == rel)
@@ -317,6 +387,24 @@ func (idx *Index) Validate() model.Diagnostics {
 		}
 		if p.Name != "" && !strings.Contains(strings.ToLower(p.Name), strings.ToLower(p.Release)) {
 			add(path, fmt.Sprintf("name %s does not carry release %s", p.Name, p.Release))
+		}
+	}
+	profiles := map[string]bool{}
+	for i, pr := range idx.Profiles {
+		path := fmt.Sprintf("profiles[%d]", i)
+		if pr.Name == "" || profiles[pr.Name] {
+			add(path, fmt.Sprintf("profile name %q is empty or used twice", pr.Name))
+		}
+		profiles[pr.Name] = true
+		for _, part := range pr.Parts {
+			if !slices.ContainsFunc(idx.Packages, func(p Package) bool { return p.Part == part && p.Kind == KindNSD }) {
+				add(path, fmt.Sprintf("part %s is not a tracked NSD package", part))
+			}
+		}
+	}
+	for i, pr := range idx.Profiles {
+		if _, err := idx.ProfileParts(pr.Name); err != nil {
+			add(fmt.Sprintf("profiles[%d]", i), err.Error())
 		}
 	}
 	return ds

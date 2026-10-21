@@ -10,10 +10,11 @@ run-name: "IEC NSD packages (${{ github.event_name }}) on ${{ github.ref_name }}
 # The packages and the local-only output generated from them are temporary:
 # they live in $RUNNER_TEMP, outside the checkout, and are deleted at the end.
 # This workflow never commits them, never caches them (actions/cache, setup-go
-# cache) and never uploads them as artifacts. The one committed derivative,
-# the Go package names/ (redistribution permitted in the lock, with NOTICE.md),
-# is only checked here: the run fails when it differs from the packages. Its summary contains metadata
-# only (namespace IDs, statuses, digests, counts).
+# cache) and never uploads them as artifacts. The committed derivatives,
+# names/, official/ and docs/reference/ (redistribution permitted in the lock,
+# with NOTICE.md), are only checked here: the run fails when they differ from
+# the packages. Its summary contains metadata only (namespace IDs, statuses,
+# digests, counts).
 #
 # The regular CI (ci.yml) never downloads IEC packages.
 
@@ -31,6 +32,8 @@ on:
       - "internal/**"
       - "cmd/**"
       - "names/**"
+      - "official/**"
+      - "docs/reference/**"
       - "Makefile"
       - ".github/workflows/nsd.yml"
   pull_request:
@@ -45,6 +48,8 @@ on:
       - "internal/**"
       - "cmd/**"
       - "names/**"
+      - "official/**"
+      - "docs/reference/**"
       - "Makefile"
       - ".github/workflows/nsd.yml"
   schedule:
@@ -97,9 +102,10 @@ jobs:
       - name: Generated output is deterministic
         run: make nsd-generate-check NSD_CACHE="$NSD_CACHE" GENERATED_DIR="$GENERATED_DIR"
 
-      - name: Committed package names/ is up to date
-        # names/ is generated from the packages pinned in the lock, whose
-        # redistribution is permitted; it must match them exactly.
+      - name: Committed output is up to date
+        # names/, official/ and docs/reference/ are generated from the
+        # packages pinned in the lock, whose redistribution is permitted;
+        # they must match them exactly.
         run: make nsd-publish-check NSD_CACHE="$NSD_CACHE"
 
       - name: Generated Go compiles

@@ -117,25 +117,16 @@ func (p *Profile) String() string {
 }
 
 // Inheritance returns the class chain of a logical node class, starting
-// with the class itself and ending with its root class. It fails with
-// [model.ErrCycle] on cyclic inheritance and with
-// [model.ErrUnknownLogicalNode] when a base class is not defined.
+// with the class itself and ending with its root class. Base classes are
+// resolved in the scope of the namespace of each class (see Scope). It
+// fails with [model.ErrCycle] on cyclic inheritance and with
+// [model.ErrUnknownLogicalNode] when a class is not defined.
 func (v *view) Inheritance(name string) ([]*model.LogicalNodeClass, error) {
-	var chain []*model.LogicalNodeClass
-	seen := map[string]bool{}
-	for cur := name; cur != ""; {
-		if seen[cur] {
-			return nil, &model.ResolutionError{Element: name, Reason: "cyclic inheritance through " + cur, Err: model.ErrCycle}
-		}
-		seen[cur] = true
-		ln, err := v.LogicalNode(cur)
-		if err != nil {
-			return nil, err
-		}
-		chain = append(chain, ln)
-		cur = ln.Base
+	ln, err := v.LogicalNode(name)
+	if err != nil {
+		return nil, err
 	}
-	return chain, nil
+	return v.chainFrom(ln)
 }
 
 // InheritedDataObject is a data object of a logical node class together
@@ -143,7 +134,7 @@ func (v *view) Inheritance(name string) ([]*model.LogicalNodeClass, error) {
 type InheritedDataObject struct {
 	*model.DataObject
 	// DeclaredIn is the class that declares the data object: the class
-	// itself or one of its base classes.
+	// itself, one of its base classes, or an extension class.
 	DeclaredIn *model.LogicalNodeClass
 }
 
@@ -157,6 +148,10 @@ func (v *view) DataObjects(lnClass string) ([]InheritedDataObject, error) {
 	if err != nil {
 		return nil, err
 	}
+	return v.dataObjectsOf(chain), nil
+}
+
+func (v *view) dataObjectsOf(chain []*model.LogicalNodeClass) []InheritedDataObject {
 	var out []InheritedDataObject
 	pos := map[string]int{}
 	for i := len(chain) - 1; i >= 0; i-- {
@@ -172,7 +167,7 @@ func (v *view) DataObjects(lnClass string) ([]InheritedDataObject, error) {
 			}
 		}
 	}
-	return out, nil
+	return out
 }
 
 // withExtensions returns a class followed by its extension classes.
@@ -184,13 +179,18 @@ func (v *view) withExtensions(ln *model.LogicalNodeClass) []*model.LogicalNodeCl
 }
 
 // DataObject returns the data object of a logical node class with the
-// given name, searching base classes too. It fails with
-// [model.ErrUnknownDataObject] when the class has no such data object.
+// given name, searching base classes and extension classes too. It
+// fails with [model.ErrUnknownDataObject] when the class has no such
+// data object.
 func (v *view) DataObject(lnClass, name string) (InheritedDataObject, error) {
 	chain, err := v.Inheritance(lnClass)
 	if err != nil {
 		return InheritedDataObject{}, err
 	}
+	return v.dataObjectOf(chain, lnClass, name)
+}
+
+func (v *view) dataObjectOf(chain []*model.LogicalNodeClass, lnClass, name string) (InheritedDataObject, error) {
 	for _, cls := range chain {
 		for _, ln := range v.withExtensions(cls) {
 			if do, ok := ln.DataObject(name); ok {

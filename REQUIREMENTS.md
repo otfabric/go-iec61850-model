@@ -317,6 +317,48 @@ Required capabilities:
 
 **Default profile policy:** latest *compatible, officially released, available and validated* namespace set — not the highest publication year for every part independently.
 
+### 5.2.1 IEC 61850-90-9 transitional namespace policy
+
+IEC TR 61850-90-9 defines transitional electrical energy storage models, several of which were later incorporated into IEC 61850-7-420. Both namespaces define `DBAT`, `DSTO` and `SBAT`, and the definitions differ (`nsdctl catalog overlaps --left IEC_61850-7-420 --right IEC_TR_61850-90-9`).
+
+**Decision:** drop 90-9 from the default profile, not from the library. Modern DER modeling stays straightforward, and historical devices can still be interpreted and older model definitions compared.
+
+| Scenario | Behavior |
+| --- | --- |
+| Default model catalog | 7-2, 7-3, 7-4, 7-410 and 7-420 (profile `default`) |
+| Historical storage models | Load 90-9 explicitly (profile `extended`) |
+| Both 90-9 and 7-420 loaded | Both definitions are kept, each with its namespace |
+| Lookup `DBAT` without a namespace | Ambiguity error when both define it |
+| Lookup with an explicit namespace | The requested definition |
+| Automatic merging of duplicates | Never |
+| Source for new DER applications | 7-420 |
+
+**Requirements:**
+
+1. Exclude `IEC_TR_61850-90-9.NSD.2018A3` from the default catalog profile.
+2. Include `IEC_61850-7-420.NSD.2019A4` as the preferred source for current DER and storage models.
+3. Retain support for IEC 61850-90-9 through an optional historical/extended profile.
+4. Preserve source namespace, version, revision, release and dependency information for every definition.
+5. Do not silently overwrite, merge or deduplicate logical nodes with identical names from different namespaces.
+6. Unqualified lookups with multiple matching definitions return `ErrAmbiguousSymbol` (an alias of `ErrAmbiguousReference`, detailed by `*AmbiguityError`).
+7. Explicit namespace-qualified lookups remain available (`LogicalNodeIn(ns, name)` and the other `…In` lookups, `Resolver.In`, `nsdctl model --ns`).
+8. Generate structural overlap reports, including differences in data objects, CDCs, presence conditions and inheritance (`Overlaps`, `nsdctl catalog overlaps`).
+9. Validate namespace dependencies and compatibility when composing catalogs.
+10. Include regression tests for overlapping definitions such as `DBAT`, `DSTO` and `SBAT`.
+
+The profiles are declared in `sources/index.json`:
+
+```json
+"profiles": [
+  { "name": "default", "parts": ["7-2", "7-3", "7-4", "7-410", "7-420"] },
+  { "name": "extended", "inherits": "default", "parts": ["90-3", "90-4", "90-6", "90-9", "90-11", "90-14", "90-21"] }
+]
+```
+
+Resolution rules: ambiguous names are an error, there is no implicit precedence between namespaces, and every definition keeps its namespace. References inside a definition resolve in its own namespace first, then in its dependencies.
+
+**Design principle:** namespace identity is part of a model definition's identity. Identical logical node names do not necessarily imply identical or interchangeable definitions.
+
 ### 5.3 Functional packages and helper API
 
 | Package | Proposed functions |

@@ -27,10 +27,15 @@ NSD_TIERS     ?= all
 NSD_PROFILE   ?=
 GENERATED_DIR ?= .generated
 GO_PACKAGE    ?= iec61850names
-# NAMES_DIR is the committed Go package generated from the official packages. It
-# is generated with the Go version of go.mod, as CI does, so that the output does
-# not depend on the local toolchain.
+# The committed output generated from the official packages, as the lock permits:
+# NAMES_DIR, the Go names of the default profile; OFFICIAL_DIR, the embedded
+# catalog of the extended profile; REFERENCE_DIR, the reference documentation of
+# the extended profile. They are generated with the Go version of go.mod, as CI
+# does, so that the output does not depend on the local toolchain.
 NAMES_DIR     ?= names
+OFFICIAL_DIR  ?= official
+REFERENCE_DIR ?= docs/reference
+PUBLISH        = --publish --lock sources/nsd.lock.json
 NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go run ./cmd/nsdctl
 NSDCTL        := go run ./cmd/nsdctl
 NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
@@ -167,12 +172,16 @@ nsd-generate-check: ## Fail if GENERATED_DIR differs from what NSD_CACHE generat
 	@$(NSDCTL) $(NSD_SOURCE) generate docs -o "$(GENERATED_DIR)/docs" --check
 	@$(NSDCTL) $(NSD_SOURCE) generate json -o "$(GENERATED_DIR)/json" --check
 
-nsd-publish: ## Regenerate the committed package NAMES_DIR from NSD_CACHE (the lock must permit every namespace)
-	@echo "Generating the committed package $(NAMES_DIR) from $(NSD_CACHE)"
-	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" generate go -o "$(NAMES_DIR)" --package names --publish --lock sources/nsd.lock.json
+nsd-publish: ## Regenerate the committed output (names, official, docs/reference) from NSD_CACHE (the lock must permit every namespace)
+	@echo "Generating the committed output from $(NSD_CACHE)"
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --force
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --force
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs -o "$(REFERENCE_DIR)" $(PUBLISH) --force
 
-nsd-publish-check: ## Fail if the committed package NAMES_DIR differs from what NSD_CACHE generates
-	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" generate go -o "$(NAMES_DIR)" --package names --publish --lock sources/nsd.lock.json --check
+nsd-publish-check: ## Fail if the committed output differs from what NSD_CACHE generates
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --check
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --check
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs -o "$(REFERENCE_DIR)" $(PUBLISH) --check
 
 nsd-clean: ## Remove downloaded packages and generated output
 	@echo "Removing $(NSD_CACHE) and $(GENERATED_DIR)"

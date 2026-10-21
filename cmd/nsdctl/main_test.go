@@ -39,6 +39,7 @@ func TestCommands(t *testing.T) {
 		want []string
 	}{
 		{"version", []string{"version"}, exitOK, []string{"nsdctl version: ", "go version:  go", "platform:    "}},
+		{"notice", []string{"notice"}, exitOK, []string{"IEC 61850-7-420:2019A4", "www.iec.ch/CCv1"}},
 		{"inspect", []string{"inspect", fixtures.Dir()}, exitOK, []string{"IEC 61850-7-4:2007B2", "doc       IEC 61850-7-4:2007B1 (en, 6 texts)"}},
 		{"inspect file", []string{"inspect", fixtures.Path(fixtures.NS73)}, exitOK, []string{"sha256", "IEC 61850-7-3:2007B1"}},
 		{"inspect via --source", []string{"-s", fixtures.Path(fixtures.NS72), "inspect"}, exitOK, []string{"IEC 61850-7-2:2007B1"}},
@@ -75,7 +76,7 @@ func TestCommands(t *testing.T) {
 		{"measurements unknown", withProfile("model", "measurements", "XXXX"), exitUsage, nil},
 		{"leaves", withProfile("model", "leaves", "MMXU.Hz", "--fc", "MX"), exitOK, []string{"MMXU.Hz.mag.f", "FLOAT32"}},
 		{"leaves unknown", withProfile("model", "leaves", "MMXU.Nope"), exitUsage, nil},
-		{"no source", []string{"model", "list"}, exitUsage, nil},
+		{"no source", []string{"generate", "json", "-o", "unused"}, exitUsage, nil},
 		{"no profile", []string{"-s", fixtures.Dir(), "model", "list"}, exitUsage, nil},
 		{"bad profile id", []string{"-s", fixtures.Dir(), "-p", ":x", "model", "list"}, exitUsage, nil},
 		{"unknown profile", []string{"-s", fixtures.Dir(), "-p", "IEC 61850-7-9", "model", "list"}, exitUsage, nil},

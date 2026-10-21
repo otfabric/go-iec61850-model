@@ -244,10 +244,10 @@ func TestFullSetLockAndModel(t *testing.T) {
 	if out, e, code := nsdctl(t, "validate", dir); code != exitOK || !strings.Contains(out, "12 namespaces, 0 errors") {
 		t.Errorf("validate: %d\n%s\n%s", code, out, e)
 	}
-	if out, _, code := nsdctl(t, "-s", dir, "model", "list"); code != exitOK || !containsAll(out, "AXDA", "DXTS", "FXLG", "HXTS", "LXBR", "MMXU", "RXTW", "SXCM", "ZXBA", "ZXCV") {
+	if out, _, code := nsdctl(t, "-s", dir, "-p", "extended", "model", "list"); code != exitOK || !containsAll(out, "AXDA", "DXTS", "FXLG", "HXTS", "LXBR", "MMXU", "RXTW", "SXCM", "ZXBA", "ZXCV") {
 		t.Errorf("model list: %d\n%s", code, out)
 	}
-	if out, _, code := nsdctl(t, "-s", dir, "model", "show", "ZXBA"); code != exitOK || !strings.Contains(out, "IEC TR 61850-90-9:2018A3") {
+	if out, _, code := nsdctl(t, "-s", dir, "-p", "extended", "model", "show", "ZXBA"); code != exitOK || !strings.Contains(out, "IEC TR 61850-90-9:2018A3") {
 		t.Errorf("90-9 class: %d\n%s", code, out)
 	}
 	if out, _, code := nsdctl(t, "-s", dir, "model", "show", "LD0/MMXU1.Hz.mag.f[MX]"); code != exitOK || !strings.Contains(out, "IEC 61850-7-3:2007B6") {

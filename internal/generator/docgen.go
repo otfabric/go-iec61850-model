@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/model"
 	"github.com/otfabric/go-iec61850-model/ontology"
 	"github.com/otfabric/go-iec61850-model/resolver"
@@ -112,7 +113,7 @@ func (g *docGen) logicalNodes() ([]byte, error) {
 			fmt.Fprintf(&b, "## %s — %s\n\n", cell(group.String()), label)
 		}
 		var names []string
-		chain, err := p.Inheritance(ln.Name)
+		chain, err := p.InheritanceIn(ln.Source, ln.Name)
 		switch {
 		case errors.Is(err, model.ErrAmbiguousReference):
 			names = []string{ln.Name, "(ambiguous: " + err.Error() + ")"}
@@ -130,7 +131,7 @@ func (g *docGen) logicalNodes() ([]byte, error) {
 		}
 		b.WriteString("\n\n")
 		meas := map[string][]string{}
-		if ds, err := semantic.FindMeasurements(p, ln.Name); err == nil {
+		if ds, err := semantic.FindMeasurementsIn(p, ln.Source, ln.Name); err == nil {
 			for _, d := range ds {
 				s := string(d.Quantity)
 				if d.Phase != "" && d.SubDataObject == "" {
@@ -147,9 +148,12 @@ func (g *docGen) logicalNodes() ([]byte, error) {
 				}
 			}
 		}
-		dos, err := dataObjects(p, ln)
-		if err != nil && !errors.Is(err, model.ErrAmbiguousReference) {
-			return nil, err
+		dos, err := p.DataObjectsIn(ln.Source, ln.Name)
+		if err != nil {
+			dos = nil
+			for i := range ln.DataObjects {
+				dos = append(dos, catalog.InheritedDataObject{DataObject: &ln.DataObjects[i], DeclaredIn: ln})
+			}
 		}
 		b.WriteString("| Data object | CDC | Presence | Declared in | Semantics | Text |\n|---|---|---|---|---|---|\n")
 		for _, do := range dos {
@@ -266,11 +270,11 @@ func ComputeCoverage(in Input) ([]Coverage, error) {
 		for _, ln := range ns.LNClasses {
 			cv.DataObjects += len(ln.DataObjects)
 			for _, do := range ln.DataObjects {
-				if _, err := r.Leaves(ln.Name, []string{do.Name}, ""); err == nil {
+				if _, err := r.In(ns.ID).Leaves(ln.Name, []string{do.Name}, ""); err == nil {
 					cv.DataObjectsOK++
 				}
 			}
-			if ds, err := semantic.FindMeasurements(p, ln.Name); err == nil {
+			if ds, err := semantic.FindMeasurementsIn(p, ln.Source, ln.Name); err == nil {
 				cv.Measurements += len(ds)
 			}
 		}

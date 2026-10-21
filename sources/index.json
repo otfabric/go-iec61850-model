@@ -247,5 +247,32 @@
       "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-7.2017.NSD.2017A.full.zip",
       "verified": true
     }
+  ],
+  "profiles": [
+    {
+      "name": "default",
+      "description": "Core and domain models: IEC 61850-7-2, 7-3, 7-4, 7-410 and 7-420. IEC 61850-7-420 is the preferred source for current DER and storage models.",
+      "parts": [
+        "7-2",
+        "7-3",
+        "7-4",
+        "7-410",
+        "7-420"
+      ]
+    },
+    {
+      "name": "extended",
+      "description": "The default profile plus the technical reports 90-3, 90-4, 90-6, 90-9, 90-11, 90-14 and 90-21. Names a report defines again (DBAT, DSTO, SBAT in 90-9; SFLW in 90-14) are ambiguous unqualified; look them up with their namespace.",
+      "inherits": "default",
+      "parts": [
+        "90-3",
+        "90-4",
+        "90-6",
+        "90-9",
+        "90-11",
+        "90-14",
+        "90-21"
+      ]
+    }
   ]
 }
