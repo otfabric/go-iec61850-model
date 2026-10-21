@@ -110,6 +110,8 @@ func (a *app) modelShowCmd() *cobra.Command {
 			}
 			if c, err := l.constructedAttribute(name); err == nil {
 				return a.output(w, c, func() error { return showMembers(w, "constructed attribute", c.Name, c.Source, c.SubDataAttributes) })
+			} else if !errors.Is(err, model.ErrUnknownType) {
+				return ambiguous(err)
 			}
 			if e, err := l.enumeration(name); err == nil {
 				return a.output(w, e, func() error {
@@ -123,9 +125,13 @@ func (a *app) modelShowCmd() *cobra.Command {
 					}
 					return table(w, "VALUE\tLITERAL", rows)
 				})
+			} else if !errors.Is(err, model.ErrUnknownType) {
+				return ambiguous(err)
 			}
 			if b, err := l.basicType(name); err == nil {
 				return a.output(w, b, func() error { _, err := fmt.Fprintf(w, "basic type %s (%s)\n", b.Name, b.Source); return err })
+			} else if !errors.Is(err, model.ErrUnknownType) {
+				return ambiguous(err)
 			}
 			if ns != nil {
 				return withCode(exitUsage, "no definition named %q in %s", name, ns)
