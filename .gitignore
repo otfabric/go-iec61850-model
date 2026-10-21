@@ -8,8 +8,9 @@
 *.out
 testdata/fuzz/
 
-# Coverage
-coverage.*
+# Coverage output of `make coverage`, in the repository root only
+# (docs/coverage.md and the golden coverage reports are tracked).
+/coverage.*
 
 # Official IEC source material must never be committed (see docs/licensing.md).
 # Synthetic fixtures under testdata/ are the only NSD-shaped files in Git.
