@@ -88,13 +88,13 @@ func Go(in Input, pkg string) (Files, error) {
 	var body bytes.Buffer
 	w := func(format string, args ...any) { fmt.Fprintf(&body, format, args...) }
 
-	lns := p.ListLogicalNodes()
+	classes := groupClasses(p.ListLogicalNodes())
 	w("// LNClass is the name of a logical node class.\ntype LNClass string\n\n")
 	w("// Logical node classes.\nconst (\n")
-	lnIdents := make([]string, len(lns))
-	for i, ln := range lns {
-		lnIdents[i] = ids.assign("LN_", ln.Name)
-		w("\t%s LNClass = %q\n", lnIdents[i], ln.Name)
+	lnIdents := make([]string, len(classes))
+	for i, c := range classes {
+		lnIdents[i] = ids.assign("LN_", c.name)
+		w("\t%s LNClass = %q\n", lnIdents[i], c.name)
 	}
 	w(")\n\n// LNClasses lists the logical node classes in name order.\nvar LNClasses = []LNClass{")
 	w("%s}\n\n", strings.Join(lnIdents, ", "))
@@ -117,41 +117,54 @@ func Go(in Input, pkg string) (Files, error) {
 
 	w("// DataObjectRef is a class-level data object reference, e.g. \"MMXU.Hz\".\ntype DataObjectRef string\n\n")
 	var notes []string
-	for _, ln := range lns {
-		dos, err := dataObjects(p, ln)
-		if err != nil {
-			notes = append(notes, fmt.Sprintf("%s (%s): %v; only its own data objects are declared", ln.Name, ln.Source, err))
+	for _, c := range classes {
+		dos, note := classDataObjects(p, c)
+		if note != "" {
+			notes = append(notes, note)
 		}
 		if len(dos) == 0 {
 			continue
 		}
-		w("// Data objects of %s (%s), including inherited ones.\nconst (\n", ln.Name, ln.Source)
+		w("// Data objects of %s (%s), including inherited ones.\nconst (\n", c.name, c.sources())
 		for _, do := range dos {
-			w("\t%s DataObjectRef = %q // %s, %s\n", ids.assign(ln.Name+"_", do.Name), ln.Name+"."+do.Name, do.Type, presence(do.Presence))
+			w("\t%s DataObjectRef = %q // %s, %s\n", ids.assign(c.name+"_", do.Name), c.name+"."+do.Name, do.Type, presence(do.Presence))
 		}
 		w(")\n\n")
 	}
 
-	enums := p.ListEnumerations()
+	enums, enumNotes := mergeEnumerations(p.ListEnumerations())
+	notes = append(notes, enumNotes...)
+	var tests []enumTest
 	for _, e := range enums {
-		typ := ids.assign("", e.Name)
-		w("// %s is the enumeration %s.\ntype %s int32\n\n", typ, e.Name, typ)
-		if len(e.Literals) == 0 {
+		typ := ids.assign("", e.name)
+		w("// %s is the enumeration %s (%s).\ntype %s int32\n\n", typ, e.name, e.sources, typ)
+		if len(e.literals) == 0 {
 			continue
 		}
-		w("// Literals of %s.\nconst (\n", e.Name)
-		names := make([]string, len(e.Literals))
-		for i, l := range e.Literals {
+		w("// Literals of %s.\nconst (\n", e.name)
+		names := make([]string, len(e.literals))
+		for i, l := range e.literals {
 			names[i] = ids.assign(typ+"_", l.Name)
 			w("\t%s %s = %d\n", names[i], typ, l.Value)
 		}
 		w(")\n\n")
 		w("// String returns the literal name, or %s(n) for an unknown value.\n", typ)
 		w("func (v %s) String() string {\n\tswitch v {\n", typ)
-		for i, l := range e.Literals {
+		seen := map[int]bool{}
+		maxV := e.literals[0].Value
+		for i, l := range e.literals {
+			maxV = max(maxV, l.Value)
+			if seen[l.Value] {
+				// Another literal has the same value; String reports the first.
+				continue
+			}
+			seen[l.Value] = true
 			w("\tcase %s:\n\t\treturn %q\n", names[i], l.Name)
+			tests = append(tests, enumTest{expr: names[i] + ".String()", want: l.Name})
 		}
 		w("\tdefault:\n\t\treturn %q + strconv.Itoa(int(v)) + \")\"\n\t}\n}\n\n", typ+"(")
+		unknown := maxV + 1
+		tests = append(tests, enumTest{expr: fmt.Sprintf("%s(%d).String()", typ, unknown), want: fmt.Sprintf("%s(%d)", typ, unknown)})
 	}
 
 	var out bytes.Buffer
@@ -179,7 +192,11 @@ func Go(in Input, pkg string) (Files, error) {
 	if err != nil {
 		return nil, fmt.Errorf("generator: formatting generated Go: %w", err)
 	}
-	files := Files{GoFileName: src}
+	test, err := goTest(pkg, len(classes), len(cdcNames), tests)
+	if err != nil {
+		return nil, err
+	}
+	files := Files{GoFileName: src, GoTestFileName: test}
 	in.addNotice(files, "go")
 	if !in.Publish {
 		files["LOCAL-ONLY.md"] = in.localNotice("go")
@@ -187,13 +204,149 @@ func Go(in Input, pkg string) (Files, error) {
 	return files, nil
 }
 
-func hasLiterals(enums []*model.Enumeration) bool {
+func hasLiterals(enums []mergedEnum) bool {
 	for _, e := range enums {
-		if len(e.Literals) > 0 {
+		if len(e.literals) > 0 {
 			return true
 		}
 	}
 	return false
+}
+
+// GoTestFileName is the name of the generated test of the Go file.
+const GoTestFileName = "names_gen_test.go"
+
+type enumTest struct{ expr, want string }
+
+// goTest generates a test that checks the generated String methods and
+// the listings, so a committed package is fully covered by its tests.
+func goTest(pkg string, classes, cdcs int, tests []enumTest) ([]byte, error) {
+	var b bytes.Buffer
+	b.WriteString("// " + Marker + " generate go; DO NOT EDIT.\n\n")
+	fmt.Fprintf(&b, "package %s\n\nimport \"testing\"\n\n", pkg)
+	b.WriteString("func TestGeneratedNames(t *testing.T) {\n")
+	fmt.Fprintf(&b, "\tif len(LNClasses) != %d || len(CDCs) != %d {\n\t\tt.Errorf(\"listings: %%d classes, %%d CDCs\", len(LNClasses), len(CDCs))\n\t}\n", classes, cdcs)
+	if len(tests) > 0 {
+		b.WriteString("\tfor _, c := range []struct{ got, want string }{\n")
+		for _, tc := range tests {
+			fmt.Fprintf(&b, "\t\t{%s, %q},\n", tc.expr, tc.want)
+		}
+		b.WriteString("\t} {\n\t\tif c.got != c.want {\n\t\t\tt.Errorf(\"String() = %q, want %q\", c.got, c.want)\n\t\t}\n\t}\n")
+	}
+	b.WriteString("}\n")
+	return format.Source(b.Bytes())
+}
+
+// class is a logical node class name with its definitions in the
+// profile: one, or several when namespaces overlap.
+type class struct {
+	name string
+	defs []*model.LogicalNodeClass
+}
+
+func (c class) sources() string {
+	ids := make([]string, len(c.defs))
+	for i, d := range c.defs {
+		ids[i] = d.Source.String()
+	}
+	return strings.Join(ids, ", ")
+}
+
+// groupClasses groups the listed classes by name; the listing is sorted
+// by name.
+func groupClasses(lns []*model.LogicalNodeClass) []class {
+	var out []class
+	for _, ln := range lns {
+		if n := len(out); n > 0 && out[n-1].name == ln.Name {
+			out[n-1].defs = append(out[n-1].defs, ln)
+			continue
+		}
+		out = append(out, class{name: ln.Name, defs: []*model.LogicalNodeClass{ln}})
+	}
+	return out
+}
+
+// classDataObjects returns the data objects of a class: for a class
+// defined by several namespaces, the union over the definitions in
+// first-seen order, with a note naming the definitions.
+func classDataObjects(p *catalog.Profile, c class) ([]catalog.InheritedDataObject, string) {
+	if len(c.defs) == 1 {
+		dos, err := dataObjects(p, c.defs[0])
+		if err != nil {
+			return dos, fmt.Sprintf("%s (%s): %v; only its own data objects are declared", c.name, c.defs[0].Source, err)
+		}
+		return dos, ""
+	}
+	var out []catalog.InheritedDataObject
+	seen := map[string]bool{}
+	for _, def := range c.defs {
+		dos := ownAndInherited(p, def)
+		for _, do := range dos {
+			if !seen[do.Name] {
+				seen[do.Name] = true
+				out = append(out, do)
+			}
+		}
+	}
+	return out, fmt.Sprintf("%s is defined by %s; its data objects are the union of the definitions", c.name, c.sources())
+}
+
+// ownAndInherited returns the data objects a definition declares and,
+// when its base classes resolve unambiguously, the inherited ones.
+func ownAndInherited(p *catalog.Profile, def *model.LogicalNodeClass) []catalog.InheritedDataObject {
+	var out []catalog.InheritedDataObject
+	if def.Base != "" {
+		if base, err := p.DataObjects(def.Base); err == nil {
+			out = append(out, base...)
+		}
+	}
+	for i := range def.DataObjects {
+		out = append(out, catalog.InheritedDataObject{DataObject: &def.DataObjects[i], DeclaredIn: def})
+	}
+	return out
+}
+
+// mergedEnum is an enumeration name with the literals of all its
+// definitions in the profile.
+type mergedEnum struct {
+	name     string
+	sources  string
+	literals []model.Literal
+}
+
+// mergeEnumerations merges enumerations defined by several namespaces:
+// literals are joined by name; a name with different values keeps the
+// first and is reported.
+func mergeEnumerations(enums []*model.Enumeration) ([]mergedEnum, []string) {
+	var out []mergedEnum
+	var notes []string
+	index := map[string]int{}
+	for _, e := range enums {
+		i, ok := index[e.Name]
+		if !ok {
+			index[e.Name] = len(out)
+			out = append(out, mergedEnum{name: e.Name, sources: e.Source.String(), literals: append([]model.Literal(nil), e.Literals...)})
+			continue
+		}
+		m := &out[i]
+		m.sources += ", " + e.Source.String()
+		notes = append(notes, fmt.Sprintf("%s is defined by %s; its literals are merged", e.Name, m.sources))
+		for _, l := range e.Literals {
+			found := false
+			for _, have := range m.literals {
+				if have.Name == l.Name {
+					found = true
+					if have.Value != l.Value {
+						notes = append(notes, fmt.Sprintf("%s.%s is %d in one definition and %d in %s; %d is kept", e.Name, l.Name, have.Value, l.Value, e.Source, have.Value))
+					}
+				}
+			}
+			if !found {
+				m.literals = append(m.literals, l)
+			}
+		}
+	}
+	return out, notes
 }
 
 func presence(p model.PresenceCondition) string {

@@ -75,6 +75,7 @@ make nsd-check            # every tracked package present and loadable; validate
 make official             # integration test against the packages
 make nsd-generate         # Go, docs and JSON into .generated/ (git-ignored, local-only)
 make nsd-generate-check   # .generated/ is up to date
+make nsd-publish          # regenerate the committed names/ package (redistribution permitted)
 make nsd-clean            # remove .nsd-cache/ and .generated/
 ```
 
@@ -92,7 +93,8 @@ make nsd-lock                                         # pin digests and statuses
 The workflow [`.github/workflows/nsd.yml`](../.github/workflows/nsd.yml) runs
 the same steps on pull requests and pushes that touch the importer or the
 sources, weekly, and on demand. It works in `$RUNNER_TEMP`, uses no caches and
-uploads no artifacts, deletes everything at the end, writes a metadata-only
+uploads no artifacts, checks that the committed `names/` package matches the
+pinned packages, deletes everything at the end, writes a metadata-only
 summary, and opens (or closes) a tracking issue when the weekly run fails, for
 instance because a package changed upstream. The regular CI never downloads
 IEC packages.
@@ -173,8 +175,10 @@ that the structure is compatible, accept it with
 namespace release, only metadata that may be committed: standard and
 publication, namespace ID, official source location, retrieval time, SHA-256,
 package kind, package file, dependencies, validation status and the
-redistribution decision. All 14 tracked packages are pinned; every entry is
-`local-only`.
+redistribution decision. All 14 tracked packages are pinned; the 12 NSD
+namespaces the `names` package is generated from are `permitted`, the 8-1
+service namespace and the 7-7 schema `local-only` (see
+[licensing.md](licensing.md#decision)).
 
 Lock entry fields: `standard`, `publication`, `namespace` (canonical ID),
 `content` (`light`/`full`), `source` (official HTTPS URL on an `iec.ch` host),

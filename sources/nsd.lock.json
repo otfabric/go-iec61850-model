@@ -12,8 +12,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC 61850-90-14",
@@ -26,8 +26,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC 61850-90-21",
@@ -40,8 +40,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC 61850-90-4",
@@ -54,8 +54,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC 61850-90-9",
@@ -68,8 +68,8 @@
         "IEC 61850-7-420:2019A"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC61850-90-3",
@@ -82,8 +82,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "(Tr)IEC61850-90-6",
@@ -96,8 +96,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-2",
@@ -107,8 +107,8 @@
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B6.Light.zip",
       "sha256": "d2ecb929472fcad26b2c38e4501ad10a3a3cde03b609d9363c0e5a41febb498b",
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-3",
@@ -121,8 +121,8 @@
         "IEC 61850-7-2:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-410",
@@ -135,8 +135,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-420",
@@ -149,8 +149,8 @@
         "IEC 61850-7-4:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-4",
@@ -163,8 +163,8 @@
         "IEC 61850-7-3:2007B"
       ],
       "status": "nsd-validated",
-      "redistribution": "local-only",
-      "notes": "validated by nsdctl sources lock"
+      "redistribution": "permitted",
+      "notes": "validated by nsdctl sources lock; redistribution permitted with IEC attribution (NOTICE.md), decided 2026-10-21"
     },
     {
       "standard": "IEC 61850-7-7",

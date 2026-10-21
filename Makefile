@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-clean clean
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean clean
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -27,6 +27,11 @@ NSD_TIERS     ?= all
 NSD_PROFILE   ?=
 GENERATED_DIR ?= .generated
 GO_PACKAGE    ?= iec61850names
+# NAMES_DIR is the committed Go package generated from the official packages. It
+# is generated with the Go version of go.mod, as CI does, so that the output does
+# not depend on the local toolchain.
+NAMES_DIR     ?= names
+NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go run ./cmd/nsdctl
 NSDCTL        := go run ./cmd/nsdctl
 NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
 
@@ -161,6 +166,13 @@ nsd-generate-check: ## Fail if GENERATED_DIR differs from what NSD_CACHE generat
 	@$(NSDCTL) $(NSD_SOURCE) generate go -o "$(GENERATED_DIR)/go" --package "$(GO_PACKAGE)" --check
 	@$(NSDCTL) $(NSD_SOURCE) generate docs -o "$(GENERATED_DIR)/docs" --check
 	@$(NSDCTL) $(NSD_SOURCE) generate json -o "$(GENERATED_DIR)/json" --check
+
+nsd-publish: ## Regenerate the committed package NAMES_DIR from NSD_CACHE (the lock must permit every namespace)
+	@echo "Generating the committed package $(NAMES_DIR) from $(NSD_CACHE)"
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" generate go -o "$(NAMES_DIR)" --package names --publish --lock sources/nsd.lock.json
+
+nsd-publish-check: ## Fail if the committed package NAMES_DIR differs from what NSD_CACHE generates
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" generate go -o "$(NAMES_DIR)" --package names --publish --lock sources/nsd.lock.json --check
 
 nsd-clean: ## Remove downloaded packages and generated output
 	@echo "Removing $(NSD_CACHE) and $(GENERATED_DIR)"

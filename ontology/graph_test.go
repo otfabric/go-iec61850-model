@@ -254,3 +254,45 @@ func TestBuildGraphConflicts(t *testing.T) {
 		t.Errorf("semantic error is passed on: %v", err)
 	}
 }
+
+func TestExtensionsAndVariantsInGraph(t *testing.T) {
+	b := model.NamespaceID{Standard: "B", Version: "1"}
+	e := model.NamespaceID{Standard: "E", Version: "1"}
+	nsB := &model.Namespace{ID: b,
+		CDCs:      []model.CommonDataClass{{Name: "MV", Source: b}, {Name: "SPG", Variant: "SP", Source: b, DataAttributes: []model.DataAttribute{{Name: "setVal", FC: "SP"}}}, {Name: "SPG", Variant: "SG", Source: b}},
+		LNClasses: []model.LogicalNodeClass{{Name: "MMXU", Source: b, DataObjects: []model.DataObject{{Name: "Hz", Type: "MV"}, {Name: "Set", Type: "SPG"}}}},
+	}
+	nsE := &model.Namespace{ID: e,
+		LNClasses: []model.LogicalNodeClass{{Name: "MMXU", IsExtension: true, Source: e, DataObjects: []model.DataObject{{Name: "Added", Type: "MV"}}},
+			{Name: "ORPH", IsExtension: true, Source: e, DataObjects: []model.DataObject{{Name: "X", Type: "MV"}}}},
+	}
+	c, _ := catalog.New(nsB, nsE)
+	p, err := c.Profile(b, e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := ontology.BuildGraph(p, ontology.Options{Semantics: semantic.Default})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(g.Conflicts()) != 0 {
+		t.Errorf("extensions and variants are not conflicts: %v", g.Conflicts())
+	}
+	if got := rels(g.Relations("ln:MMXU", ontology.Contains)); got != "contains>do:MMXU.Added contains>do:MMXU.Hz contains>do:MMXU.Set" {
+		t.Errorf("extension data objects hang off the base class: %s", got)
+	}
+	if got := rels(g.Relations("do:MMXU.Set", ontology.Uses)); got != "uses>cdc:SPG/SG uses>cdc:SPG/SP" {
+		t.Errorf("uses every variant: %s", got)
+	}
+	added, _ := g.Concept("do:MMXU.Added")
+	if v, _ := added.Property("extension"); v != "true" || added.Namespace != e {
+		t.Errorf("extension data object %+v", added)
+	}
+	orphan, ok := g.Concept("ln:ORPH")
+	if v, _ := orphan.Property("extension"); !ok || v != "true" {
+		t.Errorf("orphan extension class concept %+v", orphan)
+	}
+	if v, _ := func() (string, bool) { c, _ := g.Concept("cdc:SPG/SP"); return c.Property("variant") }(); v != "SP" {
+		t.Error("variant property")
+	}
+}

@@ -318,6 +318,18 @@ func (b *builder) addZIP(source string, data []byte, depth int) error {
 	if err != nil {
 		return &model.SourceError{Source: source, Reason: "not a valid ZIP archive", Err: errors.Join(model.ErrInvalidNSD, err)}
 	}
+	if depth == 0 {
+		// Namespaces read from this archive, also from archives nested
+		// in it, record the digest of the archive file: the digest the
+		// lock pins.
+		start := len(b.pkg.namespaces)
+		digest := sha256Hex(data)
+		defer func() {
+			for _, ns := range b.pkg.namespaces[start:] {
+				ns.Provenance.PackageSHA256 = digest
+			}
+		}()
+	}
 	seen := make(map[string]string, len(zr.File))
 	for _, f := range zr.File {
 		b.entries++
@@ -453,9 +465,6 @@ func (b *builder) finish() (*Package, error) {
 	sort.SliceStable(p.schemas, func(i, j int) bool { return p.schemas[i].Source < p.schemas[j].Source })
 	sort.SliceStable(p.manifests, func(i, j int) bool { return p.manifests[i].Source < p.manifests[j].Source })
 	for _, ns := range p.namespaces {
-		if p.sha256 != "" && ns.Provenance.Source != p.source {
-			ns.Provenance.PackageSHA256 = p.sha256
-		}
 		if ns.Provenance.Content == model.ContentUnknown {
 			if p.content != model.ContentUnknown {
 				ns.Provenance.Content = p.content

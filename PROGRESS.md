@@ -274,12 +274,30 @@ output is deterministic.
 - README install instructions per platform; docs/cli.md walkthrough with real
   output from the official packages.
 
+## Committed names package
+
+**Date:** 2026-10-21
+
+Licensing decision recorded in docs/licensing.md: the 12 NSD namespaces are
+`permitted` in the lock and the generated Go package `names/` is committed with
+`NOTICE.md` (IEC attribution, CCv1 license, copyright notices).
+
+- `make nsd-publish` / `nsd-publish-check` generate it with `--publish` (the
+  license gate checks every namespace and digest) and the Go toolchain of
+  go.mod; `nsd.yml` fails when it is out of date.
+- Generator output format 4: one set of constants per class and enumeration
+  name, with the union of data objects and merged literals for names that
+  several namespaces define (reported in the header); a generated
+  `names_gen_test.go` covers every `String` method (100% coverage).
+- Fixed: namespaces loaded from a directory of archives now record the digest
+  of their archive, which the license gate compares with the lock.
+
+The package declares 451 logical node classes, 17,692 data object references
+and the enumerations of all 12 namespaces.
+
 ## Next
 
 - **M0** — verify official sources and the license; fill `sources/`.
-- **Licensing decision** — whether IEC-derived generated output may be
-  committed; then set `redistribution: permitted` in the lock and publish with
-  `--publish` (NOTICE.md is ready).
 - **Service namespaces** — model ServiceNS (8-1) content, which likely defines
   `PhyComAddrL2`/`PhyComAddrUDP`.
 - **M3 follow-up** — extend default rules for 7-420 DER and 7-410 classes once

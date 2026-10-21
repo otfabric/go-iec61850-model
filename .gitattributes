@@ -1,3 +1,6 @@
 # Fixture digests appear in golden output: keep test data byte-exact on
 # every platform.
 testdata/** -text
+
+# Generated from the official IEC packages by make nsd-publish.
+names/** linguist-generated=true
