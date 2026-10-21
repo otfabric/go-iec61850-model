@@ -1,5 +1,40 @@
 # go-iec61850-model Releases
 
+## v0.1.1
+
+**Date:** 2026-10-21
+**Previous release:** v0.1.0
+
+### Summary
+
+nsdctl usability: shell completion, real-world use cases with real output
+from the official models, and command groups that explain themselves.
+
+### Added
+
+- **`nsdctl completion bash|zsh|fish|powershell`** — completion scripts, as in
+  the other otfabric CLIs. Flags with a fixed set of values complete to them:
+  `--profile` to the profile names and embedded namespaces; `--ns`, `--left`
+  and `--right` to the embedded namespaces (by ID and part, e.g. `7-420`);
+  `--kind`, `--fc`, `--class` and `--tiers` to their values.
+- **[docs/use-cases.md](docs/use-cases.md)** — real integration tasks solved
+  with nsdctl and the embedded official models: power meter measurements and
+  units (`MMXU`), explaining a reference, decoding `SIUnit`/`multiplier` and
+  mode values, battery storage (`DBAT`, `DSTO`), circuit breaker position
+  (`XCBR`), protection settings per setting group (`PTOC`), finding data
+  objects by CDC, legacy IEC TR 61850-90-9 devices, tag lists from `--json`,
+  and the same lookups in Go. A test re-runs the documented commands so the
+  output stays real.
+
+### Fixed
+
+- `nsdctl model`, `catalog`, `sources` and `generate` printed nothing without
+  a subcommand; they now print their help, and unknown subcommands fail with
+  exit code 1.
+- `nsdctl model list MMXU` now points to `nsdctl model show MMXU`.
+
+---
+
 ## v0.1.0
 
 **Date:** 2026-10-21
