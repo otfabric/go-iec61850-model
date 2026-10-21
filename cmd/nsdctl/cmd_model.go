@@ -372,7 +372,14 @@ func (a *app) modelListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List definitions of one kind: ln, abstract, cdc, ca, enum or basic",
-		Args:  cobra.NoArgs,
+		Example: `  nsdctl model list                 # every logical node class
+  nsdctl model list --kind enum     # every enumeration`,
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return withCode(exitUsage, "model list takes no arguments; to see what %[1]s holds, run \"nsdctl model show %[1]s\"", args[0])
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			p, err := a.loadProfile()
 			if err != nil {
