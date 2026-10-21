@@ -1,0 +1,34 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck       # unchecked errors
+    - govet          # go vet checks (shadow, printf, etc.)
+    - ineffassign    # assigned but never used
+    - staticcheck    # comprehensive static analysis (includes gosimple + unused)
+    - misspell       # common spelling mistakes
+    - godot          # comment punctuation
+    - nilerr         # return nil instead of err
+    - exhaustive     # exhaustive switch on enums
+    - unparam        # unused function parameters
+    - gocritic       # unused writes to struct fields (unusedWrite tag) and other diagnostics
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocritic:
+      disabled-checks:
+        - ifElseChain     # style preference; if/else if/else is acceptable
+        - exitAfterDefer  # Example_ doc functions intentionally use defer+log.Fatal to show cleanup pattern
+
+formatters:
+  enable:
+    - gofmt          # formatting
+    - goimports      # import grouping / formatting
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  timeout: 5m
