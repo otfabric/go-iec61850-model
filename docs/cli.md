@@ -6,6 +6,10 @@ and `catalog` commands use the official catalog embedded in the binary (the
 packages you obtained yourself. Apart from `sources fetch`, it never downloads
 anything.
 
+For task-oriented examples — metering, battery storage, breakers, protection
+settings, decoding raw values, legacy 90-9 devices — see
+[use-cases.md](use-cases.md). This page is the command reference.
+
 Pre-built binaries for Linux, macOS and Windows are attached to every
 release; see [Install nsdctl](../README.md#install-nsdctl). With Go:
 

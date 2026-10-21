@@ -58,3 +58,17 @@ func TestFlagValueCompletion(t *testing.T) {
 		}
 	}
 }
+
+func TestCommandGroups(t *testing.T) {
+	for _, group := range []string{"model", "catalog", "sources", "generate"} {
+		if out, _, code := nsdctl(t, group); code != exitOK || !strings.Contains(out, "Available Commands:") {
+			t.Errorf("%s without a subcommand: %d\n%s", group, code, out)
+		}
+		if _, e, code := nsdctl(t, group, "frob"); code != exitUsage || !strings.Contains(e, "unknown command") {
+			t.Errorf("%s frob: %d %s", group, code, e)
+		}
+	}
+	if _, e, code := nsdctl(t, "model", "list", "MMXU"); code != exitUsage || !strings.Contains(e, `nsdctl model show MMXU`) {
+		t.Errorf("model list MMXU: %d %s", code, e)
+	}
+}
