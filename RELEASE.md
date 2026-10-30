@@ -9,7 +9,6 @@
   it. Library import paths and the exported API are unchanged.
   - Release binaries are published as before.
   - Build from a checkout with `make build`, or `cd cmd/nsdctl && go build .`.
-    `go build ./cmd/nsdctl` from the root also works, through `go.work`.
   - `go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@<version>` works
     up to v0.1.1 and not after it, while the nested module's `replace` is in place.
 

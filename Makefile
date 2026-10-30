@@ -37,12 +37,11 @@ OFFICIAL_DIR  ?= official
 REFERENCE_DIR ?= docs/reference
 PUBLISH        = --publish --lock sources/nsd.lock.json
 # nsdctl is a nested module (ADR-0009): ./... of this module does not reach it.
-# From the repository root it is reached through go.work, and its arguments stay
-# relative to the root.
+# These build it and run it from the repository root, because its default paths
+# (sources/...) and its arguments are relative to the root.
 CLI_DIR       := cmd/nsdctl
-CLI_GO        := GOWORK=$(CURDIR)/go.work go
-NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 $(CLI_GO) run ./cmd/nsdctl
-NSDCTL        := $(CLI_GO) run ./cmd/nsdctl
+NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go -C $(CLI_DIR) build -o "$(CURDIR)/bin/nsdctl-pinned" . && bin/nsdctl-pinned
+NSDCTL        := go -C $(CLI_DIR) build -o "$(CURDIR)/bin/nsdctl-dev" . && bin/nsdctl-dev
 NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
 
 DIST      := dist
@@ -203,7 +202,7 @@ nsd-clean: ## Remove downloaded packages and generated output
 official: ## Test against the official packages in NSD_DIR (default NSD_CACHE), read in place
 	@test -d "$(or $(NSD_DIR),$(NSD_CACHE))" || { echo "No packages in $(or $(NSD_DIR),$(NSD_CACHE)); run make nsd-fetch"; exit 1; }
 	@echo "Testing against official packages in $(or $(NSD_DIR),$(NSD_CACHE))"
-	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" $(CLI_GO) test -count=1 -v -run TestOfficialPackages ./cmd/nsdctl
+	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" go -C $(CLI_DIR) test -count=1 -v -run TestOfficialPackages .
 
 golden: ## Regenerate testdata/golden after an intentional generator output change
 	@echo "Regenerating golden generator output"

@@ -85,9 +85,10 @@ make nsd-clean            # remove .nsd-cache/ and .generated/
 When a package is added or changes upstream on purpose:
 
 ```bash
-go run ./cmd/nsdctl sources fetch --allow-unpinned   # first download of a new package
-make nsd-check official                               # review
-make nsd-lock                                         # pin digests and statuses (metadata only)
+make build                                 # nsdctl is a nested module
+./bin/nsdctl sources fetch --allow-unpinned  # first download of a new package
+make nsd-check official                    # review
+make nsd-lock                              # pin digests and statuses (metadata only)
 ```
 
 The workflow [`.github/workflows/nsd.yml`](../.github/workflows/nsd.yml) runs
