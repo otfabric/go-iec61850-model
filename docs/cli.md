@@ -11,12 +11,14 @@ settings, decoding raw values, legacy 90-9 devices — see
 [use-cases.md](use-cases.md). This page is the command reference.
 
 Pre-built binaries for Linux, macOS and Windows are attached to every
-release; see [Install nsdctl](../README.md#install-nsdctl). With Go:
+release; see [Install nsdctl](../README.md#install-nsdctl). With Go, in a clone:
 
 ```bash
-go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@latest
-# or, in a clone: make build && ./bin/nsdctl
+make build && ./bin/nsdctl
 ```
+
+`nsdctl` is a nested module (`cmd/nsdctl/go.mod`), so the library does not
+require cobra.
 
 ## Global flags
 

@@ -82,8 +82,8 @@ go get github.com/otfabric/go-iec61850-model
 ```
 
 Requires Go 1.24 or later. No CGO, no network access at run time. The library
-packages use the standard library only; `cmd/nsdctl` adds
-[cobra](https://github.com/spf13/cobra).
+packages use the standard library only. `cmd/nsdctl`, a nested module, adds
+[cobra](https://github.com/spf13/cobra); it is not a dependency of the library.
 
 ## Quick start
 
@@ -356,11 +356,7 @@ cd go-iec61850-model
 make build
 ```
 
-`make build` writes the binary to **`bin/nsdctl`**; `make build-all` cross-compiles every release target into `dist/`. With a Go toolchain you can also install straight from the module (`nsdctl version` then reports the module version the Go toolchain records, such as `v0.1.0`, or `dev` when none is recorded):
-
-```console
-go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@latest
-```
+`make build` writes the binary to **`bin/nsdctl`**; `make build-all` cross-compiles every release target into `dist/`. `nsdctl` is a nested module, so `make build` is also how to build it with a Go toolchain. `go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@v0.1.1` installs the last version published in the library module; later versions come from the release binaries or a checkout.
 
 ## Command-line tool
 
