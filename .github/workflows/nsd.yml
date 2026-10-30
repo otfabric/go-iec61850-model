@@ -125,7 +125,7 @@ jobs:
             echo "## IEC NSD packages"
             echo
             echo '```text'
-            go run ./cmd/nsdctl sources check --packages "$NSD_CACHE" 2>&1 | grep -v '^discovery' || true
+            go -C cmd/nsdctl build -o "$RUNNER_TEMP/nsdctl" . && "$RUNNER_TEMP/nsdctl" sources check --packages "$NSD_CACHE" 2>&1 | grep -v '^discovery' || true
             echo '```'
             if [ -f "$GENERATED_DIR/docs/coverage.md" ]; then
               echo

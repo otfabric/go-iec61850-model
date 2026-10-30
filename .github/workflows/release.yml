@@ -29,11 +29,12 @@ jobs:
 
   release-nsdctl-binary:
     needs: release-package
-    uses: otfabric/.github/.github/workflows/go-binary-release.yml@v2
+    uses: otfabric/.github/.github/workflows/go-binary-release.yml@v3.1.0
     with:
       bump: none
       binary-name: nsdctl
-      main-path: ./cmd/nsdctl
+      module-dir: cmd/nsdctl
+      main-path: .
       targets: '["linux/amd64","linux/arm64","linux/arm/v7","darwin/amd64","darwin/arm64","windows/amd64","windows/arm64"]'
       ldflags: "-s -w -X main.version=${VERSION} -X main.tag=${TAG} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}"
       run-tests: false

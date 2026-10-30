@@ -1,5 +1,19 @@
 # go-iec61850-model Releases
 
+## Unreleased
+
+### Changed
+
+- **`cmd/nsdctl` is now a nested module** (`github.com/otfabric/go-iec61850-model/cmd/nsdctl`).
+  The library's `go.mod` no longer requires cobra, so consumers stop inheriting
+  it. Library import paths and the exported API are unchanged.
+  - Release binaries are published as before.
+  - Build from a checkout with `make build`, or `cd cmd/nsdctl && go build .`.
+  - `go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@<version>` works
+    up to v0.1.1 and not after it, while the nested module's `replace` is in place.
+
+---
+
 ## v0.1.1
 
 **Date:** 2026-10-21
