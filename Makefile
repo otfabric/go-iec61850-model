@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean clean
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -194,6 +194,10 @@ nsd-publish-check: ## Fail if the committed output differs from what NSD_CACHE g
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --check
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --check
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs -o "$(REFERENCE_DIR)" $(PUBLISH) --check
+
+generate: nsd-fetch nsd-publish ## Fetch the locked NSD packages (needs network) and regenerate the committed output
+
+generate-check: nsd-fetch nsd-publish-check ## Fetch the locked NSD packages (needs network) and fail if the committed output is stale
 
 nsd-clean: ## Remove downloaded packages and generated output
 	@echo "Removing $(NSD_CACHE) and $(GENERATED_DIR)"

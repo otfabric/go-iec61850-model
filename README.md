@@ -438,6 +438,7 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [docs/licensing.md](docs/licensing.md) | IEC content and redistribution limits |
 | [docs/reference](docs/reference/index.md) | Generated model reference of the official namespaces |
 | [ERRORS.md](ERRORS.md) | Error taxonomy |
+| [LIMITATIONS.md](LIMITATIONS.md) | Scope not implemented, upstream gaps, what has not been verified |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Workflow, checks and source policy |
 | [REQUIREMENTS.md](REQUIREMENTS.md), [PLAN.md](PLAN.md), [PROGRESS.md](PROGRESS.md) | Scope, plan and progress |
 
@@ -468,6 +469,7 @@ committed:
 make nsd-fetch nsd-check official   # download into .nsd-cache/, validate, integration test
 make nsd-generate                   # Go, docs and JSON into .generated/ (git-ignored)
 make nsd-publish                    # regenerate the committed names/, official/ and docs/reference/
+make generate-check                 # fetch, then fail if the committed output is stale (make generate regenerates it)
 ```
 
 The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
