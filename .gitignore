@@ -36,3 +36,6 @@ testdata/fuzz/
 
 # OS
 .DS_Store
+
+# Local workspace checksums (go.work is committed for the release build)
+/go.work.sum

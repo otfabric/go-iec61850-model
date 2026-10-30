@@ -77,9 +77,9 @@ resolver depends on the small `resolver.Lookup` interface, which both
 
 | Package | Responsibility |
 | --- | --- |
-| `cmd/nsdctl` | CLI over all packages (cobra) |
+| `cmd/nsdctl` | CLI over all packages (cobra); nested module |
 | `internal/generator` | Deterministic Go, Markdown and JSON output; write/check; license gate |
 | `internal/sources` | Source registry and version lock; digest verification |
 | `internal/fixtures` | Test helper loading the synthetic fixtures |
 
-Only `cmd/nsdctl` has a dependency outside the standard library.
+Only `cmd/nsdctl`, a nested module, has a dependency outside the standard library.

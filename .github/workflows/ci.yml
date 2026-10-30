@@ -22,3 +22,15 @@ jobs:
       go-versions: '["1.24", "1.25", "1.26"]'
       test-exclude-regex: "(/example(s)?($|/)|/internal/fixtures$)"
     secrets: inherit
+
+  # nsdctl is a nested module (ADR-0009): the root run does not reach it.
+  cli:
+    uses: otfabric/.github/.github/workflows/go-ci.yml@v2.1.0
+    with:
+      module-dir: cmd/nsdctl
+      test-exclude-regex: "/example(s)?($|/)"
+      run-govulncheck: true
+      coverage-min: "90"
+      run-codecov: false
+      go-versions: '["1.24", "1.25", "1.26"]'
+    secrets: inherit

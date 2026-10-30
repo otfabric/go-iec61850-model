@@ -36,8 +36,13 @@ NAMES_DIR     ?= names
 OFFICIAL_DIR  ?= official
 REFERENCE_DIR ?= docs/reference
 PUBLISH        = --publish --lock sources/nsd.lock.json
-NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go run ./cmd/nsdctl
-NSDCTL        := go run ./cmd/nsdctl
+# nsdctl is a nested module (ADR-0009): ./... of this module does not reach it.
+# From the repository root it is reached through go.work, and its arguments stay
+# relative to the root.
+CLI_DIR       := cmd/nsdctl
+CLI_GO        := GOWORK=$(CURDIR)/go.work go
+NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 $(CLI_GO) run ./cmd/nsdctl
+NSDCTL        := $(CLI_GO) run ./cmd/nsdctl
 NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
 
 DIST      := dist
@@ -57,10 +62,12 @@ check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check ## Run 
 test: ## Run unit tests
 	@echo "Running unit tests"
 	@go test -count=1 $(PKGS)
+	@cd $(CLI_DIR) && go test -count=1 ./...
 
 test-race: ## Run unit tests with the race detector
 	@echo "Running tests (race detector)"
 	@go test -count=1 -race $(PKGS)
+	@cd $(CLI_DIR) && go test -count=1 -race ./...
 
 coverage: ## Run tests with coverage profile and text summary
 	@echo "Running tests with coverage"
@@ -96,18 +103,22 @@ fmt-check: ## Fail if the go.mod-version gofmt or the local gofmt would change a
 vet: ## Run go vet
 	@echo "Running go vet"
 	@go vet $(PKGS)
+	@cd $(CLI_DIR) && go vet ./...
 
 lint: ## Run staticcheck
 	@echo "Running staticcheck"
 	@staticcheck $(PKGS)
+	@cd $(CLI_DIR) && staticcheck ./...
 
 lint-ci: ## Run golangci-lint (uses .golangci.yml)
 	@echo "Running golangci-lint"
 	@golangci-lint run $(PKGS)
+	@cd $(CLI_DIR) && golangci-lint run ./...
 
 vuln: ## Run govulncheck
 	@echo "Running govulncheck"
 	@govulncheck $(PKGS)
+	@cd $(CLI_DIR) && govulncheck ./...
 
 fuzz: ## Run all fuzz targets for FUZZTIME each (default 15s)
 	@echo "Fuzzing nsd.Parse"
@@ -122,15 +133,17 @@ bench: ## Run benchmarks
 tidy: ## Tidy and verify module files
 	@echo "Running go mod tidy"
 	@go mod tidy
+	@cd $(CLI_DIR) && go mod tidy
 	@echo "Running go mod verify"
 	@go mod verify
+	@cd $(CLI_DIR) && go mod verify
 
 build: ## Build all packages and bin/nsdctl
 	@echo "Building all packages"
 	@go build $(PKGS)
 	@mkdir -p bin
 	@echo "  BUILD nsdctl $(VERSION) -> bin/nsdctl"
-	@go build -ldflags '$(LDFLAGS)' -o bin/nsdctl ./cmd/nsdctl
+	@cd $(CLI_DIR) && go build -ldflags '$(LDFLAGS)' -o $(CURDIR)/bin/nsdctl .
 
 build-all: ## Cross-compile nsdctl for every release target into dist/ (names as in the releases)
 	@echo "Cross-compiling nsdctl $(VERSION)"
@@ -141,7 +154,7 @@ build-all: ## Cross-compile nsdctl for every release target into dist/ (names as
 		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
 		out=$(DIST)/nsdctl-$(VERSION)-$$label$$ext; \
 		echo "  BUILD $$target -> $$out"; \
-		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch GOARM=$$arm go build -trimpath -ldflags '$(LDFLAGS)' -o $$out ./cmd/nsdctl || exit 1; \
+		(cd $(CLI_DIR) && CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch GOARM=$$arm go build -trimpath -ldflags '$(LDFLAGS)' -o $(CURDIR)/$$out .) || exit 1; \
 	done
 
 install: build ## Install nsdctl to PREFIX/bin (default /usr/local/bin)
@@ -190,7 +203,7 @@ nsd-clean: ## Remove downloaded packages and generated output
 official: ## Test against the official packages in NSD_DIR (default NSD_CACHE), read in place
 	@test -d "$(or $(NSD_DIR),$(NSD_CACHE))" || { echo "No packages in $(or $(NSD_DIR),$(NSD_CACHE)); run make nsd-fetch"; exit 1; }
 	@echo "Testing against official packages in $(or $(NSD_DIR),$(NSD_CACHE))"
-	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" go test -count=1 -v -run TestOfficialPackages ./cmd/nsdctl
+	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" $(CLI_GO) test -count=1 -v -run TestOfficialPackages ./cmd/nsdctl
 
 golden: ## Regenerate testdata/golden after an intentional generator output change
 	@echo "Regenerating golden generator output"
