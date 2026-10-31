@@ -37,3 +37,7 @@ testdata/fuzz/
 # OS
 .DS_Store
 /cmd/nsdctl/nsdctl
+
+# Build artefacts live in /bin/ and /release/ (otfabric/engineering REPO-005)
+/release/
+coverage.out

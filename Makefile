@@ -47,7 +47,7 @@ NSDCTL_PINNED := GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go -C $(CLI_DIR) build -o "$(
 NSDCTL        := go -C $(CLI_DIR) build -o "$(CURDIR)/bin/nsdctl-dev" . && bin/nsdctl-dev
 NSD_SOURCE     = -s $(NSD_CACHE) $(foreach p,$(NSD_PROFILE),-p "$(p)")
 
-DIST      := dist
+DIST      := release
 PLATFORMS := linux/amd64 linux/arm64 linux/arm/v7 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 PREFIX    ?= /usr/local
 
@@ -152,7 +152,7 @@ build: ## Build all packages and bin/nsdctl
 	@echo "  BUILD nsdctl $(VERSION) -> bin/nsdctl"
 	@cd $(CLI_DIR) && go build -ldflags '$(LDFLAGS)' -o $(CURDIR)/bin/nsdctl .
 
-build-all: ## Cross-compile nsdctl for every release target into dist/ (names as in the releases)
+build-all: ## Cross-compile nsdctl for every release target into release/ (names as in the releases)
 	@echo "Cross-compiling nsdctl $(VERSION)"
 	@mkdir -p $(DIST)
 	@for target in $(PLATFORMS); do \
