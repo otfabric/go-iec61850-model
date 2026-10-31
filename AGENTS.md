@@ -22,7 +22,7 @@ This repository follows **otfabric/engineering policy 1.1**, profile **informati
 ## Hard rules
 
 1. Never commit official IEC material (NSD or NSDoc files, XSD schemas, packages, PDFs, copied text). Public CI runs on synthetic fixtures only.
-2. Never lower `COVERAGE_MIN` (90), add lint suppressions, or skip/delete tests to make CI pass.
+2. Never lower `COVERAGE_MIN` (90) or `COVER_PKG_MIN`, add lint suppressions, or skip/delete tests to make CI pass.
 3. Never edit `names`, `official` or `docs/reference` by hand: they come from `make nsd-publish`.
 4. Packages in this library use the standard library only; a new runtime dependency needs an ADR. This library stays on v0 or v1.
 
