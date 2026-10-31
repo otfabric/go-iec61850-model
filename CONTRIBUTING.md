@@ -31,7 +31,7 @@ document covers the guidelines for contributing.
 ### Build & Test
 
 ```sh
-make check   # format, tidy, vet, lint, vulnerability scan, race tests, coverage gate (90%)
+make check   # format, tidy, vet, lint, vulnerability scan, race tests, coverage gates (90% total, COVER_PKG_MIN per package)
 make test    # unit tests
 make fuzz    # fuzz targets, FUZZTIME each (default 15s)
 ```

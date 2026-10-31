@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-pkg-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -16,6 +16,9 @@ GOFMT_CI = $(shell GOTOOLCHAIN=go$(GO_MOD_VERSION).0 go env GOROOT)/bin/gofmt
 
 PKGS         := ./...
 COVERAGE_MIN := 90
+# Per-package floor (TEST-012), from `make coverage`. internal/fixtures is a test
+# helper imported by tests only; go-ci excludes it too. Lowest package when set: official, 92.5 %.
+COVER_PKG_MIN := 90
 FUZZTIME     ?= 15s
 
 # Official IEC NSD packages: temporary inputs, never committed. NSD_CACHE must be
@@ -56,7 +59,7 @@ LDFLAGS    := -s -w -X main.version=$(VERSION) -X main.tag=$(TAG) -X main.commit
 
 all: check build ## Run all checks and build
 
-check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check ## Run all pre-commit checks
+check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check coverage-pkg-check ## Run all pre-commit checks
 
 test: ## Run unit tests
 	@echo "Running unit tests"
@@ -79,6 +82,11 @@ coverage-html: coverage ## Generate HTML coverage report (coverage.html)
 
 coverage-check: coverage ## Fail if total coverage is below COVERAGE_MIN
 	@go tool cover -func=coverage.out | grep 'total:' | awk -v min=$(COVERAGE_MIN) '{gsub(/%/,""); p=$$NF+0; if (p < min) { printf "Coverage %.1f%% is below %d%%\n", p, min; exit 1 } else { printf "Coverage %.1f%% (>= %d%%)\n", p, min } }'
+
+coverage-pkg-check: coverage ## Fail when a package is below COVER_PKG_MIN
+	@awk -v m="$(COVER_PKG_MIN)" 'NR > 1 && !/\/internal\/fixtures\// { n[$$1] = $$2; if ($$3 > 0) h[$$1] = 1 } \
+	END { for (k in n) { p = k; sub(/\/[^\/]*$$/, "", p); s[p] += n[k]; if (k in h) c[p] += n[k] } \
+	for (p in s) { v = 100 * c[p] / s[p]; if (v < m) { printf "%s: %.1f%% < %s%%\n", p, v, m; bad = 1 } } exit bad }' coverage.out
 
 coverage-clean: ## Remove coverage artifacts
 	@echo "Removing coverage artifacts"
