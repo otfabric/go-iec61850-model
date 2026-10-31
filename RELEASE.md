@@ -1,5 +1,16 @@
 # go-iec61850-model Releases
 
+## v0.2.1
+
+**Date:** 2026-10-31
+**Previous release:** v0.2.0
+
+### Changed
+
+- Tests, CI and documents only. `make build-all` writes to `release/`. Compiled binaries are gone from git history, and tags were rewritten.
+
+---
+
 ## v0.2.0
 
 **Date:** 2026-10-30
