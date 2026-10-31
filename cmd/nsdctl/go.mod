@@ -3,7 +3,7 @@ module github.com/otfabric/go-iec61850-model/cmd/nsdctl
 go 1.24.0
 
 require (
-	github.com/otfabric/go-iec61850-model v0.2.0
+	github.com/otfabric/go-iec61850-model v0.2.1
 	github.com/spf13/cobra v1.10.2
 )
 
