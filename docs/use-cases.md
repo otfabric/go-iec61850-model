@@ -116,7 +116,7 @@ unit hint    V
 mapping      rule mmxu.phv, rule, high confidence (otfabric-default)
 ```
 
-A reference that the model does not define fails with exit code 1 and says
+A reference that the model does not define fails with exit code 2 and says
 which element is wrong:
 
 ```console

@@ -5,8 +5,5 @@
       "manifest": ".",
       "exit_codes": "."
     }
-  ],
-  "ignore": [
-    {"rule": "DS-EXIT", "subject": "exit 3", "reason": "the constant is exitValidation: 3 is invalid NSD input, lock or registry, as docs/exitcodes.md says; only the name differs from invalid_input"}
   ]
 }

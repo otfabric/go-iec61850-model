@@ -177,7 +177,7 @@ func TestFullSetCoverage(t *testing.T) {
 	if err := os.Remove(filepath.Join(dir, "IEC_TR_61850-90-14.NSD.2020A3.Light.zip")); err != nil {
 		t.Fatal(err)
 	}
-	if out, _, code := nsdctl(t, "sources", "check", "--index", index, "--lock", lock, "--packages", dir); code != exitDifferent || !strings.Contains(out, "missing") {
+	if out, _, code := nsdctl(t, "sources", "check", "--index", index, "--lock", lock, "--packages", dir); code != exitFindings || !strings.Contains(out, "missing") {
 		t.Errorf("missing package: exit %d\n%s", code, out)
 	}
 	if _, _, code := nsdctl(t, "sources", "check", "--index", index, "--lock", lock, "--packages", dir, "--tiers", "required"); code != exitOK {
@@ -262,7 +262,7 @@ func TestFullSetLockAndModel(t *testing.T) {
 	if code != exitOK || !containsAll(out, "FutureElement", "futureAttr", "http://www.iec.ch/61850/2016/NSD") {
 		t.Errorf("schema: %d\n%s", code, out)
 	}
-	if _, _, code := nsdctl(t, "schema", "--exit-code", schemaPkg); code != exitDifferent {
+	if _, _, code := nsdctl(t, "schema", "--exit-code", schemaPkg); code != exitFindings {
 		t.Errorf("schema --exit-code: %d", code)
 	}
 	if out, _, code := nsdctl(t, "--json", "schema", schemaPkg); code != exitOK || !json.Valid([]byte(out)) {

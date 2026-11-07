@@ -74,7 +74,7 @@ func TestSourcesFetchCached(t *testing.T) {
 	if code != exitOK || json.Unmarshal([]byte(out), &res) != nil || len(res) != 5 || res[0].Status != "cached" {
 		t.Errorf("cached fetch JSON: %d\n%s", code, out)
 	}
-	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "../../sources/index.json", "--lock", "missing.json", "--dest", dest); code != exitSource {
+	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "../../sources/index.json", "--lock", "missing.json", "--dest", dest); code != exitInvalidInput {
 		t.Errorf("missing lock: %d", code)
 	}
 }
@@ -82,7 +82,7 @@ func TestSourcesFetchCached(t *testing.T) {
 func TestSourcesFetchUnpinned(t *testing.T) {
 	dest, lockPath := fetchCache(t, false)
 	out, e, code := nsdctl(t, "sources", "fetch", "--index", "../../sources/index.json", "--lock", lockPath, "--dest", dest, "--tiers", "required")
-	if code != exitValidation || !strings.Contains(out, "unpinned") {
+	if code != exitInvalidInput || !strings.Contains(out, "unpinned") {
 		t.Errorf("unpinned package: %d\n%s\n%s", code, out, e)
 	}
 }

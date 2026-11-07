@@ -3,10 +3,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"slices"
 	"sort"
@@ -144,7 +146,7 @@ states, digests and redistribution decisions.
 With --packages DIR it looks for every tracked package of the selected
 tiers in DIR (by official name, with or without .zip, any case), loads
 it, and checks that it carries the namespace release its name announces.
-It also compares the packages' digests with the lock. Exit code 4 when a
+It also compares the packages' digests with the lock. Exit code 1 when a
 package is missing or carries another release, or when digests differ;
 3 when a package cannot be loaded or the files are invalid.
 
@@ -186,7 +188,7 @@ It does not contact any server.`,
 				return err
 			}
 			if rep.Diagnostics.HasErrors() {
-				return withCode(exitValidation, "registry or lock is invalid")
+				return withCode(exitInvalidInput, "registry or lock is invalid")
 			}
 			var invalid, missing int
 			for _, p := range rep.Packages {
@@ -198,13 +200,13 @@ It does not contact any server.`,
 				}
 			}
 			if invalid > 0 {
-				return withCode(exitValidation, "%d tracked packages cannot be loaded", invalid)
+				return withCode(exitInvalidInput, "%d tracked packages cannot be loaded", invalid)
 			}
 			if missing > 0 {
-				return withCode(exitDifferent, "%d tracked packages are missing or carry another release", missing)
+				return withCode(exitFindings, "%d tracked packages are missing or carry another release", missing)
 			}
 			if v := rep.Verification; v != nil && len(v.Missing) > 0 {
-				return withCode(exitDifferent, "local packages differ from the lock")
+				return withCode(exitFindings, "local packages differ from the lock")
 			}
 			return nil
 		},
@@ -304,10 +306,10 @@ lock file. Packages that are missing are left out.`,
 			w := cmd.OutOrStdout()
 			if !write {
 				_, err := w.Write(data)
-				return err
+				return outputError(err)
 			}
 			if err := os.WriteFile(lockPath, data, 0o644); err != nil {
-				return err
+				return outputError(err)
 			}
 			_, _ = fmt.Fprintf(w, "wrote %s: %d entries\n", lockPath, len(merged.Sources))
 			return nil
@@ -332,7 +334,7 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 	}
 	c, err := catalog.New(srcs...)
 	if err != nil {
-		return nil, &exitError{code: exitValidation, err: err}
+		return nil, &exitError{code: exitInvalidInput, err: err}
 	}
 	byNS := map[string]sources.Entry{}
 	for _, e := range lock.Sources {
@@ -488,12 +490,12 @@ gaps.`,
 				}
 			}
 			if exitOnGap && gaps > 0 {
-				return withCode(exitDifferent, "%d schema constructs are not modeled", gaps)
+				return withCode(exitFindings, "%d schema constructs are not modeled", gaps)
 			}
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&exitOnGap, "exit-code", false, "Exit with code 4 when the schemas declare constructs the importer does not model")
+	cmd.Flags().BoolVar(&exitOnGap, "exit-code", false, "Exit with code 1 when the schemas declare constructs the importer does not model")
 	return cmd
 }
 
@@ -514,8 +516,9 @@ must be outside the Git work tree or its git-ignored .nsd-cache directory.
 
 A package without a locked digest is refused unless --allow-unpinned is
 given; pin new packages with "nsdctl sources lock --write" after
-reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
-2 when a download fails.`,
+reviewing them. Exit code 3 on a digest mismatch, an unpinned package or
+an oversized download, 4 when a download fails, 10 when the cache cannot
+be written.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			tiers, err := parseTiers(tierList)
@@ -536,6 +539,7 @@ reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
 			if err != nil {
 				return err
 			}
+			f.Client = fetchClient
 			f.UserAgent = "nsdctl/" + currentVersion(nil).Version
 			results, ferr := f.Fetch(cmd.Context(), idx, lock, dest, tiers)
 			w := cmd.OutOrStdout()
@@ -559,14 +563,10 @@ reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
 					return err
 				}
 			}
-			switch {
-			case ferr == nil:
+			if ferr == nil {
 				return nil
-			case errors.Is(ferr, sources.ErrDigestMismatch), errors.Is(ferr, sources.ErrNotPinned):
-				return withCode(exitValidation, "%v", ferr)
-			default:
-				return withCode(exitSource, "%v", ferr)
 			}
+			return &exitError{code: fetchExitCode(ferr), err: ferr}
 		},
 	}
 	fl := cmd.Flags()
@@ -578,4 +578,26 @@ reviewing them. Exit code 3 on a digest mismatch or an unpinned package,
 	fl.BoolVar(&f.AllowUnpinned, "allow-unpinned", false, "Accept packages without a locked digest (first fetch before pinning)")
 	fl.BoolVar(&f.Refresh, "refresh", false, "Download even when a cached file matches the lock")
 	return cmd
+}
+
+// fetchClient performs the downloads of sources fetch; nil uses the
+// default client of sources.Fetcher. Tests replace it.
+var fetchClient *http.Client
+
+// fetchExitCode classifies the error of sources fetch: a package that
+// does not match the lock (or is too large) is invalid input, a failed
+// download a transport error, and anything else (writing the cache) an
+// output error. Cancellation is left to run.
+func fetchExitCode(err error) int {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return exitInterrupted
+	case errors.Is(err, sources.ErrDigestMismatch), errors.Is(err, sources.ErrNotPinned),
+		errors.Is(err, model.ErrLimitExceeded):
+		return exitInvalidInput
+	case errors.Is(err, model.ErrSourceUnavailable):
+		return exitTransport
+	default:
+		return exitInternal
+	}
 }

@@ -1,5 +1,35 @@
 # go-iec61850-model Releases
 
+## v0.3.0
+
+**Date:** unreleased
+**Previous release:** v0.2.2
+
+### Breaking changes
+
+- **nsdctl exit codes follow the organisation table.** Library code is unchanged.
+  Scripts that test nsdctl exit codes need the new values
+  ([cmd/nsdctl/docs/exitcodes.md](cmd/nsdctl/docs/exitcodes.md)):
+
+  | Case | Old | New |
+  | --- | --- | --- |
+  | Usage error, unknown name, unresolvable path, refused overwrite | 1 | 2 |
+  | Other failures: writing the output, unexpected errors | 1 | 10 |
+  | A source cannot be read or parsed | 2 | 3 |
+  | A download of `sources fetch` failed | 2 | 4 |
+  | Invalid lock or registry, load errors, digest mismatch, unpinned package | 3 | 3 |
+  | `validate` found errors, `dependencies` found unsatisfied dependencies | 3 | 1 |
+  | Differences: `diff --exit-code`, `generate --check`, `sources check`, `schema --exit-code` | 4 | 1 |
+  | The license policy refused `generate --publish` | 5 | 9 |
+  | Interrupted by SIGINT or SIGTERM | – | 130 |
+
+### Changed
+
+- nsdctl runs under a context cancelled by SIGINT and SIGTERM, so
+  `sources fetch` stops its downloads when interrupted.
+
+---
+
 ## v0.2.2
 
 **Date:** 2026-10-31

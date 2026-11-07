@@ -65,7 +65,7 @@ their flags:
 | Flag | Meaning |
 | --- | --- |
 | `-o`, `--out DIR` | Output directory (required) |
-| `--check` | Compare with the output directory instead of writing; exit code 4 when out of date |
+| `--check` | Compare with the output directory instead of writing; exit code 1 when out of date |
 | `--force` | Overwrite files that were not written by nsdctl |
 | `--include-doc-text` | Include NSDoc titles and descriptions (IEC text) |
 | `--publish` | Produce publishable output; requires `--lock` permitting every namespace |
@@ -506,7 +506,7 @@ NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6 
 ```
 
 In the extended profile both definitions are kept, never merged, and nsdctl
-refuses to guess (exit code 1):
+refuses to guess (exit code 2, usage):
 
 ```console
 $ nsdctl -p extended model show DBAT
@@ -689,7 +689,7 @@ const (
 )
 ```
 
-`--check` compares instead of writing (exit code 4 when out of date):
+`--check` compares instead of writing (exit code 1 when out of date):
 
 ```console
 $ nsdctl -s .nsd-cache generate go -o .generated/go --check

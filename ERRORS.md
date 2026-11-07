@@ -158,11 +158,17 @@ Diagnostic codes:
 
 ## nsdctl exit codes
 
+nsdctl uses the organisation exit-code table since the release after v0.2.2;
+[cmd/nsdctl/docs/exitcodes.md](cmd/nsdctl/docs/exitcodes.md) has the old → new
+mapping.
+
 | Code | Meaning |
 | --- | --- |
 | 0 | Success |
-| 1 | Usage error, unknown name, unresolvable path, refused overwrite |
-| 2 | Source error: `ErrSourceUnavailable`, `ErrInvalidNSD`, `ErrUnsupportedSchema`, `ErrLimitExceeded`, `ErrUnsafeArchive` |
-| 3 | Validation: `*ValidationError`, `*DependencyError`, invalid lock or registry |
-| 4 | Differences: `diff --exit-code`, `generate --check`, `sources check --packages` (missing package, other release, digest), `schema --exit-code` |
-| 5 | License policy refused `generate --publish` |
+| 1 | Findings: `validate` errors, unsatisfied `dependencies`, `diff --exit-code`, `generate --check`, `sources check --packages` (missing package, other release, digest), `schema --exit-code` |
+| 2 | Usage: invalid flags or arguments, unknown or ambiguous name (`ErrUnknownNamespace`, `ErrUnknownLogicalNode`, `ErrUnknownDataObject`, `ErrUnknownCDC`, `ErrUnknownAttribute`, `ErrUnknownType`, `ErrAmbiguousReference`, `ErrInvalidReference`, `ErrNoMapping`), `ErrWouldOverwrite` without `--force` |
+| 3 | Invalid input: `ErrSourceUnavailable`, `ErrInvalidNSD`, `ErrUnsupportedSchema`, `ErrLimitExceeded`, `ErrUnsafeArchive`, `*ValidationError`, `*DependencyError`, invalid lock or registry, `ErrDigestMismatch`, `ErrNotPinned` |
+| 4 | Transport: a download of `sources fetch` failed |
+| 9 | Permission: `ErrPolicyRefused` (license policy refused `generate --publish`) |
+| 10 | Internal: writing the output failed, or an unexpected error |
+| 130 | Interrupted by SIGINT or SIGTERM |
