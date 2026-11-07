@@ -1,6 +1,6 @@
 # go-iec61850-model
 
-[![Go](https://img.shields.io/badge/Go-1.24%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/otfabric/go-iec61850-model.svg)](https://pkg.go.dev/github.com/otfabric/go-iec61850-model)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/otfabric/go-iec61850-model/actions/workflows/ci.yml/badge.svg)](https://github.com/otfabric/go-iec61850-model/actions/workflows/ci.yml)
@@ -81,7 +81,7 @@ available, parsed and validated.
 go get github.com/otfabric/go-iec61850-model
 ```
 
-Requires Go 1.24 or later. No CGO, no network access at run time. The library
+Requires Go 1.26 or later. No CGO, no network access at run time. The library
 packages use the standard library only. `cmd/nsdctl`, a nested module, adds
 [cobra](https://github.com/spf13/cobra); it is not a dependency of the library.
 
