@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-pkg-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-pkg-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean docs-check
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -20,6 +20,8 @@ COVERAGE_MIN := 90
 # helper imported by tests only; go-ci excludes it too. Lowest package when set: official, 92.5 %.
 COVER_PKG_MIN := 90
 FUZZTIME     ?= 15s
+# docsync release of docs-check (DOC-008).
+DOCSYNC_VERSION := v0.2.0
 
 # Official IEC NSD packages: temporary inputs, never committed. NSD_CACHE must be
 # outside the repository or the git-ignored .nsd-cache; generated output goes to
@@ -59,7 +61,7 @@ LDFLAGS    := -s -w -X main.version=$(VERSION) -X main.tag=$(TAG) -X main.commit
 
 all: check build ## Run all checks and build
 
-check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check coverage-pkg-check ## Run all pre-commit checks
+check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check coverage-pkg-check docs-check ## Run all pre-commit checks
 
 test: ## Run unit tests
 	@echo "Running unit tests"
@@ -219,6 +221,10 @@ official: ## Test against the official packages in NSD_DIR (default NSD_CACHE), 
 golden: ## Regenerate testdata/golden after an intentional generator output change
 	@echo "Regenerating golden generator output"
 	@UPDATE_GOLDEN=1 go test -count=1 -run TestGolden ./internal/generator
+
+# The documents against the code (DOC-008): docsync, as docs.yml runs it.
+docs-check: ## Check that the documents agree with the code (docsync)
+	@go run github.com/otfabric/docsync@$(DOCSYNC_VERSION) check .
 
 clean: coverage-clean ## Clean test cache, coverage and build artifacts
 	@echo "Cleaning test cache and build artifacts"
