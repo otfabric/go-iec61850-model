@@ -401,7 +401,7 @@ Without `--source`, the `model` and `catalog` commands use the embedded
 official catalog. Text or `--json` output; exit codes 0 ok, 1 usage, 2 source
 error, 3 validation, 4 differences, 5 refused by the license policy. Generated
 output is local-only unless the lock file permits publishing it.
-[docs/cli.md](docs/cli.md) walks through every command with real output from
+[cmd/nsdctl/docs/cli.md](cmd/nsdctl/docs/cli.md) walks through every command with real output from
 the official packages; [docs/generation.md](docs/generation.md) covers the
 generator.
 
@@ -431,7 +431,7 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [docs/semantic.md](docs/semantic.md) | Quantities, phases, units, rules and overrides |
 | [docs/ontology.md](docs/ontology.md) | Concept graph, relations, export |
 | [docs/use-cases.md](docs/use-cases.md) | Real tasks solved with `nsdctl`, with real output |
-| [docs/cli.md](docs/cli.md) | `nsdctl` commands, flags and exit codes |
+| [cmd/nsdctl/docs/cli.md](cmd/nsdctl/docs/cli.md) | `nsdctl` commands and flags; [exit codes](cmd/nsdctl/docs/exitcodes.md) |
 | [docs/generation.md](docs/generation.md) | Generated outputs, determinism and the license gate |
 | [docs/coverage.md](docs/coverage.md) | Published, available, parsed and validated coverage |
 | [docs/nsd-sources.md](docs/nsd-sources.md) | Official sources, acquisition, provenance, coverage |

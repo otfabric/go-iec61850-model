@@ -358,5 +358,5 @@ d, _ := semantic.Describe(p, string(names.MMXU_TotW)+".mag.f")
 fmt.Println(d.Quantity, d.UnitHint) // active-power W
 ```
 
-See the [README](../README.md#quick-start) and [cli.md](cli.md) for every
+See the [README](../README.md#quick-start) and [cli.md](../cmd/nsdctl/docs/cli.md) for every
 command and flag.
