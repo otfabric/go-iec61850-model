@@ -1,0 +1,6 @@
+{
+  "ignore": [
+    {"rule": "DS-REF", "subject": "ErrTerm", "reason": "IEC 61850-7-4 data object ErrTerm (MV) of an LN class in the nsdctl-generated docs/reference/logical-nodes.md, not a Go error"},
+    {"rule": "DS-REF", "subject": "ErrPar", "reason": "IEC 61850-7-4 data object ErrPar (SPS) of ATCC in the nsdctl-generated docs/reference/logical-nodes.md, not a Go error"}
+  ]
+}

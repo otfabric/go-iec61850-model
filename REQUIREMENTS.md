@@ -497,7 +497,7 @@ func main() {
         "/tmp/nsd/7-420.zip",
     }
 
-    var packages []*nsd.Package
+    var packages []catalog.Source
     for _, path := range paths {
         pkg, err := nsd.LoadZIP(path)
         if err != nil {

@@ -672,6 +672,7 @@ const (
 // …
 	MMXU_Hz         DataObjectRef = "MMXU.Hz"         // MV, O
 	MMXU_PPV        DataObjectRef = "MMXU.PPV"        // DEL, O
+)
 ```
 
 `--check` compares instead of writing (exit code 4 when out of date):
