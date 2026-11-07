@@ -225,6 +225,7 @@ golden: ## Regenerate testdata/golden after an intentional generator output chan
 # The documents against the code (DOC-008): docsync, as docs.yml runs it.
 docs-check: ## Check that the documents agree with the code (docsync)
 	@go run github.com/otfabric/docsync@$(DOCSYNC_VERSION) check .
+	@cd cmd/nsdctl && go run github.com/otfabric/docsync@$(DOCSYNC_VERSION) check .
 
 clean: coverage-clean ## Clean test cache, coverage and build artifacts
 	@echo "Cleaning test cache and build artifacts"
