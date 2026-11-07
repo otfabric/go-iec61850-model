@@ -39,7 +39,7 @@ func TestCommands(t *testing.T) {
 		code int
 		want []string
 	}{
-		{"version", []string{"version"}, exitOK, []string{"nsdctl dev (commit ", ", built unknown, go"}},
+		{"version", []string{"version"}, exitOK, []string{"nsdctl dev (commit ", ", built unknown, "}},
 		{"notice", []string{"notice"}, exitOK, []string{"IEC 61850-7-420:2019A4", "www.iec.ch/CCv1"}},
 		{"inspect", []string{"inspect", fixtures.Dir()}, exitOK, []string{"IEC 61850-7-4:2007B2", "doc       IEC 61850-7-4:2007B1 (en, 6 texts)"}},
 		{"inspect file", []string{"inspect", fixtures.Path(fixtures.NS73)}, exitOK, []string{"sha256", "IEC 61850-7-3:2007B1"}},
@@ -242,10 +242,10 @@ func TestExitCode(t *testing.T) {
 	version, tag, commit, buildDate = "v1.2.3", "v1.2.3", "0123456789abcdef0123456789abcdef01234567", "2026-10-21T16:00:00Z"
 	defer func() { version, tag, commit, buildDate = "", "", "", "" }()
 	plat := runtime.Version() + ", " + runtime.GOOS + "/" + runtime.GOARCH
-	if out, _, code := nsdctl(t, "version"); code != exitOK || out != "nsdctl 1.2.3 (tag v1.2.3, commit 0123456789abcdef0123456789abcdef01234567, built 2026-10-21T16:00:00Z, "+plat+")\n" {
+	if out, _, code := nsdctl(t, "version"); code != exitOK || out != "nsdctl 1.2.3 (tag v1.2.3, commit 0123456789abcdef0123456789abcdef01234567, built 2026-10-21T16:00:00Z, "+libsText()+plat+")\n" {
 		t.Errorf("version: %d %q", code, out)
 	}
-	wantJSON := `{"name":"nsdctl","version":"1.2.3","tag":"v1.2.3","commit":"0123456789abcdef0123456789abcdef01234567","built":"2026-10-21T16:00:00Z","go":"` +
+	wantJSON := `{"name":"nsdctl","version":"1.2.3","tag":"v1.2.3","commit":"0123456789abcdef0123456789abcdef01234567","built":"2026-10-21T16:00:00Z",` + libsJSON() + `"go":"` +
 		runtime.Version() + `","platform":"` + runtime.GOOS + "/" + runtime.GOARCH + "\"}\n"
 	for _, args := range [][]string{{"--json", "version"}, {"version", "--json"}} {
 		if out, _, code := nsdctl(t, args...); code != exitOK || out != wantJSON {
@@ -253,7 +253,7 @@ func TestExitCode(t *testing.T) {
 		}
 	}
 	version, tag, commit, buildDate = "", "", "", ""
-	if out, _, _ := nsdctl(t, "version"); out != "nsdctl dev (commit unknown, built unknown, "+plat+")\n" {
+	if out, _, _ := nsdctl(t, "version"); out != "nsdctl dev (commit unknown, built unknown, "+libsText()+plat+")\n" {
 		t.Errorf("dev version: %q", out)
 	}
 }
@@ -295,4 +295,19 @@ func TestSourcesFetchGuards(t *testing.T) {
 	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "missing.json", "--dest", filepath.Join(dir, "c2")); code != exitInvalidInput {
 		t.Error("missing index")
 	}
+}
+
+// libsText and libsJSON are the libraries part of the version output of
+// this test binary (whatever OT Fabric modules it links).
+func libsText() string {
+	s := ""
+	for _, l := range build().Libraries {
+		s += l.Name + " " + l.Version + ", "
+	}
+	return s
+}
+
+func libsJSON() string {
+	b, _ := json.Marshal(build().Libraries)
+	return `"libraries":` + string(b) + `,`
 }

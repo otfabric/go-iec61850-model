@@ -46,7 +46,9 @@ var (
 )
 
 // build is the resolved build information of this binary.
-func build() buildinfo.Info { return buildinfo.Resolve("nsdctl", version, tag, commit, buildDate) }
+func build() buildinfo.Info {
+	return buildinfo.Resolve("nsdctl", version, tag, commit, buildDate, "github.com/otfabric/go-iec61850-model")
+}
 
 // Exit codes: the organisation table (docs/exitcodes.md).
 const (

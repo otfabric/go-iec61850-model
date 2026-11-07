@@ -117,13 +117,15 @@ or single NSD file works as a source.
 $ nsdctl version
 nsdctl 0.4.0 (tag v0.4.0, commit 3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c, built 2026-11-07T16:00:00Z, go1.27.3, darwin/arm64)
 $ nsdctl version --json
-{"name":"nsdctl","version":"0.4.0","tag":"v0.4.0","commit":"3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c","built":"2026-11-07T16:00:00Z","go":"go1.27.3","platform":"darwin/arm64"}
+{"name":"nsdctl","version":"0.4.0","tag":"v0.4.0","commit":"3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c","built":"2026-11-07T16:00:00Z","libraries":[],"go":"go1.27.3","platform":"darwin/arm64"}
 ```
 
 Release binaries carry version, tag, full commit and build date. A binary
 built with `go install …@vX.Y.Z` reports that module version; other builds
 report `dev`, the VCS revision (with `-dirty` for uncommitted changes) and no
-tag.
+tag. `libraries` lists the other OT Fabric libraries linked in; nsdctl links
+none besides go-iec61850-model, whose version is the version, so the text line
+has none and the JSON has `[]`.
 
 The binary embeds the official catalog; `nsdctl notice` prints the IEC
 attribution, license and copyright notice of every namespace in it:

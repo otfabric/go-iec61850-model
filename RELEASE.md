@@ -10,13 +10,13 @@
 - **`nsdctl version`** prints one line, the format of every otfabric CLI:
   `nsdctl 0.4.0 (tag v0.4.0, commit <full sha>, built <date>, go1.27.3, darwin/arm64)`,
   instead of one field per line. `--json` writes one line with the keys
-  `name`, `version`, `tag`, `commit`, `built`, `go`, `platform`, always
+  `name`, `version`, `tag`, `commit`, `built`, `libraries`, `go`, `platform`, always
   present and in that order (was `version`, `tag`, `commit`, `buildDate`,
   `goVersion`, `platform`, indented, empty ones left out). The version has
   no leading `v`, the commit is no longer cut to 8 characters, and a build
   that was not released reports `dev` (pseudo-versions of `go build` are not
   reported as versions), the VCS revision with `-dirty`, and `unknown` for
-  what is not known. `make build` injects the same values as the release.
+  what is not known. `make build` injects the version and tag only when HEAD is on a tag, and the full commit.
   Library code is unchanged.
 
 ### Added
