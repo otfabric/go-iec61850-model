@@ -21,7 +21,7 @@ COVERAGE_MIN := 90
 COVER_PKG_MIN := 90
 FUZZTIME     ?= 15s
 # docsync release of docs-check (DOC-008).
-DOCSYNC_VERSION := v0.2.0
+DOCSYNC_VERSION := v0.3.0
 
 # Official IEC NSD packages: temporary inputs, never committed. NSD_CACHE must be
 # outside the repository or the git-ignored .nsd-cache; generated output goes to
