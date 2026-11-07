@@ -52,7 +52,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `sources fetch [--dest DIR --tiers T --allow-unpinned --refresh]` | Download the tracked packages from their official locations, verified against the lock, into `.nsd-cache/` or a directory outside the repository |
 | `sources lock --packages DIR [--write]` | Produce lock entries (digest, content, dependencies, status) for the tracked packages found in DIR |
 | `schema [SOURCE...] [--exit-code]` | XSD constructs (e.g. of IEC 61850-7-7) that the importer does not model |
-| `version` | Version, tag, commit, build date, Go version, platform (`--json` too) |
+| `version` | Version, tag, commit, build date, Go version, platform on one line (`--json`: one line of JSON) |
 | `notice` | The IEC attribution and notices of the embedded catalog |
 | `completion bash\|zsh\|fish\|powershell` | Shell completion script |
 
@@ -89,20 +89,14 @@ Quote references with brackets in shells that glob (`zsh`).
 
 ## Shell completion
 
-`nsdctl completion SHELL` prints a completion script:
-
-```bash
-source <(nsdctl completion bash)                        # Bash
-source <(nsdctl completion zsh)                         # Zsh
-nsdctl completion fish | source                         # Fish
-nsdctl completion powershell | Out-String | Invoke-Expression   # PowerShell
-```
-
-Add the line to your shell profile to keep it. Commands complete, and so do
-flags with a fixed set of values: `--profile` to the profile names and
-namespaces of the embedded catalog, `--ns`, `--left` and `--right` to its
-namespaces (by ID and by part, e.g. `7-420`), `--kind`, `--fc`, `--class` and
-`--tiers` to their values.
+`nsdctl completion bash|zsh|fish|powershell` prints a completion script;
+install it as in [Shell completion](../../../README.md#shell-completion).
+Commands complete, and so do flags with a fixed set of values: `--profile` to
+the profile names and namespaces of the embedded catalog, `--ns`, `--left` and
+`--right` to its namespaces (by ID and by part, e.g. `7-420`), `--kind`,
+`--fc`, `--class` and `--tiers` to their values. `--source` and the source
+arguments complete NSD, XSD and ZIP files, `--lock` and `--index` JSON files,
+`--out`, `--dest` and `--packages` directories.
 
 ## Walkthrough with the official packages
 
@@ -121,16 +115,17 @@ or single NSD file works as a source.
 
 ```console
 $ nsdctl version
-nsdctl version: v0.1.0
-tag:         v0.1.0
-commit:      3f2a9c1e
-build date:  2026-10-21T16:00:00Z
-go version:  go1.27.3
-platform:    darwin/arm64
+nsdctl 0.4.0 (tag v0.4.0, commit 3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c, built 2026-11-07T16:00:00Z, go1.27.3, darwin/arm64)
+$ nsdctl version --json
+{"name":"nsdctl","version":"0.4.0","tag":"v0.4.0","commit":"3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c","built":"2026-11-07T16:00:00Z","libraries":[],"go":"go1.27.3","platform":"darwin/arm64"}
 ```
 
-Release binaries carry version, tag, commit and build date. A binary built with
-`go install` reports the module version and commit the Go toolchain records.
+Release binaries carry version, tag, full commit and build date. A binary
+built with `go install …@vX.Y.Z` reports that module version; other builds
+report `dev`, the VCS revision (with `-dirty` for uncommitted changes) and no
+tag. `libraries` lists the other OT Fabric libraries linked in; nsdctl links
+none besides go-iec61850-model, whose version is the version, so the text line
+has none and the JSON has `[]`.
 
 The binary embeds the official catalog; `nsdctl notice` prints the IEC
 attribution, license and copyright notice of every namespace in it:

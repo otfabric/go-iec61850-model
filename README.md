@@ -233,6 +233,28 @@ irm https://get.otfabric.io/nsdctl.ps1 | iex
 
 Linux (amd64, arm64, armv7), macOS (Intel, Apple silicon) and Windows (amd64, arm64). The installer verifies the release's SHA-256 checksum, installs per user without `sudo` (`~/.local/bin`, Windows `%LOCALAPPDATA%\OTFabric\bin`), and upgrades in place when run again. Pin a version with `OTF_VERSION=x.y.z`; for CI, containers and device images use `OTF_UNMANAGED_INSTALL=<dir>`; all options: [otfabric/install](https://github.com/otfabric/install#options). `OTF_VERSION` is the version of go-iec61850-model, which ships `nsdctl`. For offline machines, the archives and checksums are on [Releases](https://github.com/otfabric/go-iec61850-model/releases).
 
+### Shell completion
+
+Commands and the flags with a value set complete (`--profile`, `--ns`, `--left`, `--right`, `--kind`, `--fc`, `--class`, `--tiers`), and so do NSD sources, lock and registry files and output directories.
+
+```bash
+# bash (needs the bash-completion package)
+mkdir -p ~/.local/share/bash-completion/completions
+nsdctl completion bash > ~/.local/share/bash-completion/completions/nsdctl
+
+# zsh: a directory on your fpath, then restart the shell
+mkdir -p ~/.zsh/completions && nsdctl completion zsh > ~/.zsh/completions/_nsdctl
+# and once in ~/.zshrc:  fpath=(~/.zsh/completions $fpath); autoload -U compinit && compinit
+
+# fish
+mkdir -p ~/.config/fish/completions && nsdctl completion fish > ~/.config/fish/completions/nsdctl.fish
+```
+
+```powershell
+# PowerShell: add this line to your profile ($PROFILE)
+nsdctl completion powershell | Out-String | Invoke-Expression
+```
+
 ## Command-line tool
 
 `nsdctl` answers integration questions straight from the official IEC models
@@ -269,7 +291,6 @@ nsdctl diff --exit-code ./old/ ./new/
 nsdctl -s .nsd-cache generate go -o .generated/go --package iec61850names
 nsdctl schema .nsd-cache/IEC_61850-7-7.2017.NSD.2017A.full.zip
 nsdctl version
-source <(nsdctl completion zsh)                         # shell completion (bash, zsh, fish, powershell)
 ```
 
 Without `--source`, the `model` and `catalog` commands use the embedded

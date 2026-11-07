@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/internal/sources"
@@ -26,16 +27,14 @@ func completionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
 		Short: "Generate shell completion script",
-		Long: `Output a completion script for the given shell.
-
-  Bash:        source <(nsdctl completion bash)
-  Zsh:         source <(nsdctl completion zsh)
-  Fish:        nsdctl completion fish | source
-  PowerShell:  nsdctl completion powershell | Out-String | Invoke-Expression
+		Long: `Output a completion script for the given shell. How to install it: the
+"Shell completion" section of the go-iec61850-model README.
 
 Flags with a fixed set of values (--profile, --ns, --kind, --fc, --class,
---tiers) complete to those values; --profile and --ns to the profiles and
-namespaces of the embedded official catalog.`,
+--left, --right, --tiers) complete to those values; --profile, --ns, --left
+and --right to the profiles and namespaces of the embedded official catalog.
+--source and NSD source arguments complete NSD, XSD and ZIP files, --lock and
+--index JSON files, and --out, --dest and --packages directories.`,
 		ValidArgs: completionShells,
 		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -112,4 +111,60 @@ func tierValues() []string { return append(sources.Tiers(), "all") }
 
 func overlapClassValues() []string {
 	return []string{string(catalog.OverlapIdentical), string(catalog.OverlapCompatible), string(catalog.OverlapConflicting)}
+}
+
+// sourceExts are the file types an NSD source can be (directories complete
+// too).
+var sourceExts = []string{"zip", "nsd", "snsd", "nsdoc", "appns", "xsd"}
+
+// fileFlags are the flags that take a file or a directory, by name.
+var fileFlags = map[string]cobra.CompletionFunc{
+	"source":   fileExt(sourceExts...),
+	"lock":     fileExt("json"),
+	"index":    fileExt("json"),
+	"out":      dirs,
+	"dest":     dirs,
+	"packages": dirs,
+}
+
+func fileExt(exts ...string) cobra.CompletionFunc {
+	return func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+		return exts, cobra.ShellCompDirectiveFilterFileExt
+	}
+}
+
+func dirs(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return nil, cobra.ShellCompDirectiveFilterDirs
+}
+
+// registerCompletions completes what the commands do not complete
+// themselves: flags that take files or directories, NSD sources as
+// arguments, and no file names for every other flag and argument.
+func registerCompletions(root *cobra.Command) {
+	var walk func(c *cobra.Command)
+	walk = func(c *cobra.Command) {
+		each := func(f *pflag.Flag) {
+			if _, ok := c.GetFlagCompletionFunc(f.Name); ok || f.Value.Type() == "bool" {
+				return
+			}
+			fn, ok := fileFlags[f.Name]
+			if !ok {
+				fn = cobra.NoFileCompletions
+			}
+			_ = c.RegisterFlagCompletionFunc(f.Name, fn)
+		}
+		c.LocalFlags().VisitAll(each)
+		c.PersistentFlags().VisitAll(each)
+		if !c.HasSubCommands() && c.ValidArgsFunction == nil && len(c.ValidArgs) == 0 {
+			if strings.Contains(c.Use, "SOURCE") || strings.Contains(c.Use, "OLD NEW") {
+				c.ValidArgsFunction = fileExt(sourceExts...)
+			} else {
+				c.ValidArgsFunction = cobra.NoFileCompletions
+			}
+		}
+		for _, s := range c.Commands() {
+			walk(s)
+		}
+	}
+	walk(root)
 }

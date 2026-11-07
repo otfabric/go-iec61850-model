@@ -1,5 +1,35 @@
 # go-iec61850-model Releases
 
+## v0.4.0
+
+**Date:** 2026-11-07
+**Previous release:** v0.3.0
+
+### Breaking changes
+
+- **`nsdctl version`** prints one line, the format of every otfabric CLI:
+  `nsdctl 0.4.0 (tag v0.4.0, commit <full sha>, built <date>, go1.27.3, darwin/arm64)`,
+  instead of one field per line. `--json` writes one line with the keys
+  `name`, `version`, `tag`, `commit`, `built`, `libraries`, `go`, `platform`, always
+  present and in that order (was `version`, `tag`, `commit`, `buildDate`,
+  `goVersion`, `platform`, indented, empty ones left out). The version has
+  no leading `v`, the commit is no longer cut to 8 characters, and a build
+  that was not released reports `dev` (pseudo-versions of `go build` are not
+  reported as versions), the VCS revision with `-dirty`, and `unknown` for
+  what is not known. `make build` injects the version and tag only when HEAD is on a tag, and the full commit.
+  Library code is unchanged.
+
+### Added
+
+- **Shell completion** for bash, zsh, fish and PowerShell also completes
+  `--source` and the source arguments of `inspect`, `validate`,
+  `dependencies`, `schema` and `diff` (NSD, XSD and ZIP files), `--lock` and
+  `--index` (JSON files), `--out`, `--dest` and `--packages` (directories);
+  every other flag that takes a value offers no file names. Install:
+  [Shell completion](README.md#shell-completion).
+
+---
+
 ## v0.3.0
 
 **Date:** 2026-11-07

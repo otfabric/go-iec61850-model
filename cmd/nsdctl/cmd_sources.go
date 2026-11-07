@@ -540,7 +540,7 @@ be written.`,
 				return err
 			}
 			f.Client = fetchClient
-			f.UserAgent = "nsdctl/" + currentVersion(nil).Version
+			f.UserAgent = "nsdctl/" + build().Version
 			results, ferr := f.Fetch(cmd.Context(), idx, lock, dest, tiers)
 			w := cmd.OutOrStdout()
 			if a.json {

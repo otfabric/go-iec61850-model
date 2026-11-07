@@ -19,8 +19,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"runtime"
-	"runtime/debug"
 	"slices"
 	"strings"
 	"syscall"
@@ -29,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/otfabric/go-iec61850-model/catalog"
+	"github.com/otfabric/go-iec61850-model/cmd/nsdctl/internal/buildinfo"
 	"github.com/otfabric/go-iec61850-model/internal/generator"
 	"github.com/otfabric/go-iec61850-model/internal/sources"
 	"github.com/otfabric/go-iec61850-model/model"
@@ -36,13 +35,20 @@ import (
 	"github.com/otfabric/go-iec61850-model/official"
 )
 
-// Build metadata set at build time via -ldflags.
+// Build metadata set at build time via -ldflags (Makefile,
+// .github/workflows/release.yml); empty when not injected, and then
+// resolved by buildinfo.
 var (
-	version   = "dev"
+	version   = ""
 	tag       = ""
 	commit    = ""
 	buildDate = ""
 )
+
+// build is the resolved build information of this binary.
+func build() buildinfo.Info {
+	return buildinfo.Resolve("nsdctl", version, tag, commit, buildDate, "github.com/otfabric/go-iec61850-model")
+}
 
 // Exit codes: the organisation table (docs/exitcodes.md).
 const (
@@ -208,6 +214,7 @@ Exit codes: 0 ok, 1 findings (differences, validation errors), 2 usage,
 	helpWithoutSubcommand(root)
 	showHelpOfGroups(root)
 	usageErrors(root)
+	registerCompletions(root)
 	return root
 }
 
@@ -443,16 +450,17 @@ func (a *app) versionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print the version of nsdctl",
-		Args:  cobra.NoArgs,
+		Long: `Print the version, tag, commit, build date, Go version and platform on one
+line, or with --json as one line of JSON.`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			info, _ := debug.ReadBuildInfo()
-			v := currentVersion(info)
-			out := cmd.OutOrStdout()
+			b := build()
+			line := b.String()
 			if a.json {
-				return writeJSON(out, v)
+				line = b.JSON()
 			}
-			_, _ = fmt.Fprint(out, v.String())
-			return nil
+			_, err := fmt.Fprintln(cmd.OutOrStdout(), line)
+			return outputError(err)
 		},
 	}
 }
@@ -467,71 +475,6 @@ func noticeCmd() *cobra.Command {
 			return outputError(err)
 		},
 	}
-}
-
-// devVersion is the version of a binary built without the ldflags of
-// the Makefile and the release.
-const devVersion = "dev"
-
-// versionInfo is what nsdctl version reports.
-type versionInfo struct {
-	Version   string `json:"version"`
-	Tag       string `json:"tag,omitempty"`
-	Commit    string `json:"commit,omitempty"`
-	BuildDate string `json:"buildDate,omitempty"`
-	GoVersion string `json:"goVersion"`
-	Platform  string `json:"platform"`
-}
-
-// String formats the version in the layout of the other otfabric CLIs.
-func (v versionInfo) String() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "nsdctl version: %s\n", v.Version)
-	if v.Tag != "" {
-		fmt.Fprintf(&b, "tag:         %s\n", v.Tag)
-	}
-	if v.Commit != "" {
-		fmt.Fprintf(&b, "commit:      %s\n", v.Commit)
-	}
-	if v.BuildDate != "" {
-		fmt.Fprintf(&b, "build date:  %s\n", v.BuildDate)
-	}
-	fmt.Fprintf(&b, "go version:  %s\n", v.GoVersion)
-	fmt.Fprintf(&b, "platform:    %s\n", v.Platform)
-	return b.String()
-}
-
-// currentVersion returns the version to report. The ldflags of the
-// Makefile and of the release set it; a binary built without them
-// (go install, go build) reports what the go toolchain records: the
-// module version (v0.3.0 for go install …@v0.3.0, or one derived from
-// the git tags for go build in a clone) and the git revision.
-func currentVersion(info *debug.BuildInfo) versionInfo {
-	v := versionInfo{
-		Version: strings.TrimSpace(version), Tag: strings.TrimSpace(tag), Commit: strings.TrimSpace(commit),
-		BuildDate: strings.TrimSpace(buildDate), GoVersion: runtime.Version(), Platform: runtime.GOOS + "/" + runtime.GOARCH,
-	}
-	if info != nil {
-		if v.Version == devVersion || v.Version == "" {
-			if mv := info.Main.Version; mv != "" && mv != "(devel)" {
-				v.Version = mv
-			}
-		}
-		if v.Commit == "" {
-			for _, st := range info.Settings {
-				if st.Key == "vcs.revision" {
-					v.Commit = st.Value
-				}
-			}
-		}
-	}
-	if len(v.Commit) > 8 {
-		v.Commit = v.Commit[:8]
-	}
-	if v.Version == "" {
-		v.Version = "(unknown)"
-	}
-	return v
 }
 
 // profileParts returns the parts of a named profile: from the source
