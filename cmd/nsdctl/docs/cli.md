@@ -10,12 +10,9 @@ For task-oriented examples — metering, battery storage, breakers, protection
 settings, decoding raw values, legacy 90-9 devices — see
 [use-cases.md](../../../docs/use-cases.md). This page is the command reference.
 
-Pre-built binaries for Linux, macOS and Windows are attached to every
-release; see [Install nsdctl](../../../README.md#install-nsdctl). With Go, in a clone:
-
-```bash
-make build && ./bin/nsdctl
-```
+Install it with the one-line installer; see
+[Install nsdctl](../../../README.md#install-nsdctl). Contributors build it in a
+clone with `make build` (`./bin/nsdctl`).
 
 `nsdctl` is a nested module (`cmd/nsdctl/go.mod`), so the library does not
 require cobra.

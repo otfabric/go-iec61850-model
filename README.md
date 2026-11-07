@@ -223,140 +223,15 @@ catalog overlaps`). See [docs/namespaces.md](docs/namespaces.md).
 
 ## Install nsdctl
 
-The easiest way to install `nsdctl` is to download a pre-built binary from the [GitHub Releases page](https://github.com/otfabric/go-iec61850-model/releases). No Go toolchain is required.
-
-| Platform | CPU | Download |
-|---|---|---|
-| Linux | x86-64 | `nsdctl-<version>-linux-amd64.tar.gz` |
-| Linux | 64-bit ARM (Raspberry Pi 4/5 with a 64-bit OS, AWS Graviton) | `nsdctl-<version>-linux-arm64.tar.gz` |
-| Linux | 32-bit ARM (Raspberry Pi with a 32-bit OS) | `nsdctl-<version>-linux-armv7.tar.gz` |
-| macOS | Apple Silicon (M1 and later) | `nsdctl-<version>-darwin-arm64.tar.gz` |
-| macOS | Intel | `nsdctl-<version>-darwin-amd64.tar.gz` |
-| Windows | x86-64 | `nsdctl-<version>-windows-amd64.zip` |
-| Windows | ARM64 | `nsdctl-<version>-windows-arm64.zip` |
-
-Each release also contains `nsdctl-<version>-checksums.txt` (SHA-256) so you can verify your download. The commands below fetch the **latest** release, verify its checksum and install it. Afterwards, check that it works:
-
-```console
-nsdctl version
-```
-
-### Linux
-
 ```bash
-# 1. Find the latest version and your CPU architecture
-VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/otfabric/go-iec61850-model/releases/latest | sed 's|.*/v||')
-case "$(uname -m)" in
-  x86_64)         ARCH=amd64 ;;
-  aarch64|arm64)  ARCH=arm64 ;;
-  armv7l)         ARCH=armv7 ;;
-  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
-esac
-
-# 2. Download the archive and the checksum file
-FILE="nsdctl-${VERSION}-linux-${ARCH}.tar.gz"
-BASE="https://github.com/otfabric/go-iec61850-model/releases/download/v${VERSION}"
-curl -fsSLO "${BASE}/${FILE}"
-curl -fsSLO "${BASE}/nsdctl-${VERSION}-checksums.txt"
-
-# 3. Verify the download (should print "OK")
-grep "${FILE}" "nsdctl-${VERSION}-checksums.txt" | sha256sum -c -
-
-# 4. Extract and install (the binary in the archive carries the version and platform in its name)
-rm -rf nsdctl-dl && mkdir -p nsdctl-dl && tar -xzf "${FILE}" -C nsdctl-dl
-sudo install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-linux-${ARCH}" /usr/local/bin/nsdctl
+curl -fsSL https://get.otfabric.io/nsdctl | sh
 ```
-
-No `sudo`? Install into your home directory instead (and make sure `~/.local/bin` is in your `PATH`):
-
-```bash
-mkdir -p ~/.local/bin
-install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-linux-${ARCH}" ~/.local/bin/nsdctl
-```
-
-### macOS
-
-```bash
-# 1. Find the latest version and your CPU architecture (arm64 = Apple Silicon, x86_64 = Intel)
-VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/otfabric/go-iec61850-model/releases/latest | sed 's|.*/v||')
-case "$(uname -m)" in
-  arm64)   ARCH=arm64 ;;
-  x86_64)  ARCH=amd64 ;;
-  *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
-esac
-
-# 2. Download the archive and the checksum file
-FILE="nsdctl-${VERSION}-darwin-${ARCH}.tar.gz"
-BASE="https://github.com/otfabric/go-iec61850-model/releases/download/v${VERSION}"
-curl -fsSLO "${BASE}/${FILE}"
-curl -fsSLO "${BASE}/nsdctl-${VERSION}-checksums.txt"
-
-# 3. Verify the download (should print "OK")
-grep "${FILE}" "nsdctl-${VERSION}-checksums.txt" | shasum -a 256 -c -
-
-# 4. Extract and install (the binary in the archive carries the version and platform in its name)
-rm -rf nsdctl-dl && mkdir -p nsdctl-dl && tar -xzf "${FILE}" -C nsdctl-dl
-sudo install -m 0755 "nsdctl-dl/nsdctl-${VERSION}-darwin-${ARCH}" /usr/local/bin/nsdctl
-```
-
-If you downloaded the archive with a web browser instead of `curl` and macOS refuses to run the binary ("cannot be verified"), remove the quarantine flag: `xattr -d com.apple.quarantine /usr/local/bin/nsdctl`.
-
-### Windows (PowerShell)
 
 ```powershell
-# 1. Find the latest version and your CPU architecture
-$version = (Invoke-RestMethod https://api.github.com/repos/otfabric/go-iec61850-model/releases/latest).tag_name.TrimStart('v')
-$arch    = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'amd64' }
-
-# 2. Download the archive and the checksum file
-$file = "nsdctl-$version-windows-$arch.zip"
-$base = "https://github.com/otfabric/go-iec61850-model/releases/download/v$version"
-Invoke-WebRequest "$base/$file" -OutFile "$env:TEMP\$file"
-Invoke-WebRequest "$base/nsdctl-$version-checksums.txt" -OutFile "$env:TEMP\nsdctl-checksums.txt"
-
-# 3. Verify the download (throws an error on mismatch)
-$expected = ((Select-String -Path "$env:TEMP\nsdctl-checksums.txt" -Pattern $file).Line -split '\s+')[0]
-$actual   = (Get-FileHash "$env:TEMP\$file" -Algorithm SHA256).Hash
-if ($expected -ne $actual) { throw "Checksum mismatch for $file" }
-
-# 4. Extract to a per-user folder and name the program nsdctl.exe
-#    (the .exe in the archive carries the version and platform in its name)
-$dir = "$env:LOCALAPPDATA\Programs\nsdctl"
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-Remove-Item -Recurse -Force "$env:TEMP\nsdctl-dl" -ErrorAction SilentlyContinue
-Expand-Archive "$env:TEMP\$file" -DestinationPath "$env:TEMP\nsdctl-dl" -Force
-Copy-Item "$env:TEMP\nsdctl-dl\nsdctl-$version-windows-$arch.exe" "$dir\nsdctl.exe" -Force
-
-# 5. Add nsdctl to your user PATH (then open a new terminal)
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-if ($userPath -notlike "*$dir*") {
-  [Environment]::SetEnvironmentVariable('Path', "$userPath;$dir", 'User')
-}
+irm https://get.otfabric.io/nsdctl.ps1 | iex
 ```
 
-If Windows SmartScreen warns about an unrecognised app, choose **More info → Run anyway**.
-
-### Manual download
-
-1. Open the [latest release](https://github.com/otfabric/go-iec61850-model/releases/latest).
-2. Download the archive for your platform from the table above.
-3. Extract it, rename the binary to `nsdctl` (`nsdctl.exe` on Windows) and move it to a folder on your `PATH`.
-
-### Update
-
-Run the same commands again. They always fetch the latest release, unpack it into an emptied `nsdctl-dl` folder and overwrite the previous binary.
-
-### Build from source
-
-Requires Go 1.24 or later:
-
-```console
-git clone https://github.com/otfabric/go-iec61850-model.git
-cd go-iec61850-model
-make build
-```
-
-`make build` writes the binary to **`bin/nsdctl`**; `make build-all` cross-compiles every release target into `release/`. `nsdctl` is a nested module, so `make build` is also how to build it with a Go toolchain. `go install github.com/otfabric/go-iec61850-model/cmd/nsdctl@v0.1.1` installs the last version published in the library module; later versions come from the release binaries or a checkout.
+Linux (amd64, arm64, armv7), macOS (Intel, Apple silicon) and Windows (amd64, arm64). The installer verifies the release's SHA-256 checksum, installs per user without `sudo` (`~/.local/bin`, Windows `%LOCALAPPDATA%\OTFabric\bin`), and upgrades in place when run again. Pin a version with `OTF_VERSION=x.y.z`; for CI, containers and device images use `OTF_UNMANAGED_INSTALL=<dir>`; all options: [otfabric/install](https://github.com/otfabric/install#options). `OTF_VERSION` is the version of go-iec61850-model, which ships `nsdctl`. For offline machines, the archives and checksums are on [Releases](https://github.com/otfabric/go-iec61850-model/releases).
 
 ## Command-line tool
 
@@ -483,6 +358,7 @@ in CI without caches or artifacts.
 make check   # format, tidy, vet, staticcheck, golangci-lint, govulncheck, race tests, coverage gate
 make test    # unit tests
 make fuzz    # fuzz the NSD parser and the reference parser
+make build   # bin/nsdctl (a nested module: cmd/nsdctl)
 ```
 
 Run `make` for all targets.
