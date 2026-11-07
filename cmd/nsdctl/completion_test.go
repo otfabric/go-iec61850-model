@@ -3,8 +3,12 @@
 package main
 
 import (
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func TestCompletion(t *testing.T) {
@@ -71,4 +75,63 @@ func TestCommandGroups(t *testing.T) {
 	if _, e, code := nsdctl(t, "model", "list", "MMXU"); code != exitUsage || !strings.Contains(e, `nsdctl model show MMXU`) {
 		t.Errorf("model list MMXU: %d %s", code, e)
 	}
+}
+
+// TestFileAndFreeCompletion: flags and arguments that take files complete
+// files of their type or directories; free values offer no file names.
+func TestFileAndFreeCompletion(t *testing.T) {
+	tests := []struct {
+		args      []string
+		want      []string
+		directive string
+	}{
+		{[]string{"__complete", "--source", ""}, sourceExts, ":8"},
+		{[]string{"__complete", "inspect", ""}, sourceExts, ":8"},
+		{[]string{"__complete", "diff", ""}, sourceExts, ":8"},
+		{[]string{"__complete", "generate", "go", "--lock", ""}, []string{"json"}, ":8"},
+		{[]string{"__complete", "sources", "check", "--index", ""}, []string{"json"}, ":8"},
+		{[]string{"__complete", "generate", "docs", "-o", ""}, nil, ":16"},
+		{[]string{"__complete", "sources", "fetch", "--dest", ""}, nil, ":16"},
+		{[]string{"__complete", "model", "search", "--name", ""}, nil, ":4"},
+		{[]string{"__complete", "--lang", ""}, nil, ":4"},
+		{[]string{"__complete", "version", ""}, nil, ":4"},
+	}
+	for _, tc := range tests {
+		out, e, code := nsdctl(t, tc.args...)
+		if code != exitOK {
+			t.Fatalf("%v: exit %d %s", tc.args, code, e)
+		}
+		var got []string
+		dir := ""
+		for _, l := range strings.Split(strings.TrimSpace(out), "\n") {
+			if strings.HasPrefix(l, ":") {
+				dir = l
+			} else if l != "" {
+				got = append(got, strings.SplitN(l, "\t", 2)[0])
+			}
+		}
+		if !slices.Equal(got, tc.want) || dir != tc.directive {
+			t.Errorf("%v: got %v %s, want %v %s", tc.args, got, dir, tc.want, tc.directive)
+		}
+	}
+}
+
+// TestEveryFlagCompletes: every flag that takes a value has a completion
+// function (its value set, files of its type, or no file names).
+func TestEveryFlagCompletes(t *testing.T) {
+	var check func(c *cobra.Command)
+	check = func(c *cobra.Command) {
+		c.LocalFlags().VisitAll(func(f *pflag.Flag) {
+			if f.Value.Type() == "bool" {
+				return
+			}
+			if _, ok := c.GetFlagCompletionFunc(f.Name); !ok {
+				t.Errorf("%s --%s (%s) has no completion", c.CommandPath(), f.Name, f.Usage)
+			}
+		})
+		for _, s := range c.Commands() {
+			check(s)
+		}
+	}
+	check(newRootCmd())
 }
