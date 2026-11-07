@@ -179,7 +179,7 @@ checked. Exit code 3 when errors are found.`,
 				_, _ = fmt.Fprintf(w, "%d namespaces, %d errors, %d warnings\n", len(res.Namespaces), res.Errors, res.Warnings)
 			}
 			if res.Errors > 0 {
-				return withCode(exitValidation, "validation failed with %d errors", res.Errors)
+				return withCode(exitFindings, "validation failed with %d errors", res.Errors)
 			}
 			return nil
 		},
@@ -223,7 +223,7 @@ func (a *app) dependenciesCmd() *cobra.Command {
 			}
 			for _, d := range deps {
 				if d.Status != "ok" {
-					return withCode(exitValidation, "unsatisfied dependencies")
+					return withCode(exitFindings, "unsatisfied dependencies")
 				}
 			}
 			return nil
@@ -282,11 +282,11 @@ func (a *app) diffCmd() *cobra.Command {
 				_, _ = fmt.Fprintf(w, "%d changes\n", len(changes))
 			}
 			if exitOnChange && len(changes) > 0 {
-				return &exitError{code: exitDifferent, err: errors.New("sources differ")}
+				return &exitError{code: exitFindings, err: errors.New("sources differ")}
 			}
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&exitOnChange, "exit-code", false, "Exit with code 4 when there are changes")
+	cmd.Flags().BoolVar(&exitOnChange, "exit-code", false, "Exit with code 1 when there are changes")
 	return cmd
 }

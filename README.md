@@ -398,9 +398,11 @@ source <(nsdctl completion zsh)                         # shell completion (bash
 ```
 
 Without `--source`, the `model` and `catalog` commands use the embedded
-official catalog. Text or `--json` output; exit codes 0 ok, 1 usage, 2 source
-error, 3 validation, 4 differences, 5 refused by the license policy. Generated
-output is local-only unless the lock file permits publishing it.
+official catalog. Text or `--json` output; exit codes follow the organisation
+table: 0 ok, 1 findings (differences, validation errors), 2 usage, 3 invalid
+input, 4 download failed, 9 refused by the license policy, 10 output or internal
+error, 130 interrupted ([cmd/nsdctl/docs/exitcodes.md](cmd/nsdctl/docs/exitcodes.md)).
+Generated output is local-only unless the lock file permits publishing it.
 [cmd/nsdctl/docs/cli.md](cmd/nsdctl/docs/cli.md) walks through every command with real output from
 the official packages; [docs/generation.md](docs/generation.md) covers the
 generator.

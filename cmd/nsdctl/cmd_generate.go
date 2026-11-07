@@ -31,7 +31,7 @@ func (a *app) generateCmd() *cobra.Command {
 --source and --profile into --out. Files the generator did not write are
 never overwritten without --force; generated files that are no longer
 produced are removed. --check compares instead of writing and exits with
-code 4 when the output is out of date.
+code 1 when the output is out of date.
 
 Output is local-only by default and carries a LOCAL-ONLY.md notice.
 --publish drops the notice, and is refused (exit code 5) unless the lock
@@ -123,7 +123,7 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 					}
 				}
 				if len(diffs) > 0 {
-					return &exitError{code: exitDifferent, err: fmt.Errorf("%s is out of date: %d files differ", f.out, len(diffs))}
+					return &exitError{code: exitFindings, err: fmt.Errorf("%s is out of date: %d files differ", f.out, len(diffs))}
 				}
 				if !a.json {
 					_, _ = fmt.Fprintf(w, "%s is up to date (%d files)\n", f.out, len(files))
@@ -135,7 +135,7 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 				if errors.Is(err, generator.ErrWouldOverwrite) {
 					return withCode(exitUsage, "%v", err)
 				}
-				return err
+				return outputError(err)
 			}
 			if a.json {
 				return writeJSON(w, written)
@@ -151,7 +151,7 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 	}
 	fl := cmd.Flags()
 	fl.StringVarP(&f.out, "out", "o", "", "Output directory (required)")
-	fl.BoolVar(&f.check, "check", false, "Compare with the output directory instead of writing; exit 4 when out of date")
+	fl.BoolVar(&f.check, "check", false, "Compare with the output directory instead of writing; exit 1 when out of date")
 	fl.BoolVar(&f.force, "force", false, "Overwrite files that were not written by nsdctl")
 	fl.BoolVar(&f.publish, "publish", false, "Produce publishable output; requires --lock permitting every namespace")
 	fl.StringVar(&f.lock, "lock", "", "Lock file for --publish, e.g. sources/nsd.lock.json")

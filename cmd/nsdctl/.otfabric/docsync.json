@@ -1,0 +1,9 @@
+{
+  "clis": [
+    {
+      "name": "nsdctl",
+      "manifest": ".",
+      "exit_codes": "."
+    }
+  ]
+}

@@ -123,7 +123,7 @@ func TestGenerateCatalog(t *testing.T) {
 	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", filepath.Join(dir, "bare"), "--package", "embedded", "--index", "")...); code != exitOK {
 		t.Errorf("without profiles: %d", code)
 	}
-	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", filepath.Join(dir, "x"), "--index", filepath.Join(dir, "missing.json"))...); code != exitSource {
+	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", filepath.Join(dir, "x"), "--index", filepath.Join(dir, "missing.json"))...); code != exitInvalidInput {
 		t.Errorf("missing index: %d", code)
 	}
 	bad := filepath.Join(dir, "bad.json")

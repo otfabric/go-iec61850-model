@@ -12,15 +12,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/debug"
 	"slices"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -41,14 +44,16 @@ var (
 	buildDate = ""
 )
 
-// Exit codes.
+// Exit codes: the organisation table (docs/exitcodes.md).
 const (
-	exitOK         = 0 // success
-	exitUsage      = 1 // usage error, unknown name, other failure
-	exitSource     = 2 // a source cannot be read or parsed
-	exitValidation = 3 // validation, dependency or lock errors
-	exitDifferent  = 4 // diff --exit-code found changes; generate --check is out of date; packages differ from the lock
-	exitPolicy     = 5 // the license policy refuses publishing
+	exitOK           = 0   // success
+	exitFindings     = 1   // the command completed and reports problems: differences, validation errors, gaps
+	exitUsage        = 2   // invalid flags or arguments, unknown name, refused overwrite without --force
+	exitInvalidInput = 3   // an input (NSD package, registry, lock) cannot be read or is invalid
+	exitTransport    = 4   // a download failed
+	exitPermission   = 9   // the license policy refuses publishing
+	exitInternal     = 10  // writing the output failed, or another unexpected error
+	exitInterrupted  = 130 // SIGINT or SIGTERM before a result
 )
 
 // exitError carries an explicit exit code.
@@ -64,6 +69,14 @@ func withCode(code int, format string, args ...any) error {
 	return &exitError{code: code, err: fmt.Errorf(format, args...)}
 }
 
+// outputError marks a failure to write the result.
+func outputError(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &exitError{code: exitInternal, err: fmt.Errorf("write output: %w", err)}
+}
+
 // exitCode maps an error to the exit code of the command.
 func exitCode(err error) int {
 	var ee *exitError
@@ -74,32 +87,76 @@ func exitCode(err error) int {
 		return exitOK
 	case errors.As(err, &ee):
 		return ee.code
+	case errors.Is(err, context.Canceled):
+		return exitInterrupted
 	case errors.Is(err, generator.ErrPolicyRefused):
-		return exitPolicy
-	case errors.As(err, &ve), errors.As(err, &de):
-		return exitValidation
-	case errors.Is(err, model.ErrSourceUnavailable), errors.Is(err, model.ErrInvalidNSD),
+		return exitPermission
+	case errors.Is(err, generator.ErrWouldOverwrite):
+		return exitUsage
+	case errors.As(err, &ve), errors.As(err, &de),
+		errors.Is(err, model.ErrSourceUnavailable), errors.Is(err, model.ErrInvalidNSD),
 		errors.Is(err, model.ErrUnsupportedSchema), errors.Is(err, model.ErrLimitExceeded),
 		errors.Is(err, model.ErrUnsafeArchive):
-		return exitSource
-	default:
+		return exitInvalidInput
+	case errors.Is(err, model.ErrUnknownNamespace), errors.Is(err, model.ErrUnknownLogicalNode),
+		errors.Is(err, model.ErrUnknownDataObject), errors.Is(err, model.ErrUnknownCDC),
+		errors.Is(err, model.ErrUnknownAttribute), errors.Is(err, model.ErrUnknownType),
+		errors.Is(err, model.ErrInvalidReference), errors.Is(err, model.ErrAmbiguousReference),
+		errors.Is(err, model.ErrNoMapping):
 		return exitUsage
+	default:
+		return exitInternal
 	}
 }
 
-func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	code := run(ctx, os.Args[1:], os.Stdout, os.Stderr)
+	stop()
+	os.Exit(code)
+}
 
-// run executes nsdctl with args and returns the exit code.
-func run(args []string, stdout, stderr io.Writer) int {
+// run executes nsdctl with args and returns the exit code. A command
+// that fails after ctx is cancelled (SIGINT, SIGTERM) exits with
+// exitInterrupted.
+func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	root := newRootCmd()
 	root.SetArgs(args)
 	root.SetOut(stdout)
 	root.SetErr(stderr)
-	err := root.Execute()
-	if err != nil {
-		_, _ = fmt.Fprintln(stderr, "nsdctl: "+err.Error())
+	err := root.ExecuteContext(ctx)
+	if err == nil {
+		return exitOK
+	}
+	_, _ = fmt.Fprintln(stderr, "nsdctl: "+err.Error())
+	if ctx.Err() != nil {
+		return exitInterrupted
 	}
 	return exitCode(err)
+}
+
+// usageErrors makes the flag and argument errors of cobra usage errors.
+func usageErrors(c *cobra.Command) {
+	c.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return &exitError{code: exitUsage, err: err} })
+	var walk func(*cobra.Command)
+	walk = func(c *cobra.Command) {
+		if args := c.Args; args != nil {
+			c.Args = func(cmd *cobra.Command, a []string) error {
+				if err := args(cmd, a); err != nil {
+					var ee *exitError
+					if errors.As(err, &ee) {
+						return err
+					}
+					return &exitError{code: exitUsage, err: err}
+				}
+				return nil
+			}
+		}
+		for _, sub := range c.Commands() {
+			walk(sub)
+		}
+	}
+	walk(c)
 }
 
 // app holds the global flags. newRootCmd creates a fresh one, so tests
@@ -132,8 +189,9 @@ namespaces embedded in nsdctl (the default profile: IEC 61850-7-2, 7-3,
 nsdctl never downloads IEC packages. Output derived from packages you
 load is local-only unless the lock file permits publishing it.
 
-Exit codes: 0 ok, 1 usage or unknown name, 2 source error, 3 validation
-error, 4 differences found, 5 refused by the license policy.`,
+Exit codes: 0 ok, 1 findings (differences, validation errors), 2 usage,
+3 invalid input, 4 download failed, 9 refused by the license policy,
+10 output or internal error, 130 interrupted.`,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
@@ -147,7 +205,9 @@ error, 4 differences found, 5 refused by the license policy.`,
 
 	root.AddCommand(a.inspectCmd(), a.validateCmd(), a.dependenciesCmd(), a.modelCmd(), a.diffCmd(),
 		a.catalogCmd(), a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd(), noticeCmd(), completionCmd())
+	helpWithoutSubcommand(root)
 	showHelpOfGroups(root)
+	usageErrors(root)
 	return root
 }
 
@@ -157,16 +217,22 @@ error, 4 differences found, 5 refused by the license policy.`,
 func showHelpOfGroups(c *cobra.Command) {
 	for _, sub := range c.Commands() {
 		if sub.HasSubCommands() && sub.Run == nil && sub.RunE == nil {
-			sub.Args = func(cmd *cobra.Command, args []string) error {
-				if len(args) > 0 {
-					return withCode(exitUsage, "unknown command %q for %q; run \"%s --help\"", args[0], cmd.CommandPath(), cmd.CommandPath())
-				}
-				return nil
-			}
-			sub.RunE = func(cmd *cobra.Command, _ []string) error { return cmd.Help() }
+			helpWithoutSubcommand(sub)
 		}
 		showHelpOfGroups(sub)
 	}
+}
+
+// helpWithoutSubcommand makes c print its help when run without a
+// subcommand, and an unknown subcommand a usage error.
+func helpWithoutSubcommand(c *cobra.Command) {
+	c.Args = func(cmd *cobra.Command, args []string) error {
+		if len(args) > 0 {
+			return withCode(exitUsage, "unknown command %q for %q; run \"%s --help\"", args[0], cmd.CommandPath(), cmd.CommandPath())
+		}
+		return nil
+	}
+	c.RunE = func(cmd *cobra.Command, _ []string) error { return cmd.Help() }
 }
 
 func (a *app) options(source string) []nsd.Option {
@@ -219,7 +285,7 @@ func (a *app) loadCatalog(paths []string) (*catalog.Catalog, []*nsd.Package, err
 	}
 	c, err := catalog.New(srcs...)
 	if err != nil {
-		return nil, nil, &exitError{code: exitValidation, err: err}
+		return nil, nil, &exitError{code: exitInvalidInput, err: err}
 	}
 	return c, pkgs, nil
 }
@@ -240,7 +306,7 @@ func (a *app) modelCatalog() (*catalog.Catalog, error) {
 	if len(a.sources) == 0 {
 		c, err := official.Catalog()
 		if err != nil {
-			return nil, &exitError{code: exitSource, err: err}
+			return nil, &exitError{code: exitInternal, err: err}
 		}
 		return c, nil
 	}
@@ -344,7 +410,7 @@ func namedProfile(c *catalog.Catalog, name string) ([]model.NamespaceID, bool) {
 func writeJSON(w io.Writer, v any) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(v)
+	return outputError(enc.Encode(v))
 }
 
 // table writes rows separated by tabs, aligned.
@@ -356,7 +422,7 @@ func table(w io.Writer, header string, rows [][]string) error {
 	for _, r := range rows {
 		_, _ = fmt.Fprintln(tw, strings.Join(r, "\t"))
 	}
-	return tw.Flush()
+	return outputError(tw.Flush())
 }
 
 func orDash(s string) string {
@@ -398,7 +464,7 @@ func noticeCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_, err := fmt.Fprint(cmd.OutOrStdout(), official.Notice())
-			return err
+			return outputError(err)
 		},
 	}
 }

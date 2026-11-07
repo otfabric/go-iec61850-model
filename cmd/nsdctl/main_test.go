@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,7 +22,7 @@ import (
 func nsdctl(t *testing.T, args ...string) (string, string, int) {
 	t.Helper()
 	var out, errOut bytes.Buffer
-	code := run(args, &out, &errOut)
+	code := run(context.Background(), args, &out, &errOut)
 	return out.String(), errOut.String(), code
 }
 
@@ -43,12 +44,12 @@ func TestCommands(t *testing.T) {
 		{"inspect", []string{"inspect", fixtures.Dir()}, exitOK, []string{"IEC 61850-7-4:2007B2", "doc       IEC 61850-7-4:2007B1 (en, 6 texts)"}},
 		{"inspect file", []string{"inspect", fixtures.Path(fixtures.NS73)}, exitOK, []string{"sha256", "IEC 61850-7-3:2007B1"}},
 		{"inspect via --source", []string{"-s", fixtures.Path(fixtures.NS72), "inspect"}, exitOK, []string{"IEC 61850-7-2:2007B1"}},
-		{"validate ambiguous", []string{"validate", fixtures.Dir()}, exitValidation, []string{"is ambiguous", "1 errors"}},
+		{"validate ambiguous", []string{"validate", fixtures.Dir()}, exitFindings, []string{"is ambiguous", "1 errors"}},
 		{"validate profile", withProfile("validate"), exitOK, []string{"4 namespaces, 0 errors"}},
-		{"deps", []string{"deps", fixtures.Dir()}, exitValidation, []string{"ambiguous", "IEC 61850-7-4:2007B1, IEC 61850-7-4:2007B2"}},
+		{"deps", []string{"deps", fixtures.Dir()}, exitFindings, []string{"ambiguous", "IEC 61850-7-4:2007B1, IEC 61850-7-4:2007B2"}},
 		{"deps ok", []string{"dependencies", fixtures.Path(fixtures.NS72)}, exitOK, []string{"NAMESPACE"}},
 		{"diff", []string{"diff", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitOK, []string{"added    DataObject MMXU.TotPF added", "4 changes"}},
-		{"diff exit code", []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitDifferent, nil},
+		{"diff exit code", []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitFindings, nil},
 		{"diff same", []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74)}, exitOK, []string{"0 changes"}},
 		{"show class", withProfile("model", "show", "MMXU"), exitOK, []string{"group        M Metering and measurement", "PNV          WYE  O         MMXU          IEC 61850-7-4:2007B1  voltage per phase, line-neutral"}},
 		{"show path", withProfile("model", "show", "LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]"), exitOK, []string{"→ FLOAT32 (BASIC) [MX]", "reference    line-neutral", "rule mmxu.pnv"}},
@@ -80,12 +81,12 @@ func TestCommands(t *testing.T) {
 		{"no profile", []string{"-s", fixtures.Dir(), "model", "list"}, exitUsage, nil},
 		{"bad profile id", []string{"-s", fixtures.Dir(), "-p", ":x", "model", "list"}, exitUsage, nil},
 		{"unknown profile", []string{"-s", fixtures.Dir(), "-p", "IEC 61850-7-9", "model", "list"}, exitUsage, nil},
-		{"ambiguous dependency", []string{"-s", fixtures.Dir(), "-p", "OTF TEST-EXT", "model", "list"}, exitValidation, nil},
-		{"missing source", []string{"inspect", "/no/such/file.zip"}, exitSource, nil},
+		{"ambiguous dependency", []string{"-s", fixtures.Dir(), "-p", "OTF TEST-EXT", "model", "list"}, exitInvalidInput, nil},
+		{"missing source", []string{"inspect", "/no/such/file.zip"}, exitInvalidInput, nil},
 		{"unknown flag", []string{"inspect", "--nope"}, exitUsage, nil},
 		{"diff args", []string{"diff", "a"}, exitUsage, nil},
 		{"sources check", []string{"sources", "check", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json"}, exitOK, []string{"14 locked namespaces", "IEC 61850-7-4:2007B6"}},
-		{"sources check missing", []string{"sources", "check", "--index", "nope.json"}, exitSource, nil},
+		{"sources check missing", []string{"sources", "check", "--index", "nope.json"}, exitInvalidInput, nil},
 		{"generate without out", withProfile("generate", "go"), exitUsage, nil},
 	}
 	for _, tc := range tests {
@@ -146,7 +147,7 @@ func TestGenerate(t *testing.T) {
 		}
 	}
 	goOut := filepath.Join(dir, "go")
-	if o, _, code := nsdctl(t, withProfile("--json", "generate", "go", "-o", goOut, "--package", "other", "--check")...); code != exitDifferent || !strings.Contains(o, `"changed"`) {
+	if o, _, code := nsdctl(t, withProfile("--json", "generate", "go", "-o", goOut, "--package", "other", "--check")...); code != exitFindings || !strings.Contains(o, `"changed"`) {
 		t.Errorf("check with another package: %d %s", code, o)
 	}
 	if o, _, code := nsdctl(t, withProfile("--json", "generate", "go", "-o", goOut, "--check")...); code != exitOK || strings.TrimSpace(o) != "[]" {
@@ -164,7 +165,7 @@ func TestGenerate(t *testing.T) {
 	if _, _, code := nsdctl(t, withProfile("generate", "go", "-o", goOut, "--force")...); code != exitOK {
 		t.Error("forced overwrite")
 	}
-	if _, e, code := nsdctl(t, withProfile("generate", "go", "-o", goOut, "--publish")...); code != exitPolicy || !strings.Contains(e, "license policy") {
+	if _, e, code := nsdctl(t, withProfile("generate", "go", "-o", goOut, "--publish")...); code != exitPermission || !strings.Contains(e, "license policy") {
 		t.Errorf("publish without lock: %d %s", code, e)
 	}
 
@@ -191,21 +192,21 @@ func TestGenerate(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(pub, "LOCAL-ONLY.md")); !os.IsNotExist(err) {
 		t.Error("published output has a local-only notice")
 	}
-	if _, _, code := nsdctl(t, withProfile("generate", "go", "-o", pub, "--publish", "--lock", "missing.json")...); code != exitSource {
+	if _, _, code := nsdctl(t, withProfile("generate", "go", "-o", pub, "--publish", "--lock", "missing.json")...); code != exitInvalidInput {
 		t.Error("missing lock")
 	}
 	// Verify packages against the lock.
-	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", lock, "--packages", fixtures.Dir()); code != exitDifferent {
+	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", lock, "--packages", fixtures.Dir()); code != exitFindings {
 		t.Errorf("verify: %d", code)
 	}
 	bad := filepath.Join(dir, "bad.json")
 	if err := os.WriteFile(bad, []byte(`{"schemaVersion":1,"sources":[{"namespace":"x","status":"?"}]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", bad); code != exitValidation {
+	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", bad); code != exitInvalidInput {
 		t.Errorf("invalid lock: %d", code)
 	}
-	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json", "--packages", "/no/dir"); code != exitSource {
+	if _, _, code := nsdctl(t, "sources", "check", "--index", "../../sources/index.json", "--lock", "../../sources/nsd.lock.json", "--packages", "/no/dir"); code != exitInvalidInput {
 		t.Errorf("missing packages dir: %d", code)
 	}
 }
@@ -216,11 +217,23 @@ func TestExitCode(t *testing.T) {
 		code int
 	}{
 		{nil, exitOK},
-		{&model.ValidationError{}, exitValidation},
-		{&model.DependencyError{Err: model.ErrMissingDependency}, exitValidation},
-		{model.ErrUnsafeArchive, exitSource},
-		{generator.ErrPolicyRefused, exitPolicy},
-		{errors.New("other"), exitUsage},
+		{withCode(exitFindings, "sources differ"), exitFindings},
+		{&exitError{code: exitUsage, err: errors.New("unknown flag")}, exitUsage},
+		{fmt.Errorf("wrapped: %w", withCode(exitTransport, "x")), exitTransport},
+		{&model.ValidationError{}, exitInvalidInput},
+		{&model.DependencyError{Err: model.ErrMissingDependency}, exitInvalidInput},
+		{&model.SourceError{Source: "x", Err: model.ErrSourceUnavailable}, exitInvalidInput},
+		{model.ErrInvalidNSD, exitInvalidInput},
+		{model.ErrUnsupportedSchema, exitInvalidInput},
+		{model.ErrLimitExceeded, exitInvalidInput},
+		{model.ErrUnsafeArchive, exitInvalidInput},
+		{fmt.Errorf("x: %w", model.ErrUnknownLogicalNode), exitUsage},
+		{model.ErrAmbiguousReference, exitUsage},
+		{generator.ErrWouldOverwrite, exitUsage},
+		{generator.ErrPolicyRefused, exitPermission},
+		{outputError(errors.New("broken pipe")), exitInternal},
+		{fmt.Errorf("x: %w", context.Canceled), exitInterrupted},
+		{errors.New("other"), exitInternal},
 	} {
 		if got := exitCode(tc.err); got != tc.code {
 			t.Errorf("exitCode(%v) = %d, want %d", tc.err, got, tc.code)
@@ -259,7 +272,7 @@ func TestStrictAndLanguage(t *testing.T) {
 	if out, _, code := nsdctl(t, "inspect", p); code != exitOK || !strings.Contains(out, "unknown-attribute") {
 		t.Errorf("warning shown: %d %s", code, out)
 	}
-	if _, _, code := nsdctl(t, "--strict", "inspect", p); code != exitValidation {
+	if _, _, code := nsdctl(t, "--strict", "inspect", p); code != exitInvalidInput {
 		t.Errorf("strict: %d", code)
 	}
 	if out, _, _ := nsdctl(t, withProfile("--lang", "", "model", "show", "MMXU")...); strings.Contains(out, "title") {
@@ -277,13 +290,13 @@ func TestSourcesFetchGuards(t *testing.T) {
 	if err := os.WriteFile(bad, []byte(`{"schemaVersion":1,"registries":[],"parts":[],"packages":[{"tier":"required","part":"7-4","name":"IEC_61850-7-4.NSD.2007B6.Light.zip","release":"2007B6","kind":"nsd","content":"light","purpose":"x","url":"https://mirror.example.org/IEC_61850-7-4.NSD.2007B6.Light.zip","verified":false}]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, code := nsdctl(t, "sources", "fetch", "--index", bad, "--lock", "../../sources/nsd.lock.json", "--dest", filepath.Join(dir, "cache")); code != exitValidation {
+	if _, _, code := nsdctl(t, "sources", "fetch", "--index", bad, "--lock", "../../sources/nsd.lock.json", "--dest", filepath.Join(dir, "cache")); code != exitInvalidInput {
 		t.Errorf("unofficial URL in the registry: %d", code)
 	}
 	if _, _, code := nsdctl(t, "sources", "fetch", "--tiers", "nope"); code != exitUsage {
 		t.Error("bad tier")
 	}
-	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "missing.json", "--dest", filepath.Join(dir, "c2")); code != exitSource {
+	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "missing.json", "--dest", filepath.Join(dir, "c2")); code != exitInvalidInput {
 		t.Error("missing index")
 	}
 }

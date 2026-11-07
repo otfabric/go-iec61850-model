@@ -40,7 +40,7 @@ header, so no collision is resolved silently.
   unless `--force` is given; the command fails before writing anything.
 - Generated files that the current run no longer produces are removed.
 - `--check` writes nothing; it lists missing, changed and stale files and exits
-  with code 4 when there are any.
+  with code 1 when there are any.
 
 ## The committed output
 
@@ -117,7 +117,7 @@ the git-ignored `.generated/` and `make nsd-generate-check` verifies it is up to
 date; the `nsd.yml` workflow runs both.
 
 Output is **local-only** by default: the header says so and a `LOCAL-ONLY.md`
-notice is added. `--publish` removes the notice and is refused (exit code 5)
+notice is added. `--publish` removes the notice and is refused (exit code 9)
 unless `--lock` points to a lock file in which every source namespace of the
 profile has `"redistribution": "permitted"` and, when a digest is locked, the
 loaded document or package has that digest. Set `permitted` only after a
