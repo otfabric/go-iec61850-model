@@ -753,7 +753,7 @@ Documentation must be readable for both library users and tool builders. API doc
 
 ## 14. Definition of done for the first release
 
-- [ ] Reusable `github.com/otfabric/go-iec61850-model` Go module builds on Go 1.24+.
+- [ ] Reusable `github.com/otfabric/go-iec61850-model` Go module builds on Go 1.26+.
 - [ ] Pure-Go importer parses available official NSD packages for 7-2, 7-3, 7-4, 7-410, and 7-420, subject to access; any gaps are explicitly documented.
 - [ ] Official source packages are only temporary inputs; none are committed or exposed by CI.
 - [ ] Source-provenance and compatibility profiles are explicit and pinned.

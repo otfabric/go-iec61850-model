@@ -1,5 +1,17 @@
 # go-iec61850-model Releases
 
+## v0.5.0
+
+**Date:** 2026-11-08
+**Previous release:** v0.4.1
+
+### Changed
+
+- `nsdctl` is built with the latest Go 1.26 patch release; v0.4.1 was built with go1.24.0.
+- The library and `nsdctl` require Go 1.26.0 or later (was 1.24.0), the organisation floor. Library code is unchanged.
+
+---
+
 ## v0.4.1
 
 **Date:** 2026-11-07

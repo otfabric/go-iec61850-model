@@ -1,6 +1,6 @@
 module github.com/otfabric/go-iec61850-model/cmd/nsdctl
 
-go 1.24.0
+go 1.26.0
 
 require (
 	github.com/otfabric/go-iec61850-model v0.4.0
