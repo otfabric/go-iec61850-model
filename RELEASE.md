@@ -1,5 +1,16 @@
 # go-iec61850-model Releases
 
+## v0.6.0
+
+**Date:** 2026-11-08
+**Previous release:** v0.5.0
+
+### Changed
+
+- No changes. v0.6.0 was released by mistake from the same commit as v0.5.0, a few seconds later; the library and `nsdctl` are identical to v0.5.0.
+
+---
+
 ## v0.5.0
 
 **Date:** 2026-11-08
