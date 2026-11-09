@@ -22,7 +22,9 @@ import (
 // the source namespaces, the logical node classes grouped by logical
 // node group (with inherited data objects and their semantic mapping),
 // the CDCs, the constructed types and enumerations, and a coverage
-// report. NSDoc texts are included only with Input.IncludeDocText.
+// report. NSDoc texts are included only with Input.IncludeDocText. With
+// Input.Embed, the index also lists the releases of Embed outside the
+// profile.
 func Docs(in Input) (Files, error) {
 	if err := in.validate(); err != nil {
 		return nil, err
@@ -78,13 +80,39 @@ func (g *docGen) text(d model.Doc) string {
 func (g *docGen) index() []byte {
 	var b bytes.Buffer
 	g.header(&b, "IEC 61850 namespace profile")
+	documented := g.in.Profile.Namespaces()
+	namespaceTable(&b, documented)
+	b.WriteString("\n- [Logical node classes](logical-nodes.md)\n- [Common data classes](cdcs.md)\n- [Constructed types and enumerations](types.md)\n- [Coverage](coverage.md)\n")
+	if other := otherReleases(g.in.namespaces(), documented); len(other) > 0 {
+		b.WriteString("\n## Other releases\n\nThe catalog also holds these releases. The pages above document the profile only; select another release with a profile of its own.\n\n")
+		namespaceTable(&b, other)
+	}
+	return b.Bytes()
+}
+
+// namespaceTable writes one row per namespace with its definition counts.
+func namespaceTable(b *bytes.Buffer, nss []*model.Namespace) {
 	b.WriteString("| Namespace | Stage | SHA-256 | Classes | CDCs | Types | Enumerations |\n|---|---|---|---|---|---|---|\n")
-	for _, ns := range g.in.Profile.Namespaces() {
-		fmt.Fprintf(&b, "| %s | %s | %s | %d | %d | %d | %d |\n", cell(ns.ID.String()), cell(ns.PublicationStage), cell(short(ns.Provenance.SHA256)),
+	for _, ns := range nss {
+		fmt.Fprintf(b, "| %s | %s | %s | %d | %d | %d | %d |\n", cell(ns.ID.String()), cell(ns.PublicationStage), cell(short(ns.Provenance.SHA256)),
 			len(ns.LNClasses)+len(ns.AbstractLNClasses), len(ns.CDCs), len(ns.ConstructedAttributes), len(ns.Enumerations))
 	}
-	b.WriteString("\n- [Logical node classes](logical-nodes.md)\n- [Common data classes](cdcs.md)\n- [Constructed types and enumerations](types.md)\n- [Coverage](coverage.md)\n")
-	return b.Bytes()
+}
+
+// otherReleases returns the namespaces of all that are not in profile,
+// in the order of all.
+func otherReleases(all, profile []*model.Namespace) []*model.Namespace {
+	in := make(map[model.NamespaceID]bool, len(profile))
+	for _, ns := range profile {
+		in[ns.ID] = true
+	}
+	var other []*model.Namespace
+	for _, ns := range all {
+		if !in[ns.ID] {
+			other = append(other, ns)
+		}
+	}
+	return other
 }
 
 func short(sha string) string {

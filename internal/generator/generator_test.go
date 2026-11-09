@@ -132,6 +132,9 @@ func TestDocsContent(t *testing.T) {
 	if !strings.Contains(string(files["index.md"]), "[Coverage](coverage.md)") {
 		t.Error("index.md")
 	}
+	if strings.Contains(string(files["index.md"]), "## Other releases") {
+		t.Error("index.md lists other releases without Embed")
+	}
 	in := input(t)
 	in.IncludeDocText = true
 	withText, _ := Docs(in)
@@ -390,5 +393,42 @@ func TestOverlappingDefinitions(t *testing.T) {
 	test := string(files[GoTestFileName])
 	if !strings.Contains(test, `{KindE_A_y.String(), "y"}`) || !strings.Contains(test, `{KindE_B_y.String(), "y"}`) {
 		t.Errorf("generated test:\n%s", test)
+	}
+}
+
+// With Embed, the index lists the releases outside the profile, and only
+// those.
+func TestDocsIndexOtherReleases(t *testing.T) {
+	in := input(t)
+	in.Embed = fixtures.Catalog(t)
+	files, err := Docs(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := string(files["index.md"])
+	_, other, ok := strings.Cut(index, "## Other releases")
+	if !ok {
+		t.Fatalf("index.md lacks the other releases:\n%s", index)
+	}
+	documented := map[model.NamespaceID]bool{}
+	for _, ns := range in.Profile.Namespaces() {
+		documented[ns.ID] = true
+	}
+	rows := 0
+	for _, ns := range in.Embed.Namespaces() {
+		row := "| " + ns.ID.String() + " |"
+		if documented[ns.ID] {
+			if strings.Contains(other, row) {
+				t.Errorf("profile namespace %s listed as another release", ns.ID)
+			}
+			continue
+		}
+		rows++
+		if !strings.Contains(other, row) {
+			t.Errorf("other releases lack %s", ns.ID)
+		}
+	}
+	if rows == 0 {
+		t.Fatal("the fixture catalog has no release outside the profile")
 	}
 }

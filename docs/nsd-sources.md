@@ -152,7 +152,6 @@ Upstream gaps, reported as warnings by `nsdctl validate`:
   and 7-3 2007B3 with it, 3 warnings remain.
 - **Edition 2 presence condition `OF`**: 7-4 2007A2 and 2007A3 use it, and
   their 7-2 does not define it (34 warnings each).
-
 - **Overlapping definitions**: 90-9 (2018A3) and 7-420 (2019A4) both define
   `DBAT`, `DSTO`, `SBAT`, the storage base classes and two enumerations; 7-4 and
   7-410 both define `FSCH`; 90-14 and 7-410 both define `SFLW`. A profile with

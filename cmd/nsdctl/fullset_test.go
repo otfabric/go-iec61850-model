@@ -286,6 +286,11 @@ func TestFullSetLockAndModel(t *testing.T) {
 	if out, _, code := nsdctl(t, "-s", dir, "model", "show", "LD0/MMXU1.Hz.mag.f[MX]"); code != exitOK || !strings.Contains(out, "IEC 61850-7-3:2007B6") {
 		t.Errorf("resolution across the set: %d\n%s", code, out)
 	}
+	// Named profiles come from the repository registry, as when nsdctl
+	// runs in the repository root.
+	saved := registryPath
+	t.Cleanup(func() { registryPath = saved })
+	registryPath = index
 	if out, _, code := nsdctl(t, "-s", dir, "-p", "edition2", "model", "show", "LD0/MMXU1.Hz.mag.f[MX]"); code != exitOK || !strings.Contains(out, "IEC 61850-7-3:2007A3") {
 		t.Errorf("edition2 profile: %d\n%s", code, out)
 	}

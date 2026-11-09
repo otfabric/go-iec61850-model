@@ -6,7 +6,7 @@ output from a profile:
 | Kind | Files | Content |
 | --- | --- | --- |
 | `go` | `names_gen.go` | Typed constants: `LNClass` (`LN_MMXU`), `CDC` (`CDC_WYE`), `DataObjectRef` per class including inherited data objects (`MMXU_Hz = "MMXU.Hz"`), one `int32` type per enumeration with literal constants and a `String` method |
-| `docs` | `index.md`, `logical-nodes.md`, `cdcs.md`, `types.md`, `coverage.md` | Markdown reference grouped by logical node group, with inheritance, presence and semantic columns |
+| `docs` | `index.md`, `logical-nodes.md`, `cdcs.md`, `types.md`, `coverage.md` | Markdown reference grouped by logical node group, with inheritance, presence and semantic columns. With `Input.Embed` (a catalog of several releases), `index.md` also lists the releases outside the profile |
 | `json` | `catalog.json`, `ontology.json`, `coverage.json` | Normalized namespaces, the concept graph with measurements, and coverage counts |
 | `catalog` | `catalog_gen.json.gz`, `catalog_gen.json`, `catalog_gen.go` | The normalized namespaces (without NSDoc texts) embedded in a Go package with the named profiles of `sources/index.json`; the [`official`](../official) package. Only `catalog_gen.json.gz`, compact JSON compressed with gzip, is embedded; `catalog_gen.json` holds the same data indented for review. `--check` covers all three |
 
@@ -51,7 +51,7 @@ downloaded packages stay out of source control.
 | Directory | Command | Profile | Content |
 | --- | --- | --- | --- |
 | [`names/`](../names) | `generate go --package names` | `default` | Typed Go constants |
-| [`official/`](../official) | `generate catalog --package official` | `extended` | The embedded catalog with the profiles `default` and `extended` |
+| [`official/`](../official) | `generate catalog --all-releases --package official` | every release | The embedded catalog (`catalog_gen.json.gz`, with `catalog_gen.json` for review) with the profiles `default`, `extended` and `edition2` |
 | [`docs/reference/`](reference/index.md) | `generate docs` | `extended` | The Markdown model reference, every namespace |
 
 ```bash

@@ -104,13 +104,15 @@ arguments complete NSD, XSD and ZIP files, `--lock` and `--index` JSON files,
 
 ## Walkthrough with the official packages
 
-Every example below is real output of `nsdctl` run on the 14 official packages
+Every example below is real output of `nsdctl` run on the 33 official packages
 tracked by this repository (`make nsd-fetch`), cut where marked with `…`. The
 packages contain the model, not documentation texts, so the output shows
 identifiers, types and structure only.
 
 The `model` and `catalog` examples use the catalog embedded in nsdctl, which
-is generated from the same packages; add `-s .nsd-cache` to use the downloaded
+is generated from the same packages (every release since the `nsdctl` built on
+library v0.8.0, the v0.8.1 release; earlier binaries embed the 12 newest
+namespaces and have no `edition2` profile); add `-s .nsd-cache` to use the downloaded
 packages instead (the result is the same). The other examples use
 `.nsd-cache`, the directory `make nsd-fetch` fills. Any directory, ZIP archive
 or single NSD file works as a source.
@@ -254,9 +256,9 @@ own almost none of its CDCs resolve) and names that two namespaces define (see
 ```console
 $ nsdctl validate .nsd-cache
 …
-  warning: DCCT.CnttAnc: underlying type "AncillaryServiceKind" is not defined [unresolved-reference]
-  warning: DCCT.HeatRtePrc: CDC "SCR" is not defined [unresolved-reference]
-  warning: DCCT.CRtePrc: CDC "SCR" is not defined [unresolved-reference]
+  warning: FSCC.ValENS: underlying type "EnumDA" is not defined [unresolved-reference]
+  warning: FSCH.ValENS: underlying type "EnumDA" is not defined [unresolved-reference]
+  warning: FSCH.ValENG: underlying type "EnumDA" is not defined [unresolved-reference]
   warning: FSCH: logical node class "FSCH" is defined by IEC 61850-7-4:2007B6, IEC 61850-7-410:2024A4; lookups of it are ambiguous [conflicting-definition]
   warning: RST.setMag: presence condition "MFnsg" is not defined [unresolved-reference]
   warning: RST._setMag: presence condition "MFsg" is not defined [unresolved-reference]
@@ -665,6 +667,8 @@ of the technical report 90-9 with the later 7-420 edition that absorbed them:
 
 ```console
 $ nsdctl diff .nsd-cache/IEC_TR_61850-90-9.NSD.2018A3.Light.zip .nsd-cache/IEC_61850-7-420.NSD.2019A4.Light.zip
+removed  dependency (Tr)IEC 61850-90-9 -> IEC 61850-7-420 removed (was IEC 61850-7-420:2019A)
+…
 added    DataObject DBAT.BatOn added
 added    DataObject DBAT.BatSt added
 added    DataObject DBAT.BatTest added
@@ -672,6 +676,7 @@ removed  DataObject DBAT.BatTestRsl removed
 added    DataObject DBAT.BatVNom added
 added    DataObject DBAT.TestAddRsl added
 added    DataObject DBAT.TestRsl added
+…
 143 changes
 ```
 
