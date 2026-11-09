@@ -24,8 +24,13 @@ func TestEmbeddedCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(c.Namespaces()); got != 12 || len(official.Namespaces()) != 12 {
-		t.Fatalf("%d embedded namespaces, want 12", got)
+	// Every published release: 7-2, 7-3 and 7-4 2007A2 to 2007B6, 90-6
+	// 2018A5 and 2018B, and one release of each other part.
+	if got := len(c.Namespaces()); got != 28 || len(official.Namespaces()) != 28 {
+		t.Fatalf("%d embedded namespaces, want 28", got)
+	}
+	if got := c.Releases("IEC 61850-7-4"); len(got) != 6 || got[0].String() != "IEC 61850-7-4:2007A2" || got[5].String() != "IEC 61850-7-4:2007B6" {
+		t.Errorf("7-4 releases = %v", got)
 	}
 	for _, ns := range c.Namespaces() {
 		if ns.Copyright.LicenseURI != "www.iec.ch/CCv1" || ns.Provenance.SHA256 == "" {
@@ -36,7 +41,7 @@ func TestEmbeddedCatalog(t *testing.T) {
 	for _, p := range official.Profiles() {
 		names = append(names, p.Name)
 	}
-	if strings.Join(names, ",") != "default,extended" {
+	if strings.Join(names, ",") != "default,extended,edition2" {
 		t.Errorf("profiles %v", names)
 	}
 	if _, ok := official.Lookup("nope"); ok {
@@ -222,6 +227,46 @@ func TestForNamespace(t *testing.T) {
 	for _, s := range []string{"IEC 61850-7-4:2003", "IEC 61850-7-4:2007B99", "IEC 61850-7-4:2007Z", "IEC 61850-7-4", "IEC 61850-7-4:x", "OTF 1:2020A"} {
 		if _, err := official.ForNamespace(s); !errors.Is(err, model.ErrUnknownNamespace) {
 			t.Errorf("ForNamespace(%s) error = %v", s, err)
+		}
+	}
+}
+
+// The edition2 profile holds Edition 2 of the core parts, 2007A3, for
+// devices that declare IEC 61850-7-4:2007 or 2007A.
+func TestEdition2Profile(t *testing.T) {
+	p, err := official.Open("edition2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, id := range p.IDs() {
+		ids = append(ids, id.String())
+	}
+	if strings.Join(ids, ", ") != "IEC 61850-7-2:2007A3, IEC 61850-7-3:2007A3, IEC 61850-7-4:2007A3" {
+		t.Errorf("edition2 = %v", ids)
+	}
+	// Edition 2.1 added data objects to MMXU and logical nodes such as XFUS.
+	ed2, err := p.DataObjects("MMXU")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := official.Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ed21, err := d.DataObjects("MMXU")
+	if err != nil || len(ed2) >= len(ed21) {
+		t.Errorf("MMXU: %d data objects in Edition 2, %d in 2.1 (%v)", len(ed2), len(ed21), err)
+	}
+	if _, err := p.LogicalNode("XFUS"); !errors.Is(err, model.ErrUnknownLogicalNode) {
+		t.Errorf("XFUS in Edition 2: %v", err)
+	}
+	for declared, want := range map[string]string{
+		"IEC 61850-7-4:2007": "edition2", "IEC 61850-7-4:2007A": "edition2", "IEC 61850-7-4:2007A2": "edition2",
+		"IEC 61850-7-4:2007B": "default", "IEC 61850-7-3:2007B5": "default",
+	} {
+		if got, err := official.ForNamespace(declared); err != nil || got.Name != want {
+			t.Errorf("ForNamespace(%s) = %s, %v; want %s", declared, got.Name, err, want)
 		}
 	}
 }

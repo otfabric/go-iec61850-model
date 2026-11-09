@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/internal/generator"
 	"github.com/otfabric/go-iec61850-model/internal/sources"
 )
@@ -21,6 +22,8 @@ type genFlags struct {
 	docText bool
 	goPkg   string
 	index   string
+	// allReleases embeds every loaded namespace, not only the profile's.
+	allReleases bool
 }
 
 func (a *app) generateCmd() *cobra.Command {
@@ -84,11 +87,19 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 			if len(a.sources) == 0 {
 				return withCode(exitUsage, "no source given (use --source with the official packages)")
 			}
-			p, err := a.loadProfile()
+			c, err := a.modelCatalog()
+			if err != nil {
+				return err
+			}
+			p, err := a.selectProfile(c)
 			if err != nil {
 				return err
 			}
 			in := generator.Input{Profile: p, ToolVersion: version, IncludeDocText: f.docText, Publish: f.publish}
+			var published catalog.Source = p
+			if f.allReleases {
+				in.Embed, published = c, c
+			}
 			if f.publish {
 				var lock *sources.Lock
 				if f.lock != "" {
@@ -96,7 +107,7 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 						return err
 					}
 				}
-				if err := (generator.Policy{Lock: lock}).CheckPublish(p); err != nil {
+				if err := (generator.Policy{Lock: lock}).CheckPublish(published); err != nil {
 					return err
 				}
 			}
@@ -162,6 +173,7 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 	case "catalog":
 		fl.StringVar(&f.goPkg, "package", "official", "Go package name")
 		fl.StringVar(&f.index, "index", "sources/index.json", "Source registry with the named profiles (empty: none)")
+		fl.BoolVar(&f.allReleases, "all-releases", false, "Embed every namespace of --source, every release, not only the profile's; the named profiles select from them")
 	}
 	return cmd
 }

@@ -36,6 +36,10 @@ device or engineering tool.
   loaded namespace defines fail, and the importer does not invent one. The
   affected references, and the per-namespace counts, are in
   [docs/nsd-sources.md](docs/nsd-sources.md#what-the-official-packages-contain).
+- No Edition 1. IEC publishes no NSD for IEC 61850-7-4:2003 (Edition 1), so
+  devices that declare it in `LLN0.NamPlt.ldNs` cannot be checked against
+  official definitions; `official.ForNamespace` reports `ErrUnknownNamespace`
+  for them. Edition 2 (2007A) and Edition 2.1 (2007B) are embedded.
 - Overlapping definitions stay ambiguous. A name that two namespaces of a
   profile define (`DBAT` in 7-420 and 90-9, for example) fails with
   `model.ErrAmbiguousSymbol` until it is looked up with its namespace.

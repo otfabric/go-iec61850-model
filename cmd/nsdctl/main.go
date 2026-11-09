@@ -380,7 +380,7 @@ func (a *app) selectProfile(c *catalog.Catalog) (*catalog.Profile, error) {
 			continue
 		}
 		if _, known := profileParts(s); known {
-			return nil, withCode(exitUsage, "--profile %s: the sources do not carry exactly one release of each of its parts", s)
+			return nil, withCode(exitUsage, "--profile %s: the sources do not carry a release of each of its parts", s)
 		}
 		id, err := model.ParseNamespaceID(s)
 		if err != nil {

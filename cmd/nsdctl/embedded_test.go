@@ -44,7 +44,7 @@ func TestEmbeddedCatalog(t *testing.T) {
 		{"path in namespace", []string{"model", "show", "MMXU.Hz.mag.f", "--ns", "IEC 61850-7-4:2007B6"}, exitOK, []string{"→ FLOAT32"}},
 		{"overlaps json all", []string{"--json", "catalog", "overlaps", "-p", "default", "--class", "identical"}, exitOK, []string{"[]"}},
 		{"profiles json", []string{"--json", "catalog", "profiles"}, exitOK, []string{`"name": "extended"`}},
-		{"profiles from sources", []string{"-s", "../../testdata/nsd", "catalog", "profiles"}, exitOK, []string{"(the sources do not carry exactly one release of each part"}},
+		{"profiles from sources", []string{"-s", "../../testdata/nsd", "catalog", "profiles"}, exitOK, []string{"(the sources do not carry a release of each part"}},
 		{"overlaps sources", []string{"-s", "../../testdata/nsd", "catalog", "overlaps"}, exitOK, nil},
 		{"overlaps bad profile", []string{"catalog", "overlaps", "-p", "nope"}, exitUsage, nil},
 		{"overlaps", []string{"catalog", "overlaps", "--left", "IEC_61850-7-420", "--right", "IEC_TR_61850-90-9"}, exitOK, []string{
@@ -54,6 +54,11 @@ func TestEmbeddedCatalog(t *testing.T) {
 		{"overlaps one side", []string{"catalog", "overlaps", "--left", "7-420"}, exitUsage, nil},
 		{"overlaps bad class", []string{"catalog", "overlaps", "--class", "similar"}, exitUsage, nil},
 		{"overlaps unknown", []string{"catalog", "overlaps", "--left", "7-999", "--right", "7-420"}, exitUsage, nil},
+		{"select 2007B", []string{"catalog", "select", "IEC 61850-7-4:2007B"}, exitOK, []string{"IEC 61850-7-4:2007B: profile default", "  IEC 61850-7-4:2007B6"}},
+		{"select json", []string{"--json", "catalog", "select", "IEC TR 61850-90-9:2018A"}, exitOK, []string{`"profile": "extended"`}},
+		{"select edition 1", []string{"catalog", "select", "IEC 61850-7-4:2003"}, exitInvalidInput, nil},
+		{"select with sources", []string{"-s", "../../testdata/nsd", "catalog", "select", "IEC 61850-7-4:2007B"}, exitUsage, nil},
+		{"select no argument", []string{"catalog", "select"}, exitUsage, nil},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -119,6 +124,19 @@ func TestGenerateCatalog(t *testing.T) {
 	}
 	if o, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", out, "--package", "embedded", "--index", index, "--check")...); code != exitOK || !strings.Contains(o, "up to date") {
 		t.Errorf("check: %d %s", code, o)
+	}
+	// --all-releases embeds both 7-4 releases of the fixtures; the profiles
+	// resolve to the newest.
+	all := filepath.Join(dir, "all")
+	if o, e, code := nsdctl(t, withProfile("generate", "catalog", "--all-releases", "-o", all, "--package", "embedded", "--index", index)...); code != exitOK {
+		t.Fatalf("generate catalog --all-releases: %d %s %s", code, o, e)
+	}
+	if src, err := os.ReadFile(filepath.Join(all, "catalog_gen.go")); err != nil || !strings.Contains(string(src), "IEC 61850-7-4:2007B1") ||
+		!strings.Contains(string(src), "IEC 61850-7-4:2007B2") || !strings.Contains(string(src), "OTF TEST-EXT:2026A1") {
+		t.Errorf("--all-releases header: %v\n%s", err, src)
+	}
+	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "--all-releases", "-o", filepath.Join(dir, "pub"), "--index", index, "--publish")...); code != exitPermission {
+		t.Errorf("--all-releases --publish without a lock: %d", code)
 	}
 	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", filepath.Join(dir, "bare"), "--package", "embedded", "--index", "")...); code != exitOK {
 		t.Errorf("without profiles: %d", code)

@@ -335,6 +335,27 @@ IEC TR 61850-90-9 transitional namespace policy (REQUIREMENTS.md, section
   preserves both definitions, qualified lookups work and unqualified ones
   return the typed error (`catalog`, `official`, `cmd/nsdctl`).
 
+## Every published NSD release
+
+**Date:** 2026-11-09
+
+Devices declare the release they implement in `LLN0.NamPlt.ldNs`; checking an
+Edition 2 device against 2007B6 gave false findings. The registry and lock now
+track 33 packages: 7-2, 7-3 and 7-4 from 2007A2 to 2007B6, 90-6 2018A5 besides
+2018B, and the 8-1 releases 2003 to 2003A3. IEC publishes no NSD for Edition 1
+(2003) of 7-4.
+
+- `official/` embeds 28 model namespaces (8-1 and 7-7 stay local-only), gzip
+  compressed: 0.33 MB for 28 namespaces.
+- Profile `edition2` (7-2, 7-3, 7-4 at 2007A3); `official.ForNamespace` and
+  `nsdctl catalog select` pick the profile for a declared release.
+- A dependency several loaded releases satisfy resolves to the newest one.
+- Validating the 28 namespaces gives 0 errors and 1543 warnings, all upstream
+  gaps listed in docs/nsd-sources.md (7-4 2007B3 declares no dependency;
+  Edition 2 uses presence condition `OF`, which its 7-2 does not define).
+- The `nsdctl` built on this library embeds the new catalog from v0.8.1; the
+  reference in `docs/reference/` gets its "Other releases" table then too.
+
 ## Next
 
 - **M0** — verify official sources and the license; fill `sources/`.

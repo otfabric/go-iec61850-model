@@ -77,7 +77,7 @@ func TestExitCodesByCommand(t *testing.T) {
 	}{
 		{"ok", nil, []string{"version"}, exitOK, ""},
 		{"findings: diff", nil, []string{"diff", "--exit-code", fixtures.Path(fixtures.NS74), fixtures.Path(fixtures.NS74R2)}, exitFindings, "sources differ"},
-		{"findings: validate", nil, []string{"validate", fixtures.Dir()}, exitFindings, "validation failed"},
+		{"findings: validate", nil, []string{"validate", fixtures.Path(fixtures.NS74)}, exitFindings, "validation failed"},
 		{"usage: unknown flag", nil, []string{"inspect", "--nope"}, exitUsage, "unknown flag"},
 		{"usage: flag value", nil, []string{"--strict=maybe", "inspect"}, exitUsage, "invalid argument"},
 		{"usage: argument count", nil, []string{"diff", "a"}, exitUsage, "accepts 2 arg(s)"},

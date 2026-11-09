@@ -11,9 +11,16 @@ Coverage is reported in four stages, never merged into one claim:
 
 ## Current state
 
-No official NSD package has been parsed yet (milestone M0 is open), so this
-module claims support for no namespace release. The table in
-[nsd-sources.md](nsd-sources.md) is the authoritative status.
+All 33 tracked packages are available and parsed. The 28 model namespaces
+(7-2, 7-3 and 7-4 from 2007A2 to 2007B6, 7-410, 7-420 and the technical
+reports) are `nsd-validated` in the lock and embedded in
+[`official`](../official): validated together they give no errors, only the
+upstream gaps listed in [nsd-sources.md](nsd-sources.md#what-the-official-packages-contain). The
+8-1 service namespaces (2003 to 2003A4) and the 7-7 schema are
+`nsd-available`: recognized, not modeled. The lock and
+[nsd-sources.md](nsd-sources.md) are the authoritative status; the counts per
+namespace of the extended profile are in
+[docs/reference/coverage.md](reference/coverage.md).
 
 ## Producing a coverage report
 

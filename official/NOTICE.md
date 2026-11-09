@@ -47,12 +47,54 @@ License: www.iec.ch/CCv1 (Standard).
 
 > COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_TR_61850-90-3:2016 Edition 1.0; see the IEC_TR_61850-90-3:2016 Edition 1.0 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
 
+## (Tr)IEC61850-90-6:2018A5
+
+Source: IEC code component (Tr)IEC61850-90-6:2018A5, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2018. This version of this NSD is part of IEC/TR 61850-90-6:2018A; see the IEC/TR 61850-90-6:2018A for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
 ## (Tr)IEC61850-90-6:2018B
 
 Source: IEC code component (Tr)IEC61850-90-6:2018B, © IEC.
 License: www.iec.ch/CCv1 (Standard).
 
 > COPYRIGHT (c) IEC, 2019. This version of this NSD is part of IEC_TR_61850-90-6:2018 Edition 1.1; see the IEC_TR_61850-90-6:2018 Edition 1.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-2:2007A2
+
+Source: IEC code component IEC 61850-7-2:2007A2, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2018. This version of this NSD is part of IEC 61850-7-2:2007A; see the IEC 61850-7-2:2007A for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-2:2007A3
+
+Source: IEC code component IEC 61850-7-2:2007A3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2020. This version of this NSD is part of IEC 61850-7-2:2007A3; see the IEC 61850-7-2:2007A3 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-2:2007B3
+
+Source: IEC code component IEC 61850-7-2:2007B3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-2:2010 Edition 2.1; see the IEC_61850-7-2:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-2:2007B4
+
+Source: IEC code component IEC 61850-7-2:2007B4, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-2:2010 Edition 2.1; see the IEC_61850-7-2:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-2:2007B5
+
+Source: IEC code component IEC 61850-7-2:2007B5, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-2:2010 Edition 2.1; see the IEC_61850-7-2:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
 
 ## IEC 61850-7-2:2007B6
 
@@ -61,12 +103,82 @@ License: www.iec.ch/CCv1 (Standard).
 
 > COPYRIGHT (c) IEC, 2025. This version of this NSD is part of IEC_61850-7-2:2010 Edition 2.1; see the IEC_61850-7-2:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
 
+## IEC 61850-7-3:2007A2
+
+Source: IEC code component IEC 61850-7-3:2007A2, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2018. This version of this NSD is part of IEC 61850-7-3:2007A2; see the IEC 61850-7-3:2007A2 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-3:2007A3
+
+Source: IEC code component IEC 61850-7-3:2007A3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2020. This version of this NSD is part of IEC 61850-7-3:2007A3; see the IEC 61850-7-3:2007A3 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-3:2007B3
+
+Source: IEC code component IEC 61850-7-3:2007B3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-3:2010 Edition 2.1; see the IEC_61850-7-3:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-3:2007B4
+
+Source: IEC code component IEC 61850-7-3:2007B4, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-3:2010 Edition 2.1; see the IEC_61850-7-3:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-3:2007B5
+
+Source: IEC code component IEC 61850-7-3:2007B5, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-3:2010 Edition 2.1; see the IEC_61850-7-3:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
 ## IEC 61850-7-3:2007B6
 
 Source: IEC code component IEC 61850-7-3:2007B6, © IEC.
 License: www.iec.ch/CCv1 (Standard).
 
 > COPYRIGHT (c) IEC, 2025. This version of this NSD is part of IEC_61850-7-3:2010 Edition 2.1; see the IEC_61850-7-3:2010 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-4:2007A2
+
+Source: IEC code component IEC 61850-7-4:2007A2, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2018. This version of this NSD is part of IEC 61850-7-4:2007A2; see the IEC 61850-7-4:2007A2 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-4:2007A3
+
+Source: IEC code component IEC 61850-7-4:2007A3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, 2020. This version of this NSD is part of IEC 61850-7-4:2007A3; see the IEC 61850-7-4:2007A3 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below code is the valid one; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details
+
+## IEC 61850-7-4:2007B3
+
+Source: IEC code component IEC 61850-7-4:2007B3, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-4:2007; see the IEC_61850-7-4:2007 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-4:2007B4
+
+Source: IEC code component IEC 61850-7-4:2007B4, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-4:2020 Edition 2.1; see the IEC_61850-7-4:2020 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
+
+## IEC 61850-7-4:2007B5
+
+Source: IEC code component IEC 61850-7-4:2007B5, © IEC.
+License: www.iec.ch/CCv1 (Standard).
+
+> COPYRIGHT (c) IEC, www.iec.ch/tc57/supportdocuments. This version of this NSD is part of IEC_61850-7-4:2020 Edition 2.1; see the IEC_61850-7-4:2020 Edition 2.1 for full legal notices. In case of any differences between the here-below code and the IEC published content, the here-below definition supersedes the IEC publication; it may contain updates. See history files. The whole document has to be taken into account to have a full description of this code component. See www.iec.ch/CCv1 for copyright details.
 
 ## IEC 61850-7-4:2007B6
 

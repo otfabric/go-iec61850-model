@@ -37,7 +37,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | --- | --- |
 | `inspect [SOURCE...]` | Namespaces, counts, dependencies, digests, manifest, documentation, warnings |
 | `validate [SOURCE...]` | Parse, then check each namespace's profile (or `--profile`): dependencies, conflicts, unresolved references |
-| `dependencies [SOURCE...]` (`deps`) | Each declared dependency and whether the loaded sources satisfy it: ok, missing, ambiguous |
+| `dependencies [SOURCE...]` (`deps`) | Each declared dependency and whether the loaded sources satisfy it (ok, missing), with the release a profile adds: the newest that satisfies it |
 | `diff OLD NEW [--exit-code]` | Added, removed and changed definitions between two sources |
 | `model show NAME\|PATH` | A class (with inherited data objects and semantics), CDC, type, enumeration or basic type; or a resolved path with every step |
 | `model list [--kind ln\|abstract\|cdc\|ca\|enum\|basic]` | Definitions of one kind |
@@ -47,6 +47,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `model leaves LNCLASS[.DO...] [--fc FC]` | All leaf attributes below a class or path |
 | `catalog profiles` | The named profiles and the namespaces they select |
 | `catalog overlaps [--left NS --right NS] [--class C]` | Names two namespaces both define, classified identical, compatible-extension or conflicting, with the differing data objects, CDCs, presence and inheritance |
+| `catalog select NAMESPACE` | The embedded profile for the release a device declares in `LLN0.NamPlt.ldNs` or `lnNs`, e.g. `IEC 61850-7-4:2007A` |
 | `generate go\|docs\|json\|catalog -o DIR` | Deterministic output; see [generation.md](../../../docs/generation.md) |
 | `sources check [--index --lock --packages DIR --tiers T]` | Validate the registry and lock; with `--packages`, check that every tracked package is present and carries its release, and compare digests with the lock |
 | `sources fetch [--dest DIR --tiers T --allow-unpinned --refresh]` | Download the tracked packages from their official locations, verified against the lock, into `.nsd-cache/` or a directory outside the repository |
@@ -69,6 +70,7 @@ their flags:
 | `--lock FILE` | Lock file for `--publish`, e.g. `sources/nsd.lock.json` |
 | `--package NAME` | Go package name (`generate go`: default `iec61850names`; `generate catalog`: default `official`) |
 | `--index FILE` | `generate catalog` only: source registry with the named profiles (default `sources/index.json`; empty: none) |
+| `--all-releases` | `generate catalog` only: embed every namespace of `--source`, every release, not only the profile's; the named profiles select from them |
 
 Examples:
 
@@ -78,7 +80,9 @@ nsdctl -p extended model show DBAT --ns 90-9
 nsdctl catalog overlaps --left IEC_61850-7-420 --right IEC_TR_61850-90-9
 nsdctl inspect ./nsd/IEC_61850-7-4.zip
 nsdctl -s ./nsd validate
-nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" model show MMXU
+nsdctl -p "IEC 61850-7-4:2007B5" model show MMXU          # any embedded release
+nsdctl -p edition2 model show XCBR                       # Edition 2 (2007A3)
+nsdctl catalog select "IEC 61850-7-4:2007A"              # profile for a device's ldNs
 nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" model show 'LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]'
 nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" model search --cdc WYE --kind do
 nsdctl diff --exit-code ./nsd-2019/ ./nsd-2025/
@@ -100,13 +104,15 @@ arguments complete NSD, XSD and ZIP files, `--lock` and `--index` JSON files,
 
 ## Walkthrough with the official packages
 
-Every example below is real output of `nsdctl` run on the 14 official packages
+Every example below is real output of `nsdctl` run on the 33 official packages
 tracked by this repository (`make nsd-fetch`), cut where marked with `…`. The
 packages contain the model, not documentation texts, so the output shows
 identifiers, types and structure only.
 
 The `model` and `catalog` examples use the catalog embedded in nsdctl, which
-is generated from the same packages; add `-s .nsd-cache` to use the downloaded
+is generated from the same packages (every release since the `nsdctl` built on
+library v0.8.0, the v0.8.1 release; earlier binaries embed the 12 newest
+namespaces and have no `edition2` profile); add `-s .nsd-cache` to use the downloaded
 packages instead (the result is the same). The other examples use
 `.nsd-cache`, the directory `make nsd-fetch` fills. Any directory, ZIP archive
 or single NSD file works as a source.
@@ -169,6 +175,8 @@ IEC_TR_61850-90-11.NSD.2019A2.light.zip  cached  pinned  63401cd1e065  -
 IEC_TR_61850-90-21.NSD.2022A2.Light.zip  cached  pinned  d6df9731479a  -
 IEC_61850-8-1.NSD.2003A4.Light.zip       cached  pinned  b5b54ab11731  -
 IEC_61850-7-7.2017.NSD.2017A.full.zip    cached  pinned  d6c5f7fdac0f  -
+IEC_61850-7-2.NSD.2007A2.light.zip       cached  pinned  d6c423b3d65d  -
+…
 ```
 
 `sources check --packages` confirms that every tracked package is present and
@@ -194,9 +202,11 @@ optional     90-11  IEC_TR_61850-90-11.NSD.2019A2.light.zip  ok      (Tr)IEC 618
 optional     90-21  IEC_TR_61850-90-21.NSD.2022A2.Light.zip  ok      (Tr)IEC 61850-90-21:2022A2
 optional     8-1    IEC_61850-8-1.NSD.2003A4.Light.zip       ok      IEC 61850-8-1:2003A4
 optional     7-7    IEC_61850-7-7.2017.NSD.2017A.full.zip    ok      3 schema files
-14 locked namespaces
+optional     7-2    IEC_61850-7-2.NSD.2007A2.light.zip       ok      IEC 61850-7-2:2007A2
+…
+33 locked namespaces
 NAMESPACE                   STATUS         REDISTRIBUTION  SHA256
-(Tr)IEC 61850-90-11:2019A2  nsd-validated  local-only      63401cd1e065
+(Tr)IEC 61850-90-11:2019A2  nsd-validated  permitted       63401cd1e065
 …
 ```
 
@@ -214,35 +224,46 @@ $ nsdctl inspect .nsd-cache/IEC_61850-7-420.NSD.2019A4.Light.zip
 ```console
 $ nsdctl dependencies .nsd-cache
 NAMESPACE                   REQUIRES               STATUS  SATISFIED BY
-(Tr)IEC 61850-90-11:2019A2  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-(Tr)IEC 61850-90-14:2020A3  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-(Tr)IEC 61850-90-21:2022A2  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-(Tr)IEC 61850-90-4:2018A    IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
+(Tr)IEC 61850-90-11:2019A2  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+(Tr)IEC 61850-90-14:2020A3  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+(Tr)IEC 61850-90-21:2022A2  IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+(Tr)IEC 61850-90-4:2018A    IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
 (Tr)IEC 61850-90-9:2018A3   IEC 61850-7-420:2019A  ok      IEC 61850-7-420:2019A4
-(Tr)IEC61850-90-3:2015B     IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-(Tr)IEC61850-90-6:2018B     IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-IEC 61850-7-3:2007B6        IEC 61850-7-2:2007B    ok      IEC 61850-7-2:2007B6
-IEC 61850-7-4:2007B6        IEC 61850-7-3:2007B    ok      IEC 61850-7-3:2007B6
-IEC 61850-7-410:2024A4      IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
-IEC 61850-7-420:2019A4      IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6
+(Tr)IEC61850-90-3:2015B     IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+(Tr)IEC61850-90-6:2018A5    IEC 61850-7-4:2007B1   ok      IEC 61850-7-4:2007B6 (newest of 4)
+(Tr)IEC61850-90-6:2018B     IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+IEC 61850-7-3:2007A2        IEC 61850-7-2:2007A2   ok      IEC 61850-7-2:2007A3 (newest of 2)
+IEC 61850-7-3:2007A3        IEC 61850-7-2:2007A3   ok      IEC 61850-7-2:2007A3
+IEC 61850-7-3:2007B3        IEC 61850-7-2:2007B    ok      IEC 61850-7-2:2007B6 (newest of 4)
+IEC 61850-7-3:2007B4        IEC 61850-7-2:2007B    ok      IEC 61850-7-2:2007B6 (newest of 4)
+IEC 61850-7-3:2007B5        IEC 61850-7-2:2007B    ok      IEC 61850-7-2:2007B6 (newest of 4)
+IEC 61850-7-3:2007B6        IEC 61850-7-2:2007B    ok      IEC 61850-7-2:2007B6 (newest of 4)
+IEC 61850-7-4:2007A2        IEC 61850-7-3:2007A2   ok      IEC 61850-7-3:2007A3 (newest of 2)
+IEC 61850-7-4:2007A3        IEC 61850-7-3:2007A3   ok      IEC 61850-7-3:2007A3
+IEC 61850-7-4:2007B4        IEC 61850-7-3:2007B    ok      IEC 61850-7-3:2007B6 (newest of 4)
+IEC 61850-7-4:2007B5        IEC 61850-7-3:2007B    ok      IEC 61850-7-3:2007B6 (newest of 4)
+IEC 61850-7-4:2007B6        IEC 61850-7-3:2007B    ok      IEC 61850-7-3:2007B6 (newest of 4)
+IEC 61850-7-410:2024A4      IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
+IEC 61850-7-420:2019A4      IEC 61850-7-4:2007B    ok      IEC 61850-7-4:2007B6 (newest of 4)
 ```
 
 `validate` checks every namespace together with its dependencies. The official
 packages validate without errors; the warnings are upstream gaps (references to
-definitions no package provides) and names that two namespaces define (see
+definitions no package provides; 7-4 2007B3 declares no dependency, so on its
+own almost none of its CDCs resolve) and names that two namespaces define (see
 [nsd-sources.md](../../../docs/nsd-sources.md)):
 
 ```console
 $ nsdctl validate .nsd-cache
 …
-  warning: DCCT.CnttAnc: underlying type "AncillaryServiceKind" is not defined [unresolved-reference]
-  warning: DCCT.HeatRtePrc: CDC "SCR" is not defined [unresolved-reference]
-  warning: DCCT.CRtePrc: CDC "SCR" is not defined [unresolved-reference]
+  warning: FSCC.ValENS: underlying type "EnumDA" is not defined [unresolved-reference]
+  warning: FSCH.ValENS: underlying type "EnumDA" is not defined [unresolved-reference]
+  warning: FSCH.ValENG: underlying type "EnumDA" is not defined [unresolved-reference]
   warning: FSCH: logical node class "FSCH" is defined by IEC 61850-7-4:2007B6, IEC 61850-7-410:2024A4; lookups of it are ambiguous [conflicting-definition]
   warning: RST.setMag: presence condition "MFnsg" is not defined [unresolved-reference]
   warning: RST._setMag: presence condition "MFsg" is not defined [unresolved-reference]
   warning: RST.__setMag: presence condition "MFsg" is not defined [unresolved-reference]
-12 namespaces, 0 errors, 26 warnings
+28 namespaces, 0 errors, 1543 warnings
 ```
 
 ### What does a logical node hold?
@@ -455,9 +476,11 @@ MMXU.TotW.t          Timestamp  BASIC       MX
 
 ### Profiles and namespaces
 
-Two profiles are defined (`sources/index.json`, embedded in nsdctl). The
-default profile holds the current models; `extended` adds the technical
-reports:
+Three profiles are defined (`sources/index.json`, embedded in nsdctl). The
+default profile holds the newest release of the current models; `extended`
+adds the technical reports; `edition2` holds Edition 2 of the core parts. The
+embedded catalog holds every published release, so `-p` also takes any
+release ID, e.g. `-p "IEC 61850-7-4:2007B4"`:
 
 ```console
 $ nsdctl catalog profiles
@@ -481,6 +504,34 @@ extended: The default profile plus the technical reports 90-3, 90-4, 90-6, 90-9,
   (Tr)IEC 61850-90-11:2019A2
   (Tr)IEC 61850-90-14:2020A3
   (Tr)IEC 61850-90-21:2022A2
+
+edition2: Edition 2 of the core parts: IEC 61850-7-2, 7-3 and 7-4 at namespace release 2007A3 (IEC 61850-7-4:2010 before Amendment 1), for devices that declare IEC 61850-7-4:2007 or 2007A. The domain parts and technical reports depend on 2007B and are not part of it.
+  IEC 61850-7-2:2007A3
+  IEC 61850-7-3:2007A3
+  IEC 61850-7-4:2007A3
+```
+
+A device names the release its model follows in `LLN0.NamPlt.ldNs`.
+`catalog select` names the profile to check it against. A declaration without
+a revision selects the oldest embedded revision, the edition the version was
+first published as; Edition 1 (`2003`) has no official NSD and exits with
+code 3:
+
+```console
+$ nsdctl catalog select "IEC 61850-7-4:2007A"
+IEC 61850-7-4:2007A: profile edition2
+  IEC 61850-7-2:2007A3
+  IEC 61850-7-3:2007A3
+  IEC 61850-7-4:2007A3
+$ nsdctl catalog select "IEC 61850-7-4:2007B"
+IEC 61850-7-4:2007B: profile default
+  IEC 61850-7-2:2007B6
+  IEC 61850-7-3:2007B6
+  IEC 61850-7-4:2007B6
+  IEC 61850-7-410:2024A4
+  IEC 61850-7-420:2019A4
+$ nsdctl catalog select "IEC 61850-7-4:2003"
+nsdctl: iec61850-model: unknown namespace: no embedded release of IEC 61850-7-4:2003
 ```
 
 IEC TR 61850-90-9 and IEC 61850-7-420 both define `DBAT`, `DSTO` and `SBAT`.
@@ -536,8 +587,8 @@ nsdctl: iec61850-model: cannot resolve "DBAT.BatSt": class DBAT has no data obje
 `catalog overlaps` compares every name two namespaces both define, by resolved
 structure: inheritance chain and every data object with its CDC and presence,
 inherited ones included; CDCs, constructed attributes and enumerations by their
-members. Without `--left` and `--right` it compares every pair of the catalog
-or of `--profile`:
+members. Without `--left` and `--right` it compares every pair of `--profile`,
+or of the extended profile (the newest releases) when no profile is given:
 
 ```console
 $ nsdctl catalog overlaps --left IEC_61850-7-420 --right IEC_TR_61850-90-9
@@ -616,6 +667,8 @@ of the technical report 90-9 with the later 7-420 edition that absorbed them:
 
 ```console
 $ nsdctl diff .nsd-cache/IEC_TR_61850-90-9.NSD.2018A3.Light.zip .nsd-cache/IEC_61850-7-420.NSD.2019A4.Light.zip
+removed  dependency (Tr)IEC 61850-90-9 -> IEC 61850-7-420 removed (was IEC 61850-7-420:2019A)
+…
 added    DataObject DBAT.BatOn added
 added    DataObject DBAT.BatSt added
 added    DataObject DBAT.BatTest added
@@ -623,6 +676,7 @@ removed  DataObject DBAT.BatTestRsl removed
 added    DataObject DBAT.BatVNom added
 added    DataObject DBAT.TestAddRsl added
 added    DataObject DBAT.TestRsl added
+…
 143 changes
 ```
 
