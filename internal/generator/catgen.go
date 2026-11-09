@@ -4,6 +4,7 @@ package generator
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"go/format"
@@ -13,10 +14,13 @@ import (
 	"github.com/otfabric/go-iec61850-model/internal/sources"
 )
 
-// Catalog file names.
+// Catalog file names. The package embeds only CatalogGzipFileName, the
+// compact JSON compressed with gzip; CatalogJSONFileName holds the same
+// data indented, for review, and is not embedded.
 const (
 	CatalogGoFileName   = "catalog_gen.go"
 	CatalogJSONFileName = "catalog_gen.json"
+	CatalogGzipFileName = "catalog_gen.json.gz"
 )
 
 // ProfileSpec is a named selection of IEC parts to embed with the
@@ -51,15 +55,19 @@ func Catalog(in Input, pkg string, profiles []ProfileSpec) (Files, error) {
 		return nil, err
 	}
 	data = append(data, '\n')
+	gz, err := compressCatalog(doc)
+	if err != nil {
+		return nil, err
+	}
 
 	var b bytes.Buffer
 	for _, l := range in.headerLines("catalog") {
 		b.WriteString(strings.TrimRight("// "+l, " ") + "\n")
 	}
 	fmt.Fprintf(&b, "\npackage %s\n\nimport (\n\t_ \"embed\"\n\n\t\"github.com/otfabric/go-iec61850-model/model\"\n)\n\n", pkg)
-	fmt.Fprintf(&b, "// catalogJSON holds the normalized namespaces.\n//\n//go:embed %s\nvar catalogJSON []byte\n\n", CatalogJSONFileName)
+	fmt.Fprintf(&b, "// catalogJSON holds the normalized namespaces: compact JSON, compressed\n// with gzip. %s holds the same data indented, for review.\n//\n//go:embed %s\nvar catalogJSON []byte\n\n", CatalogJSONFileName, CatalogGzipFileName)
 	b.WriteString("// profiles are the named profiles of sources/index.json, resolved to the\n// embedded namespace releases.\nvar profiles = []Profile{\n")
-	loaded := in.Profile.Namespaces()
+	loaded := in.namespaces()
 	for _, ps := range profiles {
 		ids, err := sources.NamespacesForParts(loaded, ps.Parts)
 		if err != nil {
@@ -76,10 +84,33 @@ func Catalog(in Input, pkg string, profiles []ProfileSpec) (Files, error) {
 	if err != nil {
 		return nil, fmt.Errorf("generator: formatting generated Go: %w", err)
 	}
-	files := Files{CatalogGoFileName: src, CatalogJSONFileName: data}
+	files := Files{CatalogGoFileName: src, CatalogJSONFileName: data, CatalogGzipFileName: gz}
 	in.addNotice(files, "catalog")
 	if !in.Publish {
 		files["LOCAL-ONLY.md"] = in.localNotice("catalog")
 	}
 	return files, nil
+}
+
+// compressCatalog returns the catalog as compact JSON compressed with
+// gzip at the best compression. The gzip header carries no name and no
+// modification time, so the output depends on the data and the Go
+// release only.
+func compressCatalog(doc jsonDoc) ([]byte, error) {
+	compact, err := json.Marshal(doc)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	zw, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := zw.Write(compact); err != nil {
+		return nil, err
+	}
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

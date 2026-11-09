@@ -335,7 +335,7 @@ func (c *Catalog) Profile(ids ...model.NamespaceID) (*Profile, error)
 
 Profile builds a profile from the selected namespaces and their dependencies.
 
-Each ID may be partial: "IEC 61850-7-4" with no version selects the only loaded release of that standard, and fails with a [\*model.AmbiguityError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#AmbiguityError) when several are loaded. Dependencies that are not selected are added when exactly one loaded release satisfies them; otherwise the call fails with a [\*model.DependencyError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#DependencyError) (missing, ambiguous, or conflicting with a selected release).
+Each ID may be partial: "IEC 61850-7-4" with no version selects the only loaded release of that standard, and fails with a [\*model.AmbiguityError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#AmbiguityError) when several are loaded. A dependency that is not selected adds the newest loaded release satisfying it: releases of one version and revision only add corrections, so "IEC 61850-7-3:2007B" adds 2007B6 when 2007B3 to 2007B6 are loaded. A dependency no loaded release satisfies, or one a selected release does not satisfy, fails with a [\*model.DependencyError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#DependencyError).
 
 Problems that do not prevent lookups, such as a name defined by two namespaces of the profile or a type reference that resolves to no definition, are reported by [Profile.Diagnostics](#func-profile-diagnostics).
 

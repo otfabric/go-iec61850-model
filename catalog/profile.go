@@ -27,10 +27,12 @@ type Profile struct {
 //
 // Each ID may be partial: "IEC 61850-7-4" with no version selects the
 // only loaded release of that standard, and fails with a
-// [*model.AmbiguityError] when several are loaded. Dependencies that
-// are not selected are added when exactly one loaded release satisfies
-// them; otherwise the call fails with a [*model.DependencyError]
-// (missing, ambiguous, or conflicting with a selected release).
+// [*model.AmbiguityError] when several are loaded. A dependency that is
+// not selected adds the newest loaded release satisfying it: releases
+// of one version and revision only add corrections, so "IEC
+// 61850-7-3:2007B" adds 2007B6 when 2007B3 to 2007B6 are loaded. A
+// dependency no loaded release satisfies, or one a selected release
+// does not satisfy, fails with a [*model.DependencyError].
 //
 // Problems that do not prevent lookups, such as a name defined by two
 // namespaces of the profile or a type reference that resolves to no
@@ -69,25 +71,12 @@ func (c *Catalog) Profile(ids ...model.NamespaceID) (*Profile, error) {
 				}
 				continue
 			}
-			var cands []*model.Namespace
-			for _, cand := range c.namespaces {
-				if cand.ID.Satisfies(dep) {
-					cands = append(cands, cand)
-				}
-			}
-			switch len(cands) {
-			case 0:
+			best := newestSatisfying(c.namespaces, dep)
+			if best == nil {
 				return nil, &model.DependencyError{Namespace: ns.ID, Required: dep, Err: model.ErrMissingDependency}
-			case 1:
-				selected[dep.Standard] = cands[0]
-				queue = append(queue, cands[0])
-			default:
-				cids := make([]model.NamespaceID, len(cands))
-				for i, cand := range cands {
-					cids[i] = cand.ID
-				}
-				return nil, &model.DependencyError{Namespace: ns.ID, Required: dep, Candidates: cids, Err: model.ErrAmbiguousReference}
 			}
+			selected[dep.Standard] = best
+			queue = append(queue, best)
 		}
 	}
 	nss := make([]*model.Namespace, 0, len(selected))

@@ -176,7 +176,7 @@ func TestPackages(t *testing.T) {
 	idx := &Index{SchemaVersion: 1, Packages: []Package{
 		p, p,
 		{Tier: "someday", Part: "x", Name: "n.2020A", Release: "2020A", Kind: "pdf", Content: "medium"},
-		{Tier: TierOptional, Part: "y", Name: "other", Release: "2020", Kind: KindNSD, Content: "light"},
+		{Tier: TierOptional, Part: "y", Name: "other", Release: "rev", Kind: KindNSD, Content: "light"},
 		{Tier: TierOptional, Name: "", Release: "2020A", Kind: KindNSD, Content: "light"},
 	}}
 	ds := idx.Validate()
@@ -244,12 +244,41 @@ func TestProfiles(t *testing.T) {
 	if ids, err := NamespacesForParts(nss, []string{"7-3", "90-9"}); err != nil || len(ids) != 2 || ids[1].Standard != "(Tr)IEC 61850-90-9" {
 		t.Errorf("NamespacesForParts = %v, %v", ids, err)
 	}
-	var ae *model.AmbiguityError
-	if _, err := NamespacesForParts(nss, []string{"7-4"}); !errors.As(err, &ae) || len(ae.Candidates) != 2 {
-		t.Errorf("two releases of a part: %v", err)
+	// A bare part selects the newest release, a part with a label the
+	// newest release matching it.
+	for spec, want := range map[string]int{"7-4": 6, "7-4@2007B5": 5, "7-4@2007B": 6} {
+		if ids, err := NamespacesForParts(nss, []string{spec}); err != nil || ids[0].Release != want {
+			t.Errorf("NamespacesForParts(%s) = %v, %v; want release %d", spec, ids, err, want)
+		}
+	}
+	if _, err := NamespacesForParts(nss, []string{"7-4@2007A3"}); !errors.Is(err, model.ErrMissingDependency) {
+		t.Errorf("label no loaded release matches: %v", err)
+	}
+	if p, r := SplitPart("7-4@2007A3"); p != "7-4" || r != "2007A3" {
+		t.Errorf("SplitPart = %s %s", p, r)
+	}
+	// The spelling of the standard does not order releases.
+	tr := []*model.Namespace{
+		{ID: model.NamespaceID{Standard: "IEC 61850-90-6", Version: "2018", Revision: "A"}},
+		{ID: model.NamespaceID{Standard: "(Tr)IEC61850-90-6", Version: "2018", Revision: "B"}},
+	}
+	if ids, err := NamespacesForParts(tr, []string{"90-6"}); err != nil || ids[0].Revision != "B" {
+		t.Errorf("NamespacesForParts(90-6) = %v, %v", ids, err)
 	}
 	if _, err := NamespacesForParts(nss, []string{"7-420"}); !errors.Is(err, model.ErrMissingDependency) {
 		t.Errorf("part without a namespace: %v", err)
+	}
+
+	pinned := &Index{SchemaVersion: 1, Packages: []Package{
+		{Tier: TierOptional, Part: "7-4", Name: "IEC_61850-7-4.NSD.2007A3.light.zip", Release: "2007A3", Kind: KindNSD, Content: "light"},
+		{Tier: TierOptional, Part: "8-1", Name: "IEC_61850-8-1.NSD.2003.light.zip", Release: "2003", Kind: KindNSD, Content: "light"},
+	}, Profiles: []Profile{{Name: "ed2", Parts: []string{"7-4@2007A3", "7-4@2007A"}}, {Name: "gone", Parts: []string{"7-4@2007B6"}}}}
+	var pinnedErrs []string
+	for _, d := range pinned.Validate().Errors() {
+		pinnedErrs = append(pinnedErrs, d.String())
+	}
+	if len(pinnedErrs) != 1 || !strings.Contains(pinnedErrs[0], "7-4@2007B6") {
+		t.Errorf("profile parts with release labels: %v", pinnedErrs)
 	}
 
 	bad := &Index{SchemaVersion: 2, Profiles: []Profile{{Name: ""}, {Name: "a", Inherits: "b"}, {Name: "a"}}}

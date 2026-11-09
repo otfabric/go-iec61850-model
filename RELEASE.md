@@ -1,5 +1,24 @@
 # go-iec61850-model Releases
 
+## v0.7.0
+
+**Date:** unreleased
+**Previous release:** v0.6.0
+
+### Added
+
+- `official.ForNamespace` returns the embedded profile for the release a device declares in `LLN0.NamPlt.ldNs` or `lnNs`, e.g. `IEC 61850-7-4:2007B`. A declaration without a revision selects the oldest embedded revision of that version; `IEC 61850-7-4:2003` (Edition 1) finds none, since IEC publishes no NSD for it.
+- Named profiles may pin a release: `7-4@2007A3`. A bare part selects the newest loaded release of the part instead of failing when several are loaded.
+- The catalog generator can embed every loaded release, not only those of the profile (for `nsdctl generate catalog --all-releases`).
+- Registry release labels without a revision, e.g. `2003` for IEC 61850-8-1:2003.
+
+### Changed
+
+- `nsdctl generate catalog` writes `catalog_gen.json.gz`, compact JSON compressed with gzip, and embeds only that file; the indented `catalog_gen.json` stays next to it for review, and `--check` covers both. The `official` package decompresses the embedded catalog once, on first use, and still reads plain JSON. Compressed, the catalog of v0.6.0 takes about 0.14 MB instead of 3.76 MB; the committed catalog switches to this format with the next release, whose `nsdctl` generates it. The API is unchanged.
+- `catalog.Profile` adds the newest loaded release that satisfies a dependency it does not select, instead of failing with `ErrAmbiguousReference`: releases of one version and revision only add corrections. References inside definitions resolve the same way on a catalog of several releases. Lookups of a name that two loaded namespaces define stay ambiguous.
+
+---
+
 ## v0.6.0
 
 **Date:** 2026-11-08

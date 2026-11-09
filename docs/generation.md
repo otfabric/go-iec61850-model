@@ -8,7 +8,7 @@ output from a profile:
 | `go` | `names_gen.go` | Typed constants: `LNClass` (`LN_MMXU`), `CDC` (`CDC_WYE`), `DataObjectRef` per class including inherited data objects (`MMXU_Hz = "MMXU.Hz"`), one `int32` type per enumeration with literal constants and a `String` method |
 | `docs` | `index.md`, `logical-nodes.md`, `cdcs.md`, `types.md`, `coverage.md` | Markdown reference grouped by logical node group, with inheritance, presence and semantic columns |
 | `json` | `catalog.json`, `ontology.json`, `coverage.json` | Normalized namespaces, the concept graph with measurements, and coverage counts |
-| `catalog` | `catalog_gen.json`, `catalog_gen.go` | The normalized namespaces (without NSDoc texts) embedded in a Go package with the named profiles of `sources/index.json`; the [`official`](../official) package |
+| `catalog` | `catalog_gen.json.gz`, `catalog_gen.json`, `catalog_gen.go` | The normalized namespaces (without NSDoc texts) embedded in a Go package with the named profiles of `sources/index.json`; the [`official`](../official) package. Only `catalog_gen.json.gz`, compact JSON compressed with gzip, is embedded; `catalog_gen.json` holds the same data indented for review. `--check` covers all three |
 
 No Go struct is generated per device: device instances belong to SCL and
 discovery.

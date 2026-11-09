@@ -144,8 +144,15 @@ func TestMatch(t *testing.T) {
 	if ds, _ := semantic.Match(p, semantic.Criteria{LNClass: "MMXU", Quantity: semantic.QuantityFrequency}); len(ds) != 1 {
 		t.Errorf("frequency in MMXU = %d", len(ds))
 	}
-	if _, err := semantic.Match(fixtures.Catalog(t), semantic.Criteria{}); !errors.Is(err, model.ErrAmbiguousReference) {
-		t.Errorf("Match on an ambiguous catalog: %v", err)
+	// On a catalog of two releases, each release's classes are matched
+	// and every description names its namespace.
+	all, err := semantic.Match(fixtures.Catalog(t), semantic.Criteria{LNClass: "MMXU"})
+	releases := map[model.NamespaceID]bool{}
+	for _, d := range all {
+		releases[d.Namespace] = true
+	}
+	if err != nil || !releases[fixtures.ID74] || !releases[fixtures.ID74R2] {
+		t.Errorf("Match on a catalog of two releases: %v, %v", releases, err)
 	}
 }
 

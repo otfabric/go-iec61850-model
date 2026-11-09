@@ -3,9 +3,13 @@
 package official
 
 import (
+	"bytes"
+	"compress/gzip"
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 	"sync"
 
 	"github.com/otfabric/go-iec61850-model/catalog"
@@ -51,7 +55,18 @@ func Catalog() (*catalog.Catalog, error) {
 	return loaded, loadErr
 }
 
+// load parses the embedded catalog: gzip-compressed JSON, or plain JSON
+// as generated before v0.7.0.
 func load(data []byte) (*catalog.Catalog, error) {
+	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
+		zr, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("%w: embedded catalog: %v", model.ErrInvalidNSD, err)
+		}
+		if data, err = io.ReadAll(zr); err != nil {
+			return nil, fmt.Errorf("%w: embedded catalog: %v", model.ErrInvalidNSD, err)
+		}
+	}
 	var doc struct {
 		Namespaces []*model.Namespace `json:"namespaces"`
 	}
@@ -127,3 +142,74 @@ func Default() (*catalog.Profile, error) { return Open("default") }
 // a report defines again (e.g. DBAT in IEC TR 61850-90-9 and IEC
 // 61850-7-420) are ambiguous in it; look them up with their namespace.
 func Extended() (*catalog.Profile, error) { return Open("extended") }
+
+// ForNamespace returns the embedded profile to check a device against
+// that declares namespace s, as LLN0.NamPlt.ldNs or a logical node's
+// lnNs does, e.g. "IEC 61850-7-4:2007B" or "IEC 61850-7-4:2007A".
+//
+// The profile must hold a release of the declared standard with the
+// declared version, the declared revision when there is one, and at
+// least the declared release; of several, the highest release wins,
+// then the first profile in [Profiles] order. A declaration without a
+// revision ("IEC 61850-7-4:2007") selects the oldest embedded revision
+// of that version, the edition it was first published as. Standards
+// are compared without spaces and technical-report markers, so "IEC TR
+// 61850-90-9" finds "(Tr)IEC 61850-90-9".
+//
+// It fails with [model.ErrUnknownNamespace] when no embedded profile
+// holds a matching release, e.g. for "IEC 61850-7-4:2003": IEC publishes
+// no NSD for Edition 1 of IEC 61850-7-4.
+func ForNamespace(s string) (Profile, error) {
+	want, err := model.ParseNamespaceID(s)
+	if err != nil {
+		return Profile{}, err
+	}
+	if want.Version == "" {
+		return Profile{}, fmt.Errorf("%w: %q declares no version", model.ErrUnknownNamespace, s)
+	}
+	var best Profile
+	var bestID model.NamespaceID
+	found := false
+	for _, p := range Profiles() {
+		for _, id := range p.Namespaces {
+			if !matchesDeclared(id, want) {
+				continue
+			}
+			if !found || betterRelease(id, bestID, want.Revision == "") {
+				best, bestID, found = p, id, true
+			}
+		}
+	}
+	if !found {
+		return Profile{}, fmt.Errorf("%w: no embedded release of %s", model.ErrUnknownNamespace, want)
+	}
+	return best, nil
+}
+
+func matchesDeclared(id, want model.NamespaceID) bool {
+	if normalizeStandard(id.Standard) != normalizeStandard(want.Standard) || id.Version != want.Version {
+		return false
+	}
+	if want.Revision == "" {
+		return true
+	}
+	return strings.EqualFold(id.Revision, want.Revision) && id.Release >= want.Release
+}
+
+// betterRelease reports whether a is preferred over b: the oldest
+// revision when the declaration names none, then the highest release.
+func betterRelease(a, b model.NamespaceID, oldestRevision bool) bool {
+	if oldestRevision && a.Revision != b.Revision {
+		return a.Revision < b.Revision
+	}
+	return a.Release > b.Release
+}
+
+// normalizeStandard drops spaces, case and technical-report markers:
+// "(Tr)IEC 61850-90-9" and "IEC TR 61850-90-9" both become
+// "iec61850-90-9".
+func normalizeStandard(s string) string {
+	s = strings.ToLower(strings.ReplaceAll(s, " ", ""))
+	s = strings.ReplaceAll(s, "(tr)", "")
+	return strings.Replace(s, "iectr", "iec", 1)
+}

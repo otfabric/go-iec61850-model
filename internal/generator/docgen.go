@@ -375,7 +375,7 @@ func JSON(in Input) (Files, error) {
 // removed.
 func copyNamespaces(in Input) ([]*model.Namespace, error) {
 	var out []*model.Namespace
-	for _, ns := range in.Profile.Namespaces() {
+	for _, ns := range in.namespaces() {
 		data, err := json.Marshal(ns)
 		if err != nil {
 			return nil, err

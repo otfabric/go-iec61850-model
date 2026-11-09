@@ -5,6 +5,7 @@ package catalog_test
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -92,9 +93,14 @@ func TestCatalogLookupsAreAmbiguousAcrossReleases(t *testing.T) {
 	if p, err := c.PresenceCondition("AtLeastOne"); err != nil || p.Argument == "" {
 		t.Error(err)
 	}
-	// Inheritance-aware lookups also work on the catalog when the names are unique.
-	if do, err := c.DataObject("DTST", "Beh"); err == nil || !errors.Is(err, model.ErrAmbiguousReference) {
-		t.Errorf("DTST inherits through an ambiguous base: %v %v", do, err)
+	// Inheritance-aware lookups also work on the catalog when the names
+	// are unique. DTST depends on 7-4 2007B without a release: its base
+	// classes come from the newest loaded release, 2007B2.
+	if do, err := c.DataObject("DTST", "Beh"); err != nil || do.Name != "Beh" {
+		t.Errorf("DTST.Beh = %v, %v", do, err)
+	}
+	if chain, err := c.Inheritance("DTST"); err != nil || len(chain) < 2 || chain[1].Source != fixtures.ID74R2 {
+		t.Errorf("Inheritance(DTST) = %v, %v", chain, err)
 	}
 }
 
@@ -117,20 +123,17 @@ func TestProfileSelection(t *testing.T) {
 		t.Errorf("unexpected diagnostics: %v", ds)
 	}
 
-	// A partial ID selects the only matching release.
-	if _, err := c.Profile(model.NamespaceID{Standard: "OTF TEST-EXT"}); !errors.Is(err, model.ErrAmbiguousReference) {
+	// A partial ID selects the only matching release. The extension
+	// depends on 7-4 2007B without a release: the newest of the two
+	// loaded releases satisfies it.
+	if p, err := c.Profile(model.NamespaceID{Standard: "OTF TEST-EXT"}); err != nil || !slices.Contains(p.IDs(), fixtures.ID74R2) {
 		t.Errorf("extension depends on 7-4 without release; two are loaded: %v", err)
 	}
 	if p, err := c.Profile(model.NamespaceID{Standard: fixtures.Standard, Release: 2}); err != nil || len(p.Namespaces()) != 3 {
 		t.Errorf("partial ID with release: %v", err)
 	}
-	var de *model.DependencyError
-	_, err = c.Profile(fixtures.IDExt)
-	if !errors.As(err, &de) || len(de.Candidates) != 2 || !strings.Contains(err.Error(), "ambiguous") {
-		t.Errorf("ambiguous dependency error = %v", err)
-	}
-	if _, err := c.Profile(fixtures.IDExt, fixtures.ID74R2); err != nil {
-		t.Errorf("explicit release resolves the ambiguity: %v", err)
+	if p, err := c.Profile(fixtures.IDExt, fixtures.ID74); err != nil || !slices.Contains(p.IDs(), fixtures.ID74) {
+		t.Errorf("an explicit older release satisfies the dependency too: %v", err)
 	}
 	if _, err := c.Profile(model.NamespaceID{Standard: fixtures.Standard}); !errors.Is(err, model.ErrAmbiguousReference) {
 		t.Errorf("partial ID with two releases: %v", err)
