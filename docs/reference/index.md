@@ -79,3 +79,12 @@ The catalog also holds these releases. The pages above document the profile only
 | IEC 61850-7-4:2007B3 | IS | 11ec4aa42f8d | 204 | 0 | 0 | 62 |
 | IEC 61850-7-4:2007B4 | IS | cd54fef034c5 | 204 | 0 | 0 | 62 |
 | IEC 61850-7-4:2007B5 | IS | c13043f243b4 | 204 | 0 | 0 | 62 |
+
+## Stage
+
+Stage is the publication stage the NSD document of a namespace declares (its `publicationStage`), in IEC's codes:
+
+- **-** — not declared; the NSD schema then means IS
+- **IS** — International Standard, the published normative standard
+- **TR** — Technical Report, published informative guidance and extensions, not a standard
+- **draftTR** — internal draft of the TR stage (Technical Report)

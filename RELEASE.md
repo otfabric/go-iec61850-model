@@ -1,5 +1,16 @@
 # go-iec61850-model Releases
 
+## v0.8.2
+
+**Date:** 2026-11-09
+**Previous release:** v0.8.1
+
+### Changed
+
+- `nsdctl` is built on library v0.8.1. [docs/reference/index.md](docs/reference/index.md) now explains the publication stage codes of its Stage column (`IS`, `TR`, `draftTR`, not declared) in a "Stage" section.
+
+---
+
 ## v0.8.1
 
 **Date:** 2026-11-09
