@@ -9,6 +9,7 @@
 
 - `nsdctl` is built on library v0.8.0: its embedded catalog holds the 28 namespaces of every published release, with the `edition2` profile; `-p` takes any embedded release ID, e.g. `-p "IEC 61850-7-4:2007B4"`, and `catalog select` picks `edition2` for Edition 2 declarations, all without `--source`.
 - `nsdctl generate docs --all-releases` lists the releases outside the documented profile on `index.md`; `make nsd-publish` uses it, so [docs/reference](docs/reference/index.md) lists the 16 earlier releases under "Other releases".
+- The generated reference index explains the publication stage codes of its Stage column (`IS`, `TR`, `draftTR`, not declared) in a "Stage" section; [docs/reference](docs/reference/index.md) gets it once `nsdctl` is built on the library release that carries it. [docs/nsd-sources.md](docs/nsd-sources.md#what-the-official-packages-contain) explains the codes now.
 
 ---
 

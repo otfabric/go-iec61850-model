@@ -432,3 +432,35 @@ func TestDocsIndexOtherReleases(t *testing.T) {
 		t.Fatal("the fixture catalog has no release outside the profile")
 	}
 }
+
+func TestStageMeaning(t *testing.T) {
+	for stage, want := range map[string]string{
+		"IS":      "International Standard, the published normative standard",
+		"TR":      "Technical Report, published informative guidance and extensions, not a standard",
+		"draftTR": "internal draft of the TR stage (Technical Report)",
+		"draftCD": "internal draft of the CD stage (committee draft)",
+		"":        "not declared; the NSD schema then means IS",
+		"draftXY": "a stage this generator does not know",
+		"XY":      "a stage this generator does not know",
+	} {
+		if got := stageMeaning(stage); got != want {
+			t.Errorf("stageMeaning(%q) = %q, want %q", stage, got, want)
+		}
+	}
+}
+
+// The index explains each stage its tables show, once.
+func TestDocsIndexStageLegend(t *testing.T) {
+	files, err := Docs(input(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := string(files["index.md"])
+	_, legend, ok := strings.Cut(index, "## Stage\n")
+	if !ok {
+		t.Fatalf("index.md lacks the stage legend:\n%s", index)
+	}
+	if n := strings.Count(legend, "- **IS** — "); n != 1 {
+		t.Errorf("IS explained %d times:\n%s", n, legend)
+	}
+}

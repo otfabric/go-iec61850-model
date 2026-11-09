@@ -23,3 +23,9 @@ Namespaces:
 - [Common data classes](cdcs.md)
 - [Constructed types and enumerations](types.md)
 - [Coverage](coverage.md)
+
+## Stage
+
+Stage is the publication stage the NSD document of a namespace declares (its `publicationStage`), in IEC's codes:
+
+- **IS** — International Standard, the published normative standard
