@@ -27,7 +27,7 @@ Messages start with `iec61850-model:`.
 | `ErrUnknownAttribute` | A CDC or constructed type has no such member, or the attribute has a different functional constraint |
 | `ErrUnknownType` | A basic, constructed or enumerated type cannot be found or determined |
 | `ErrInvalidReference` | A reference is syntactically invalid |
-| `ErrAmbiguousReference` | A name is defined by more than one namespace, or a partial namespace ID or dependency matches several releases. `ErrAmbiguousSymbol` is the same sentinel; look the name up with its namespace (`LogicalNodeIn`, ...) |
+| `ErrAmbiguousReference` | A name is defined by more than one namespace, or a partial namespace ID matches several releases. `ErrAmbiguousSymbol` is the same sentinel; look the name up with its namespace (`LogicalNodeIn`, ...) |
 | `ErrCycle` | Cyclic class inheritance or a type that contains itself |
 | `ErrSourceUnavailable` | A file, directory or reader cannot be opened or read; a nil source |
 | `ErrNoMapping` | No semantic rule applies to an element, or the rule does not fit the model (CDC, sub data object); a class is not a measured value |
@@ -85,8 +85,9 @@ type AmbiguityError struct {
 ### `*DependencyError`
 
 A dependency that a profile cannot satisfy. Unwraps to `Err`:
-`ErrMissingDependency`, `ErrAmbiguousReference` (several candidate releases) or
-`ErrNamespaceConflict` (the profile selects an incompatible release).
+`ErrMissingDependency` (no loaded release satisfies it) or
+`ErrNamespaceConflict` (the profile selects an incompatible release). Several
+satisfying releases are not an error: the profile adds the newest.
 
 ```go
 type DependencyError struct {

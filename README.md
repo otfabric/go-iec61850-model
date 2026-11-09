@@ -209,11 +209,14 @@ The library keeps three things apart:
 
 ## Namespaces, releases and profiles
 
-A `catalog.Catalog` may hold several releases of the same namespace. It never
-picks the "latest": a lookup of a name that two loaded namespaces define fails
-with `model.ErrAmbiguousSymbol` (`ErrAmbiguousReference`). A `catalog.Profile`
-selects at most one release per standard and adds dependencies when exactly
-one loaded release satisfies them.
+A `catalog.Catalog` may hold several releases of the same namespace. A lookup
+of a name that two loaded namespaces define fails with
+`model.ErrAmbiguousSymbol` (`ErrAmbiguousReference`); the catalog never picks
+one. A `catalog.Profile` selects at most one release per standard and adds,
+for each dependency it does not select, the newest loaded release that
+satisfies it (releases of one version and revision only add corrections).
+`official.ForNamespace` names the embedded profile for the release a device
+declares in `LLN0.NamPlt.ldNs`.
 
 Namespace identity is part of a definition's identity. IEC TR 61850-90-9 and
 IEC 61850-7-420 both define `DBAT`, `DSTO` and `SBAT`, differently; the default

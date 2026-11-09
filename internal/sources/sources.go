@@ -62,7 +62,9 @@ type Index struct {
 
 // Profile is a named selection of IEC parts, e.g. "default" for 7-2,
 // 7-3, 7-4, 7-410 and 7-420. Parts are resolved against the loaded
-// namespaces, so a profile survives release updates.
+// namespaces, so a profile survives release updates: a part selects its
+// newest loaded release, a part with a release label ("7-4@2007A3")
+// that release. See [NamespacesForParts].
 type Profile struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -106,28 +108,48 @@ func MatchesPart(standard, part string) bool {
 	return strings.HasSuffix(strings.ReplaceAll(standard, " ", ""), "61850-"+part)
 }
 
-// NamespacesForParts returns, per part, the one namespace of nss that
-// belongs to it. A part without a namespace, or with several (two
-// releases), is an error: select releases explicitly then.
+// SplitPart splits a profile part into the part and its release label:
+// "7-4@2007A3" is part 7-4, release 2007A3; "7-4" has no label.
+func SplitPart(spec string) (part, release string) {
+	part, release, _ = strings.Cut(spec, "@")
+	return part, release
+}
+
+// NamespacesForParts returns, per profile part, the namespace of nss
+// that it selects: for a bare part ("7-4") the newest loaded release of
+// the part, for a part with a release label ("7-4@2007A3", "7-4@2007A")
+// the newest loaded release matching the label. Releases are ordered by
+// version, revision and release number; the spelling of the standard
+// ("IEC 61850-90-6", "(Tr)IEC61850-90-6") does not count. A part that
+// selects no namespace is an error.
 func NamespacesForParts(nss []*model.Namespace, parts []string) ([]model.NamespaceID, error) {
 	var out []model.NamespaceID
-	for _, part := range parts {
-		var found []model.NamespaceID
+	for _, spec := range parts {
+		part, label := SplitPart(spec)
+		pkg := Package{Part: part, Release: label}
+		var best *model.NamespaceID
 		for _, ns := range nss {
-			if MatchesPart(ns.ID.Standard, part) {
-				found = append(found, ns.ID)
+			if !MatchesPart(ns.ID.Standard, part) || label != "" && !pkg.MatchesNamespace(ns.ID) {
+				continue
+			}
+			if best == nil || compareRelease(ns.ID, *best) > 0 {
+				id := ns.ID
+				best = &id
 			}
 		}
-		switch len(found) {
-		case 1:
-			out = append(out, found[0])
-		case 0:
-			return nil, fmt.Errorf("%w: no namespace of part %s is loaded", model.ErrMissingDependency, part)
-		default:
-			return nil, &model.AmbiguityError{Kind: "namespace of part", Name: part, Candidates: found}
+		if best == nil {
+			return nil, fmt.Errorf("%w: no namespace of part %s is loaded", model.ErrMissingDependency, spec)
 		}
+		out = append(out, *best)
 	}
 	return out, nil
+}
+
+// compareRelease orders two releases of a part by version, revision and
+// release number, ignoring the spelling of the standard.
+func compareRelease(a, b model.NamespaceID) int {
+	a.Standard, b.Standard = "", ""
+	return a.Compare(b)
 }
 
 // Package tiers, in priority order.
@@ -175,10 +197,11 @@ type Package struct {
 }
 
 // ReleaseID returns the namespace ID fields of the package's release
-// label: version, revision and release (0 when the label has none).
+// label: version, revision and release. Revision and release are empty
+// and 0 when the label has none, e.g. "2003" for IEC 61850-8-1:2003.
 func (p Package) ReleaseID() (version, revision string, release int, err error) {
 	id, err := model.ParseNamespaceID("x:" + p.Release)
-	if err != nil || id.Revision == "" {
+	if err != nil {
 		return "", "", 0, fmt.Errorf("%w: release label %q", model.ErrUnknownNamespace, p.Release)
 	}
 	return id.Version, id.Revision, id.Release, nil
@@ -396,9 +419,12 @@ func (idx *Index) Validate() model.Diagnostics {
 			add(path, fmt.Sprintf("profile name %q is empty or used twice", pr.Name))
 		}
 		profiles[pr.Name] = true
-		for _, part := range pr.Parts {
-			if !slices.ContainsFunc(idx.Packages, func(p Package) bool { return p.Part == part && p.Kind == KindNSD }) {
-				add(path, fmt.Sprintf("part %s is not a tracked NSD package", part))
+		for _, spec := range pr.Parts {
+			part, label := SplitPart(spec)
+			if !slices.ContainsFunc(idx.Packages, func(p Package) bool {
+				return p.Part == part && p.Kind == KindNSD && (label == "" || strings.HasPrefix(p.Release, label))
+			}) {
+				add(path, fmt.Sprintf("part %s is not a tracked NSD package", spec))
 			}
 		}
 	}

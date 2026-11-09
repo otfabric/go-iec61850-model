@@ -3,6 +3,8 @@
 package official
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"strings"
 	"testing"
@@ -16,6 +18,20 @@ func TestLoad(t *testing.T) {
 	}
 	if c, err := load([]byte(`{"namespaces":[]}`)); err != nil || len(c.IDs()) != 0 {
 		t.Errorf("empty catalog: %v", err)
+	}
+	// The generated catalog is gzip-compressed JSON.
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	_, _ = zw.Write([]byte(`{"namespaces":[{"id":{"standard":"OTF X","version":"2026","revision":"A"}}]}`))
+	_ = zw.Close()
+	if c, err := load(buf.Bytes()); err != nil || len(c.IDs()) != 1 {
+		t.Errorf("gzip catalog: %v", err)
+	}
+	if _, err := load(buf.Bytes()[:buf.Len()-6]); !errors.Is(err, model.ErrInvalidNSD) {
+		t.Errorf("truncated gzip: %v", err)
+	}
+	if _, err := load([]byte{0x1f, 0x8b, 0}); !errors.Is(err, model.ErrInvalidNSD) {
+		t.Errorf("bad gzip header: %v", err)
 	}
 }
 

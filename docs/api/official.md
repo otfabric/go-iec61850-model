@@ -92,6 +92,18 @@ type Profile struct {
 
 Profile is a named selection of the embedded namespaces.
 
+#### func ForNamespace
+
+```go
+func ForNamespace(s string) (Profile, error)
+```
+
+ForNamespace returns the embedded profile to check a device against that declares namespace s, as LLN0.NamPlt.ldNs or a logical node's lnNs does, e.g. "IEC 61850-7-4:2007B" or "IEC 61850-7-4:2007A".
+
+The profile must hold a release of the declared standard with the declared version, the declared revision when there is one, and at least the declared release; of several, the highest release wins, then the first profile in [Profiles](#func-profiles) order. A declaration without a revision ("IEC 61850-7-4:2007") selects the oldest embedded revision of that version, the edition it was first published as. Standards are compared without spaces and technical-report markers, so "IEC TR 61850-90-9" finds "(Tr)IEC 61850-90-9".
+
+It fails with [model.ErrUnknownNamespace](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownNamespace) when no embedded profile holds a matching release, e.g. for "IEC 61850-7-4:2003": IEC publishes no NSD for Edition 1 of IEC 61850-7-4.
+
 #### func Lookup
 
 ```go

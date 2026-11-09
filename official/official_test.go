@@ -175,3 +175,53 @@ func TestOverlapReport(t *testing.T) {
 		t.Errorf("all overlaps: %d %v", len(all), err)
 	}
 }
+
+func TestForNamespace(t *testing.T) {
+	for _, tc := range []struct {
+		declared, profile string
+		revision          string
+	}{
+		{"IEC 61850-7-4:2007B", "default", "B"},
+		{"IEC 61850-7-4:2007B4", "default", "B"},
+		{"IEC 61850-7-420:2019A", "default", "A"},
+		{"(Tr)IEC 61850-90-9:2018A", "extended", "A"},
+		{"IEC TR 61850-90-9:2018A3", "extended", "A"},
+	} {
+		p, err := official.ForNamespace(tc.declared)
+		if err != nil || p.Name != tc.profile {
+			t.Errorf("ForNamespace(%s) = %s, %v; want %s", tc.declared, p.Name, err, tc.profile)
+			continue
+		}
+		want, _ := model.ParseNamespaceID(tc.declared)
+		ok := false
+		for _, id := range p.Namespaces {
+			ok = ok || (id.Version == want.Version && id.Revision == tc.revision && strings.HasSuffix(id.Standard, want.Standard[len(want.Standard)-7:]))
+		}
+		if !ok {
+			t.Errorf("ForNamespace(%s): profile %s holds no %s release", tc.declared, p.Name, tc.revision)
+		}
+	}
+	// Without a revision, the oldest embedded revision of the version.
+	p, err := official.ForNamespace("IEC 61850-7-4:2007")
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldest := ""
+	for _, q := range official.Profiles() {
+		for _, id := range q.Namespaces {
+			if id.Standard == "IEC 61850-7-4" && (oldest == "" || id.Revision < oldest) {
+				oldest = id.Revision
+			}
+		}
+	}
+	for _, id := range p.Namespaces {
+		if id.Standard == "IEC 61850-7-4" && id.Revision != oldest {
+			t.Errorf("ForNamespace(IEC 61850-7-4:2007) = %s with %s, want revision %s", p.Name, id, oldest)
+		}
+	}
+	for _, s := range []string{"IEC 61850-7-4:2003", "IEC 61850-7-4:2007B99", "IEC 61850-7-4:2007Z", "IEC 61850-7-4", "IEC 61850-7-4:x", "OTF 1:2020A"} {
+		if _, err := official.ForNamespace(s); !errors.Is(err, model.ErrUnknownNamespace) {
+			t.Errorf("ForNamespace(%s) error = %v", s, err)
+		}
+	}
+}

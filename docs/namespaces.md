@@ -24,7 +24,8 @@ no preference.
 
 Lookups on a catalog (`LogicalNode`, `CDC`, ...) return a definition only when
 exactly one loaded namespace defines the name. Otherwise they fail with a
-`*model.AmbiguityError` that lists the candidates.
+`*model.AmbiguityError` that lists the candidates: a catalog never picks one of
+two releases that define a name.
 
 ## Profiles select
 
@@ -34,10 +35,15 @@ exactly one loaded namespace defines the name. Otherwise they fail with a
    It selects the only loaded release that matches, and fails if several do.
 2. At most one release per standard; selecting two fails with
    `ErrNamespaceConflict`.
-3. Dependencies are added when exactly one loaded release satisfies them. None
-   gives `ErrMissingDependency`; several give `ErrAmbiguousReference`; a
-   selected release that does not satisfy a dependency gives
-   `ErrNamespaceConflict`. All three are `*model.DependencyError`.
+3. A dependency that is not selected adds the newest loaded release that
+   satisfies it. A dependency names a standard, version and revision
+   (`IEC 61850-7-3:2007B`), and releases of one version and revision only add
+   corrections, so of 2007B3 to 2007B6 the profile adds 2007B6. No satisfying
+   release gives `ErrMissingDependency`; a selected release that does not
+   satisfy a dependency gives `ErrNamespaceConflict`. Both are
+   `*model.DependencyError`. References inside a definition follow the same
+   rule on a catalog: they resolve in the newest release that satisfies each
+   dependency.
 4. `Profile.Diagnostics()` reports names defined by two namespaces of the
    profile (lookups of them stay ambiguous) and references to types, classes,
    functional constraints or presence conditions the profile does not define.
@@ -47,6 +53,23 @@ release of each standard. The project's default policy — the latest
 compatible, officially released, available and validated set — will be driven
 by the lock file once releases are validated; it is never "highest year per
 part".
+
+## The release a device declares
+
+A device names the release its model follows in `LLN0.NamPlt.ldNs` (and per
+logical node in `lnNs`), e.g. `IEC 61850-7-4:2007B`. `official.ForNamespace`
+returns the embedded profile to check it against: one whose release of that
+standard has the declared version and revision and at least the declared
+release, the highest such release first. A declaration without a revision
+(`IEC 61850-7-4:2007`) selects the oldest revision embedded, the edition that
+version was first published as. `IEC 61850-7-4:2003` (Edition 1) finds no
+profile: IEC publishes no NSD for it, so a device of that edition cannot be
+checked against official definitions.
+
+```go
+p, err := official.ForNamespace("IEC 61850-7-4:2007B") // the default profile
+prof, err := official.Open(p.Name)
+```
 
 ## Named profiles
 

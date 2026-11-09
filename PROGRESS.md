@@ -35,8 +35,9 @@ Points the plan left open or that needed adjustment:
 5. **Parameterized CDCs.** ENS/ENC `stVal` take their type from the data
    object's underlying type. Not in the plan; required to resolve `Beh.stVal`.
 6. **Inheritance on catalogs too.** Inheritance-aware lookups work on both
-   `Catalog` and `Profile`; they fail with ambiguity errors on a catalog with
-   several releases rather than being profile-only.
+   `Catalog` and `Profile`. On a catalog with several releases, references
+   resolve in the newest release satisfying each dependency (since v0.7.0;
+   before, they failed with ambiguity errors).
 7. **IECManifest.xml is kept generically.** Its format is not verified yet, so
    `nsd.Manifest` preserves every element and attribute in order instead of
    guessing field names. Model it once an official manifest has been seen.

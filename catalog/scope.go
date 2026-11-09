@@ -27,7 +27,8 @@ import (
 
 // computeScopes returns, per namespace, its scope by level: the
 // namespace itself, then the namespaces satisfying its dependencies,
-// then theirs, and so on, each namespace at its first level.
+// then theirs, and so on, each namespace at its first level. Of several
+// releases satisfying one dependency, only the newest is in the scope.
 func computeScopes(nss []*model.Namespace) map[model.NamespaceID][][]model.NamespaceID {
 	out := make(map[model.NamespaceID][][]model.NamespaceID, len(nss))
 	for _, ns := range nss {
@@ -38,11 +39,9 @@ func computeScopes(nss []*model.Namespace) map[model.NamespaceID][][]model.Names
 			for _, id := range levels[len(levels)-1] {
 				cur := findNamespace(nss, id)
 				for _, dep := range cur.Dependencies {
-					for _, cand := range nss {
-						if cand.ID.Satisfies(dep) && !seen[cand.ID] {
-							seen[cand.ID] = true
-							next = append(next, cand.ID)
-						}
+					if cand := newestSatisfying(nss, dep); cand != nil && !seen[cand.ID] {
+						seen[cand.ID] = true
+						next = append(next, cand.ID)
 					}
 				}
 			}
@@ -54,6 +53,19 @@ func computeScopes(nss []*model.Namespace) map[model.NamespaceID][][]model.Names
 		out[ns.ID] = levels
 	}
 	return out
+}
+
+// newestSatisfying returns the namespace of nss with the highest release
+// that satisfies dep, or nil. Every release satisfying dep has dep's
+// standard, version and revision.
+func newestSatisfying(nss []*model.Namespace, dep model.NamespaceID) *model.Namespace {
+	var best *model.Namespace
+	for _, cand := range nss {
+		if cand.ID.Satisfies(dep) && (best == nil || cand.ID.Release > best.ID.Release) {
+			best = cand
+		}
+	}
+	return best
 }
 
 func findNamespace(nss []*model.Namespace, id model.NamespaceID) *model.Namespace {

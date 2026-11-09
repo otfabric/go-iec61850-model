@@ -453,7 +453,7 @@ type DependencyError struct {
 
 DependencyError reports a namespace dependency that cannot be satisfied.
 
-It unwraps to Err, which is ErrMissingDependency, ErrAmbiguousReference (more than one candidate release) or ErrNamespaceConflict (the profile selects an incompatible release).
+It unwraps to Err, which is ErrMissingDependency (no loaded release satisfies the dependency) or ErrNamespaceConflict (the profile selects an incompatible release). Catalogs before v0.7.0 also reported several satisfying releases, with ErrAmbiguousReference; they now add the newest.
 
 #### func (DependencyError) Error
 

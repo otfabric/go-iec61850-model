@@ -47,6 +47,11 @@ var (
 type Input struct {
 	// Profile is the namespace selection to generate from.
 	Profile *catalog.Profile
+	// Embed, when set, lists the namespaces [Catalog] embeds instead of
+	// those of Profile, e.g. a catalog holding several releases of a
+	// standard. The named profiles are resolved against it. Headers,
+	// notices and the publish policy cover the same namespaces.
+	Embed catalog.Source
 	// ToolVersion is written into headers, e.g. "v0.3.0".
 	ToolVersion string
 	// IncludeDocText includes NSDoc titles and descriptions. They are
@@ -75,7 +80,7 @@ func (f Files) Paths() []string {
 // the packages are stored.
 func (in Input) sourceLines() []string {
 	var out []string
-	for _, ns := range in.Profile.Namespaces() {
+	for _, ns := range in.namespaces() {
 		line := ns.ID.String()
 		if ns.Provenance.SHA256 != "" {
 			line += " sha256:" + ns.Provenance.SHA256
@@ -128,7 +133,7 @@ func orDev(v string) string {
 func (in Input) noticeFile(kind string) []byte {
 	var b bytes.Buffer
 	found := false
-	for _, ns := range in.Profile.Namespaces() {
+	for _, ns := range in.namespaces() {
 		if ns.Copyright.IsZero() {
 			continue
 		}
@@ -183,6 +188,15 @@ func (in Input) localNotice(kind string) []byte {
 	return b.Bytes()
 }
 
+// namespaces returns the source namespaces: those of Embed when set,
+// otherwise those of the profile.
+func (in Input) namespaces() []*model.Namespace {
+	if in.Embed != nil {
+		return in.Embed.Namespaces()
+	}
+	return in.Profile.Namespaces()
+}
+
 func (in Input) validate() error {
 	if in.Profile == nil {
 		return fmt.Errorf("%w: generator needs a profile", model.ErrUnknownNamespace)
@@ -207,13 +221,13 @@ func (e *PolicyError) Error() string {
 
 func (e *PolicyError) Unwrap() error { return ErrPolicyRefused }
 
-// CheckPublish permits publishing only when every namespace of the
-// profile has a lock entry with redistribution "permitted" and, when
+// CheckPublish permits publishing only when every namespace of src
+// has a lock entry with redistribution "permitted" and, when
 // the entry records a digest, the loaded document or package has that
 // digest.
-func (p Policy) CheckPublish(profile *catalog.Profile) error {
+func (p Policy) CheckPublish(src catalog.Source) error {
 	var blocked []string
-	for _, ns := range profile.Namespaces() {
+	for _, ns := range src.Namespaces() {
 		if p.Lock == nil {
 			blocked = append(blocked, ns.ID.String()+": no lock file")
 			continue
