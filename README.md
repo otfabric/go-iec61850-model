@@ -19,7 +19,7 @@ Sampled Values or SCL runtime; those depend on this library, not the other way
 round.
 
 > **IEC content.** The repository ships no NSD files and no text from the
-> standards. It commits what is generated from the 12 official NSD namespaces
+> standards. It commits what is generated from the 28 official NSD namespaces
 > (identifiers, types and structure; no documentation texts), under the IEC
 > Code Components license with the attribution in `NOTICE.md`: the embedded
 > catalog [`official`](official), the constants [`names`](names) and the
@@ -60,10 +60,10 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 | Type resolution (`resolver`) | Implemented |
 | Semantic mapping (`semantic`) | Implemented: MMXU, MMXN, MMTR rules, overrides, unit handling |
 | Ontology helpers (`ontology`) | Implemented: concept graph, traversal, JSON export |
-| Embedded catalog (`official`) | Committed: the 12 official NSD namespaces with the profiles `default` and `extended`, with IEC attribution |
+| Embedded catalog (`official`) | Committed: every published NSD release (28 namespaces: 7-2, 7-3 and 7-4 from 2007A2 to 2007B6, 90-6 2018A and 2018B, one release of each other part) with the profiles `default`, `extended` and `edition2`, with IEC attribution; gzip-compressed, about 0.3 MB in a binary |
 | Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the default profile, with IEC attribution |
 | Model reference ([docs/reference](docs/reference/index.md)) | Committed: every class, CDC and type of the extended profile |
-| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, catalog (profiles, overlaps), diff, generate (go, docs, json, catalog) with license gate, sources fetch/check/lock, schema, version, shell completion; binaries for Linux, macOS and Windows |
+| `nsdctl` CLI, generator | Implemented: inspect, validate, dependencies, model, catalog (profiles, overlaps, select), diff, generate (go, docs, json, catalog) with license gate, sources fetch/check/lock, schema, version, shell completion; binaries for Linux, macOS and Windows |
 | NSD update monitor | Planned (M5) |
 
 **Standards coverage.** The importer targets the NSD format of IEC 61850-7-7

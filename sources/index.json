@@ -246,6 +246,215 @@
       "purpose": "NSD XML schema; check importer coverage with nsdctl schema (2017B6 announced in the 2025 corrigendum)",
       "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-7.2017.NSD.2017A.full.zip",
       "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-2",
+      "name": "IEC_61850-7-2.NSD.2007A2.light.zip",
+      "release": "2007A2",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Abstract services, basic types, functional constraints, presence conditions; Edition 2 (IEC 61850-7-2:2010), superseded by 2007A3",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007A2.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-2",
+      "name": "IEC_61850-7-2.NSD.2007A3.light.zip",
+      "release": "2007A3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Abstract services, basic types, functional constraints, presence conditions; Edition 2 (IEC 61850-7-2:2010), latest release",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007A3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-2",
+      "name": "IEC_61850-7-2.NSD.2007B3.light.zip",
+      "release": "2007B3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Abstract services, basic types, functional constraints, presence conditions; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-2",
+      "name": "IEC_61850-7-2.NSD.2007B4.Light.zip",
+      "release": "2007B4",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Abstract services, basic types, functional constraints, presence conditions; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B4.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-2",
+      "name": "IEC_61850-7-2.NSD.2007B5.Light.zip",
+      "release": "2007B5",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Abstract services, basic types, functional constraints, presence conditions; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B5.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-3",
+      "name": "IEC_61850-7-3.NSD.2007A2.light.zip",
+      "release": "2007A2",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Common data classes, constructed attributes, enumerations; Edition 2 (IEC 61850-7-3:2010), superseded by 2007A3",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007A2.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-3",
+      "name": "IEC_61850-7-3.NSD.2007A3.light.zip",
+      "release": "2007A3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Common data classes, constructed attributes, enumerations; Edition 2 (IEC 61850-7-3:2010), latest release",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007A3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-3",
+      "name": "IEC_61850-7-3.NSD.2007B3.light.zip",
+      "release": "2007B3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Common data classes, constructed attributes, enumerations; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-3",
+      "name": "IEC_61850-7-3.NSD.2007B4.Light.zip",
+      "release": "2007B4",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Common data classes, constructed attributes, enumerations; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B4.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-3",
+      "name": "IEC_61850-7-3.NSD.2007B5.Light.zip",
+      "release": "2007B5",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Common data classes, constructed attributes, enumerations; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B5.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-4",
+      "name": "IEC_61850-7-4.NSD.2007A2.light.zip",
+      "release": "2007A2",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Logical node classes and data objects; Edition 2 (IEC 61850-7-4:2010), superseded by 2007A3",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007A2.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-4",
+      "name": "IEC_61850-7-4.NSD.2007A3.light.zip",
+      "release": "2007A3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Logical node classes and data objects; Edition 2 (IEC 61850-7-4:2010), latest release",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007A3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-4",
+      "name": "IEC_61850-7-4.NSD.2007B3.light.zip",
+      "release": "2007B3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Logical node classes and data objects; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B3.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-4",
+      "name": "IEC_61850-7-4.NSD.2007B4.Light.zip",
+      "release": "2007B4",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Logical node classes and data objects; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B4.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "7-4",
+      "name": "IEC_61850-7-4.NSD.2007B5.Light.zip",
+      "release": "2007B5",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Logical node classes and data objects; Edition 2.1 (AMD1:2020), superseded by 2007B6",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B5.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "8-1",
+      "name": "IEC_61850-8-1.NSD.2003.light.zip",
+      "release": "2003",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "MMS mapping (a service namespace, recognized, not modeled yet); superseded by 2003A4",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "8-1",
+      "name": "IEC_61850-8-1.NSD.2003A2.light.zip",
+      "release": "2003A2",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "MMS mapping (a service namespace, recognized, not modeled yet); superseded by 2003A4",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A2.light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "8-1",
+      "name": "IEC_61850-8-1.NSD.2003A3.Light.zip",
+      "release": "2003A3",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "MMS mapping (a service namespace, recognized, not modeled yet); superseded by 2003A4",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A3.Light.zip",
+      "verified": true
+    },
+    {
+      "tier": "optional",
+      "part": "90-6",
+      "name": "IEC_61850-90-6.NSD.2018A.light.zip",
+      "release": "2018A",
+      "kind": "nsd",
+      "content": "light",
+      "purpose": "Distribution automation, fault isolation and restoration; superseded by 2018B",
+      "url": "https://assets.iec.ch/public/tc57/IEC_61850-90-6.NSD.2018A.light.zip",
+      "verified": true
     }
   ],
   "profiles": [
@@ -272,6 +481,15 @@
         "90-11",
         "90-14",
         "90-21"
+      ]
+    },
+    {
+      "name": "edition2",
+      "description": "Edition 2 of the core parts: IEC 61850-7-2, 7-3 and 7-4 at namespace release 2007A3 (IEC 61850-7-4:2010 before Amendment 1), for devices that declare IEC 61850-7-4:2007 or 2007A. The domain parts and technical reports depend on 2007B and are not part of it.",
+      "parts": [
+        "7-2@2007A3",
+        "7-3@2007A3",
+        "7-4@2007A3"
       ]
     }
   ]

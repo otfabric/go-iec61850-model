@@ -94,6 +94,25 @@ func asRelease6(t *testing.T, name string) []byte {
 	return bytes.Replace(fixtures.Read(t, name), []byte(`release="1"`), []byte(`release="6"`), 1)
 }
 
+// asRelease turns a synthetic core namespace into another release, e.g.
+// 2007A3, with its dependencies on the same revision.
+func asRelease(t *testing.T, name, revision, release string) []byte {
+	data := bytes.ReplaceAll(fixtures.Read(t, name), []byte(`revision="B"`), []byte(`revision="`+revision+`"`))
+	return bytes.Replace(data, []byte(`release="1"`), []byte(`release="`+release+`"`), 1)
+}
+
+// serviceNS is a synthetic 8-1 service namespace package.
+func serviceNS(revision, release string) map[string][]byte {
+	attrs := ""
+	if revision != "" {
+		attrs = fmt.Sprintf(` revision="%s" release="%s"`, revision, release)
+	}
+	return map[string][]byte{
+		"8-1.snsd": []byte(nsHeader + `<ServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" id="IEC 61850-8-1" version="2003"` + attrs + ` nsdVersion="2017" nsdRevision="B" nsdRelease="6"/>`),
+		"x.AppNS":  []byte(nsHeader + `<ApplicableServiceNS xmlns="http://www.iec.ch/61850/2016/NSD" version="2"/>`),
+	}
+}
+
 // fullSet writes the synthetic package directory and returns its path.
 func fullSet(t *testing.T) string {
 	t.Helper()
@@ -119,6 +138,19 @@ func fullSet(t *testing.T) string {
 			"Manifest.xml": manifest,
 		},
 		"IEC_61850-7-7.2017.NSD.2017A.full.zip": {"NSD.xsd": []byte(syntheticXSD), "NSDoc.xsd": []byte(syntheticXSD), "IECManifest.xml": manifest},
+		// Earlier releases: Edition 2 (2007A) and Edition 2.1 before 2007B6.
+		"IEC_61850-8-1.NSD.2003.light.zip":   serviceNS("", ""),
+		"IEC_61850-8-1.NSD.2003A2.light.zip": serviceNS("A", "2"),
+		"IEC_61850-8-1.NSD.2003A3.Light.zip": serviceNS("A", "3"),
+		"IEC_61850-90-6.NSD.2018A.light.zip": {"90-6.nsd": extension("IEC 61850-90-6", "2018", "A", "5", dependsOn74, "AXDA", "FltA")},
+	}
+	for _, r := range []struct{ name, revision, release string }{
+		{"2007A2.light.zip", "A", "2"}, {"2007A3.light.zip", "A", "3"}, {"2007B3.light.zip", "B", "3"},
+		{"2007B4.Light.zip", "B", "4"}, {"2007B5.Light.zip", "B", "5"},
+	} {
+		for part, fixture := range map[string]string{"7-2": fixtures.NS72, "7-3": fixtures.NS73, "7-4": fixtures.NS74} {
+			pkgs["IEC_61850-"+part+".NSD."+r.name] = map[string][]byte{part + ".nsd": asRelease(t, fixture, r.revision, r.release)}
+		}
 	}
 	for name, files := range pkgs {
 		if err := os.WriteFile(filepath.Join(dir, name), zipOf(t, files), 0o600); err != nil {
@@ -147,8 +179,8 @@ func TestFullSetCoverage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(idx.Packages) != 14 {
-		t.Fatalf("the registry tracks %d packages, want 14", len(idx.Packages))
+	if len(idx.Packages) != 33 {
+		t.Fatalf("the registry tracks %d packages, want 33", len(idx.Packages))
 	}
 
 	out, errOut, code := nsdctl(t, "--json", "sources", "check", "--index", index, "--lock", lock, "--packages", dir)
@@ -161,7 +193,7 @@ func TestFullSetCoverage(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &rep); err != nil {
 		t.Fatal(err)
 	}
-	if len(rep.Packages) != 14 {
+	if len(rep.Packages) != 33 {
 		t.Fatalf("%d packages checked", len(rep.Packages))
 	}
 	for _, p := range rep.Packages {
@@ -204,8 +236,8 @@ func TestFullSetLockAndModel(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &lock); err != nil {
 		t.Fatal(err)
 	}
-	if len(lock.Sources) != 14 {
-		t.Fatalf("%d lock entries, want 12 namespaces, the 8-1 service namespace and the schema package", len(lock.Sources))
+	if len(lock.Sources) != 33 {
+		t.Fatalf("%d lock entries, want 28 namespaces, 4 releases of the 8-1 service namespace and the schema package", len(lock.Sources))
 	}
 	if ds := lock.Validate(); ds.HasErrors() {
 		t.Errorf("generated lock is invalid: %v", ds)
@@ -216,7 +248,7 @@ func TestFullSetLockAndModel(t *testing.T) {
 			if e.Redistribution != sources.RedistributionPermitted || e.Source == "" || e.Status != sources.StateNSDValidated || e.Content != "light" {
 				t.Errorf("existing decisions must be kept: %+v", e)
 			}
-		case "IEC 61850-8-1:2003A4":
+		case "IEC 61850-8-1:2003", "IEC 61850-8-1:2003A2", "IEC 61850-8-1:2003A3", "IEC 61850-8-1:2003A4":
 			if e.Status != sources.StateNSDAvailable || !strings.Contains(e.Notes, "service namespace") || e.Package == "" {
 				t.Errorf("service namespace entry %+v", e)
 			}
@@ -240,8 +272,9 @@ func TestFullSetLockAndModel(t *testing.T) {
 		t.Error("lock without --packages")
 	}
 
-	// The whole set forms one profile: exactly one release per standard.
-	if out, e, code := nsdctl(t, "validate", dir); code != exitOK || !strings.Contains(out, "12 namespaces, 0 errors") {
+	// Every release validates; a dependency several releases satisfy
+	// resolves to the newest.
+	if out, e, code := nsdctl(t, "validate", dir); code != exitOK || !strings.Contains(out, "28 namespaces, 0 errors") {
 		t.Errorf("validate: %d\n%s\n%s", code, out, e)
 	}
 	if out, _, code := nsdctl(t, "-s", dir, "-p", "extended", "model", "list"); code != exitOK || !containsAll(out, "AXDA", "DXTS", "FXLG", "HXTS", "LXBR", "MMXU", "RXTW", "SXCM", "ZXBA", "ZXCV") {
@@ -252,6 +285,9 @@ func TestFullSetLockAndModel(t *testing.T) {
 	}
 	if out, _, code := nsdctl(t, "-s", dir, "model", "show", "LD0/MMXU1.Hz.mag.f[MX]"); code != exitOK || !strings.Contains(out, "IEC 61850-7-3:2007B6") {
 		t.Errorf("resolution across the set: %d\n%s", code, out)
+	}
+	if out, _, code := nsdctl(t, "-s", dir, "-p", "edition2", "model", "show", "LD0/MMXU1.Hz.mag.f[MX]"); code != exitOK || !strings.Contains(out, "IEC 61850-7-3:2007A3") {
+		t.Errorf("edition2 profile: %d\n%s", code, out)
 	}
 	if _, _, code := nsdctl(t, "-s", dir, "generate", "docs", "-o", filepath.Join(t.TempDir(), "docs")); code != exitOK {
 		t.Error("generate docs over the full set")

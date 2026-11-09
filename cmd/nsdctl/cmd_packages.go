@@ -187,9 +187,12 @@ checked. Exit code 3 when errors are found.`,
 }
 
 type dependency struct {
-	Namespace  string   `json:"namespace"`
-	Requires   string   `json:"requires"`
-	Status     string   `json:"status"`
+	Namespace string `json:"namespace"`
+	Requires  string `json:"requires"`
+	Status    string `json:"status"`
+	// Selected is the release a profile adds for the dependency: the
+	// newest of the candidates.
+	Selected   string   `json:"selected,omitempty"`
 	Candidates []string `json:"candidates,omitempty"`
 }
 
@@ -215,7 +218,11 @@ func (a *app) dependenciesCmd() *cobra.Command {
 			} else {
 				var rows [][]string
 				for _, d := range deps {
-					rows = append(rows, []string{d.Namespace, d.Requires, d.Status, orDash(strings.Join(d.Candidates, ", "))})
+					by := d.Selected
+					if n := len(d.Candidates); n > 1 {
+						by = fmt.Sprintf("%s (newest of %d)", by, n)
+					}
+					rows = append(rows, []string{d.Namespace, d.Requires, d.Status, orDash(by)})
 				}
 				if err := table(w, "NAMESPACE\tREQUIRES\tSTATUS\tSATISFIED BY", rows); err != nil {
 					return err
@@ -241,13 +248,13 @@ func resolveDependencies(c *catalog.Catalog) []dependency {
 					d.Candidates = append(d.Candidates, cand.ID.String())
 				}
 			}
-			switch len(d.Candidates) {
-			case 0:
+			// Releases satisfying one dependency differ only in their
+			// release number and come in ascending order: the last is the
+			// newest, the one a profile adds.
+			if n := len(d.Candidates); n == 0 {
 				d.Status = "missing"
-			case 1:
-				d.Status = "ok"
-			default:
-				d.Status = "ambiguous"
+			} else {
+				d.Status, d.Selected = "ok", d.Candidates[n-1]
 			}
 			out = append(out, d)
 		}

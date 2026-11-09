@@ -34,8 +34,10 @@ is available from `Package.Manifest()`.
 ## Tracked packages
 
 [`sources/index.json`](../sources/index.json) lists every code component
-package the project covers, with its official download location. All 14 were
-verified on 2026-10-21 against `https://assets.iec.ch/public/tc57/` (the older
+package the project covers, with its official download location: every NSD
+release IEC publishes in the TC 57 supporting documents, 33 packages. The 14
+newest were verified on 2026-10-21, the 19 earlier releases on 2026-11-09,
+against `https://assets.iec.ch/public/tc57/` (the older
 `www.iec.ch/public/TC57/supportdocuments/` paths refuse access). File names are
 case-sensitive there. Release labels such as `2007B6` are namespace version,
 revision and release, not publication dates.
@@ -56,6 +58,20 @@ revision and release, not publication dates.
 | optional | 90-21 | `IEC_TR_61850-90-21.NSD.2022A2.Light.zip` | Travelling-wave fault location |
 | optional | 8-1 | `IEC_61850-8-1.NSD.2003A4.Light.zip` | MMS mapping (a service namespace, recognized, not modeled yet) |
 | optional (schema) | 7-7 | `IEC_61850-7-7.2017.NSD.2017A.full.zip` | NSD XML schema |
+
+Earlier releases, all tier optional:
+
+| Part | Releases | Edition |
+| --- | --- | --- |
+| 7-2, 7-3, 7-4 | `2007A2`, `2007A3` | Edition 2 (IEC 61850-7-x:2010); the `edition2` profile uses 2007A3 |
+| 7-2, 7-3, 7-4 | `2007B3`, `2007B4`, `2007B5` | Edition 2.1 (Amendment 1:2020), superseded by 2007B6 |
+| 8-1 | `2003`, `2003A2`, `2003A3` | MMS mapping service namespace, superseded by 2003A4 |
+| 90-6 | `2018A` (namespace `2018A5`) | Superseded by 2018B |
+
+IEC publishes no NSD for Edition 1 of IEC 61850-7-4 (2003): devices that
+declare `IEC 61850-7-4:2003` cannot be checked against official definitions.
+The same listing also carries `IEC_62351-4.NSD.2018.Light.zip`, a namespace of
+IEC 62351, which is out of scope here.
 
 The packages declare NSD format version 2017B6; a `2017B6` 7-7 package is not
 published at the official location, so 7-7 stays at `2017A`.
@@ -102,7 +118,7 @@ IEC packages.
 
 ## What the official packages contain
 
-Findings from importing the 14 packages, reflected in the importer:
+Findings from importing the packages, reflected in the importer:
 
 - **Manifest** `Manifest.xml` (namespace `http://www.iec.ch/CC/2017/IECManifest`)
   with copyright notice and license `www.iec.ch/CCv1`; each NS document also
@@ -130,6 +146,12 @@ Findings from importing the 14 packages, reflected in the importer:
 - **Dependency types** `dependsOn`, `includes` and `extends`.
 
 Upstream gaps, reported as warnings by `nsdctl validate`:
+
+- **7-4 2007B3 declares no dependency**: validated on its own, none of the
+  CDCs it uses resolve (about 1,400 warnings). In a profile that selects 7-2
+  and 7-3 2007B3 with it, 3 warnings remain.
+- **Edition 2 presence condition `OF`**: 7-4 2007A2 and 2007A3 use it, and
+  their 7-2 does not define it (34 warnings each).
 
 - **Overlapping definitions**: 90-9 (2018A3) and 7-420 (2019A4) both define
   `DBAT`, `DSTO`, `SBAT`, the storage base classes and two enumerations; 7-4 and
@@ -164,6 +186,11 @@ official packages pinned in `sources/nsd.lock.json`:
 | IEC 61850-8-1:2003A4 | yes | recognized (ServiceNS) | n/a | n/a |
 | IEC 61850-7-7:2017A (schema) | yes | inventoried | n/a | n/a |
 
+The earlier releases (2026-11-09) of 7-2, 7-3 and 7-4 (2007A2 to 2007B5) and
+90-6 (2018A5) are available, parsed and validate without errors, with the
+upstream warnings above; their leaf-type coverage has not been measured. The
+8-1 releases 2003 to 2003A3 are recognized like 2003A4.
+
 Counts come from `coverage.md` of `make nsd-generate` over all packages in one
 profile; the shortfalls are the upstream gaps above.
 
@@ -179,9 +206,9 @@ that the structure is compatible, accept it with
 namespace release, only metadata that may be committed: standard and
 publication, namespace ID, official source location, retrieval time, SHA-256,
 package kind, package file, dependencies, validation status and the
-redistribution decision. All 14 tracked packages are pinned; the 12 NSD
-namespaces the committed output is generated from are `permitted`, the 8-1
-service namespace and the 7-7 schema `local-only` (see
+redistribution decision. All 33 tracked packages are pinned; the 28 NSD
+namespaces the committed output is generated from are `permitted`, the four
+8-1 service namespace releases and the 7-7 schema `local-only` (see
 [licensing.md](licensing.md#decision)).
 
 Lock entry fields: `standard`, `publication`, `namespace` (canonical ID),

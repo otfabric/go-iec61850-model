@@ -81,6 +81,11 @@ prof, err := official.Open(p.Name)
 | --- | --- | --- |
 | `default` | 7-2, 7-3, 7-4, 7-410, 7-420 | Current core, domain, DER and storage models |
 | `extended` | `default` plus 90-3, 90-4, 90-6, 90-9, 90-11, 90-14, 90-21 | Historical and specialised models from the technical reports |
+| `edition2` | 7-2, 7-3 and 7-4 at 2007A3 | Devices that declare Edition 2 (`IEC 61850-7-4:2007` or `2007A`) |
+
+A bare part selects the newest embedded release of the part; `7-4@2007A3`
+pins one. The embedded catalog holds every published release, so any release
+can also be selected by ID: `nsdctl -p "IEC 61850-7-4:2007B4" model show MMXU`.
 
 ```go
 p, err := official.Default()            // *catalog.Profile

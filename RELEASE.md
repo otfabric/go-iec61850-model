@@ -1,5 +1,25 @@
 # go-iec61850-model Releases
 
+## v0.8.0
+
+**Date:** unreleased
+**Previous release:** v0.7.0
+
+### Added
+
+- The embedded catalog holds every NSD release IEC publishes: IEC 61850-7-2, 7-3 and 7-4 from 2007A2 to 2007B6 and IEC TR 61850-90-6 2018A5 besides 2018B, 28 namespaces (was 12). The registry and lock also track the 8-1 service namespace releases 2003 to 2003A3. IEC publishes no NSD for Edition 1 (2003) of 7-4.
+- Profile `edition2`: IEC 61850-7-2, 7-3 and 7-4 at 2007A3, for devices that declare `IEC 61850-7-4:2007` or `2007A`. `nsdctl -p` takes any embedded release ID, e.g. `-p "IEC 61850-7-4:2007B4"`, without `--source`.
+- `nsdctl catalog select NAMESPACE` names the embedded profile for the release a device declares in `LLN0.NamPlt.ldNs` (`official.ForNamespace`).
+- `nsdctl generate catalog --all-releases` embeds every loaded release; `make nsd-publish` uses it.
+
+### Changed
+
+- The embedded catalog is generated in the gzip format of v0.7.0: about 0.33 MB in a binary for 28 namespaces, where the 12 namespaces of v0.7.0 took 3.76 MB. Loading it takes about 65 ms, once per process.
+- `nsdctl dependencies` reports a dependency several releases satisfy as `ok`, with the newest release (the one a profile adds), instead of `ambiguous`.
+- `nsdctl catalog overlaps` without `--profile` compares the namespaces of the extended profile instead of every loaded namespace, so earlier releases are not compared with their successors.
+
+---
+
 ## v0.7.0
 
 **Date:** unreleased

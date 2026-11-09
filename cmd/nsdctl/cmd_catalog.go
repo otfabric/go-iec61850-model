@@ -24,7 +24,7 @@ Without --source, the commands use the official catalog embedded in nsdctl.
 Definitions of the same name in two namespaces are never merged; the
 overlap report shows how they relate.`,
 	}
-	cmd.AddCommand(a.catalogProfilesCmd(), a.catalogOverlapsCmd())
+	cmd.AddCommand(a.catalogProfilesCmd(), a.catalogOverlapsCmd(), a.catalogSelectCmd())
 	return cmd
 }
 
@@ -64,7 +64,7 @@ func (a *app) catalogProfilesCmd() *cobra.Command {
 					}
 					_, _ = fmt.Fprintf(w, "%s: %s\n", p.Name, p.Description)
 					if len(p.Namespaces) == 0 {
-						_, _ = fmt.Fprintf(w, "  (the sources do not carry exactly one release of each part: %s)\n", strings.Join(p.Parts, ", "))
+						_, _ = fmt.Fprintf(w, "  (the sources do not carry a release of each part: %s)\n", strings.Join(p.Parts, ", "))
 					}
 					for _, ns := range p.Namespaces {
 						_, _ = fmt.Fprintf(w, "  %s\n", ns)
@@ -93,9 +93,10 @@ Each overlap is classified:
   conflicting           the definitions differ in what both define, or each
                         defines something the other does not
 
-Without --left and --right, every pair of namespaces of the catalog (or of
---profile) is compared. Namespaces may be partial: "IEC 61850-7-420",
-"IEC_TR_61850-90-9" or "90-9".`,
+Without --left and --right, every pair of namespaces of --profile is
+compared; without --profile, of the extended profile when the sources
+carry it, otherwise of every loaded namespace. Namespaces may be
+partial: "IEC 61850-7-420", "IEC_TR_61850-90-9" or "90-9".`,
 		Example: `  nsdctl catalog overlaps --left IEC_61850-7-420 --right IEC_TR_61850-90-9
   nsdctl catalog overlaps --profile extended --class conflicting`,
 		Args: cobra.NoArgs,
@@ -176,7 +177,7 @@ Without --left and --right, every pair of namespaces of the catalog (or of
 }
 
 // overlapSet is the set the overlap report compares: the profile
-// selected with --profile, or the whole catalog.
+// selected with --profile, the extended profile, or the whole catalog.
 type overlapSet interface {
 	namespaceSet
 	Overlaps(left, right model.NamespaceID) ([]catalog.Overlap, error)
@@ -188,9 +189,61 @@ func (a *app) overlapSet() (overlapSet, error) {
 		return nil, err
 	}
 	if len(a.profile) == 0 {
+		// Every release of a standard overlaps the others; compare the
+		// newest releases of the extended profile instead.
+		if ids, ok := namedProfile(c, "extended"); ok {
+			return c.Profile(ids...)
+		}
 		return c, nil
 	}
 	return a.selectProfile(c)
+}
+
+// selection is the profile ForNamespace chose for a declared namespace.
+type selection struct {
+	Declared   string   `json:"declared"`
+	Profile    string   `json:"profile"`
+	Namespaces []string `json:"namespaces"`
+}
+
+func (a *app) catalogSelectCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "select NAMESPACE",
+		Short: "Name the embedded profile for a namespace a device declares",
+		Long: `Select names the embedded profile to check a device against that
+declares NAMESPACE, as LLN0.NamPlt.ldNs or a logical node's lnNs does.
+
+The profile must hold a release of the declared standard with the
+declared version, revision and at least the declared release; the
+highest such release wins. A declaration without a revision selects the
+oldest revision embedded: "IEC 61850-7-4:2007" is Edition 2 (2007A),
+"IEC 61850-7-4:2007B" Edition 2.1. Exit code 3 when no embedded profile
+fits, e.g. for "IEC 61850-7-4:2003": IEC publishes no NSD for Edition 1.`,
+		Example: `  nsdctl catalog select "IEC 61850-7-4:2007B"
+  nsdctl catalog select "IEC 61850-7-4:2007A"`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(a.sources) > 0 {
+				return withCode(exitUsage, "catalog select uses the embedded catalog; drop --source")
+			}
+			p, err := official.ForNamespace(args[0])
+			if err != nil {
+				return withCode(exitInvalidInput, "%v", err)
+			}
+			out := selection{Declared: args[0], Profile: p.Name, Namespaces: []string{}}
+			for _, id := range p.Namespaces {
+				out.Namespaces = append(out.Namespaces, id.String())
+			}
+			w := cmd.OutOrStdout()
+			return a.output(w, out, func() error {
+				_, _ = fmt.Fprintf(w, "%s: profile %s\n", out.Declared, out.Profile)
+				for _, ns := range out.Namespaces {
+					_, _ = fmt.Fprintf(w, "  %s\n", ns)
+				}
+				return nil
+			})
+		},
+	}
 }
 
 func containsClass(classes []string, c catalog.OverlapClass) bool {
