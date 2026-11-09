@@ -52,7 +52,7 @@ downloaded packages stay out of source control.
 | --- | --- | --- | --- |
 | [`names/`](../names) | `generate go --package names` | `default` | Typed Go constants |
 | [`official/`](../official) | `generate catalog --all-releases --package official` | every release | The embedded catalog (`catalog_gen.json.gz`, with `catalog_gen.json` for review) with the profiles `default`, `extended` and `edition2` |
-| [`docs/reference/`](reference/index.md) | `generate docs` | `extended` | The Markdown model reference, every namespace |
+| [`docs/reference/`](reference/index.md) | `generate docs --all-releases` | `extended` | The Markdown model reference of every namespace of the profile; `index.md` also lists the other embedded releases |
 
 ```bash
 make nsd-fetch        # the official packages, verified against the lock

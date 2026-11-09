@@ -203,12 +203,12 @@ nsd-publish: ## Regenerate the committed output (names, official, docs/reference
 	@echo "Generating the committed output from $(NSD_CACHE)"
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --force
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog --all-releases -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --force
-	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs -o "$(REFERENCE_DIR)" $(PUBLISH) --force
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs --all-releases -o "$(REFERENCE_DIR)" $(PUBLISH) --force
 
 nsd-publish-check: ## Fail if the committed output differs from what NSD_CACHE generates
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --check
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog --all-releases -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --check
-	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs -o "$(REFERENCE_DIR)" $(PUBLISH) --check
+	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs --all-releases -o "$(REFERENCE_DIR)" $(PUBLISH) --check
 
 generate: nsd-fetch nsd-publish ## Fetch the locked NSD packages (needs network) and regenerate the committed output
 

@@ -70,7 +70,7 @@ their flags:
 | `--lock FILE` | Lock file for `--publish`, e.g. `sources/nsd.lock.json` |
 | `--package NAME` | Go package name (`generate go`: default `iec61850names`; `generate catalog`: default `official`) |
 | `--index FILE` | `generate catalog` only: source registry with the named profiles (default `sources/index.json`; empty: none) |
-| `--all-releases` | `generate catalog` only: embed every namespace of `--source`, every release, not only the profile's; the named profiles select from them |
+| `--all-releases` | `generate catalog`: embed every namespace of `--source`, every release, not only the profile's; the named profiles select from them. `generate docs`: list the other releases on `index.md` |
 
 Examples:
 
@@ -110,9 +110,9 @@ packages contain the model, not documentation texts, so the output shows
 identifiers, types and structure only.
 
 The `model` and `catalog` examples use the catalog embedded in nsdctl, which
-is generated from the same packages (every release since the `nsdctl` built on
-library v0.8.0, the v0.8.1 release; earlier binaries embed the 12 newest
-namespaces and have no `edition2` profile); add `-s .nsd-cache` to use the downloaded
+is generated from the same packages (every release since nsdctl v0.8.1;
+earlier binaries embed the 12 newest namespaces and have no `edition2`
+profile); add `-s .nsd-cache` to use the downloaded
 packages instead (the result is the same). The other examples use
 `.nsd-cache`, the directory `make nsd-fetch` fills. Any directory, ZIP archive
 or single NSD file works as a source.

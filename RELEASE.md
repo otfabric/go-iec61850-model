@@ -1,5 +1,17 @@
 # go-iec61850-model Releases
 
+## v0.8.1
+
+**Date:** 2026-11-09
+**Previous release:** v0.8.0
+
+### Changed
+
+- `nsdctl` is built on library v0.8.0: its embedded catalog holds the 28 namespaces of every published release, with the `edition2` profile; `-p` takes any embedded release ID, e.g. `-p "IEC 61850-7-4:2007B4"`, and `catalog select` picks `edition2` for Edition 2 declarations, all without `--source`.
+- `nsdctl generate docs --all-releases` lists the releases outside the documented profile on `index.md`; `make nsd-publish` uses it, so [docs/reference](docs/reference/index.md) lists the 16 earlier releases under "Other releases".
+
+---
+
 ## v0.8.0
 
 **Date:** 2026-11-09
