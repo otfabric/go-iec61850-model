@@ -144,6 +144,16 @@ Findings from importing the packages, reflected in the importer:
 - **Technical report IDs** look like `(Tr)IEC 61850-90-9` or
   `(Tr)IEC61850-90-6`.
 - **Dependency types** `dependsOn`, `includes` and `extends`.
+- **Publication stage** (`publicationStage`, the Stage column of the
+  [model reference](reference/index.md)): the IEC stage of the namespace.
+  `IS` is an International Standard, `TR` a Technical Report (informative
+  guidance and extensions, not a standard), `TS` a Technical Specification;
+  `WD`, `CD`, `CDV`, `FDIS`, `DTR` and the like are drafts, and a `draft`
+  prefix marks an internal draft of the stage it names. The 2007A2 and 2007A3
+  releases of 7-2, 7-3 and 7-4 and 90-6 2018A5 declare none, which the NSD
+  schema reads as `IS`. 90-6 2018B, the newest published 90-6 release, declares
+  `draftTR`. The stage is informational: the library selects and validates
+  releases the same way whatever their stage.
 
 Upstream gaps, reported as warnings by `nsdctl validate`:
 

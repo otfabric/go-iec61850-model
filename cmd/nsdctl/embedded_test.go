@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,6 +58,11 @@ func TestEmbeddedCatalog(t *testing.T) {
 		{"select 2007B", []string{"catalog", "select", "IEC 61850-7-4:2007B"}, exitOK, []string{"IEC 61850-7-4:2007B: profile default", "  IEC 61850-7-4:2007B6"}},
 		{"select json", []string{"--json", "catalog", "select", "IEC TR 61850-90-9:2018A"}, exitOK, []string{`"profile": "extended"`}},
 		{"select edition 1", []string{"catalog", "select", "IEC 61850-7-4:2003"}, exitInvalidInput, nil},
+		{"profiles edition2", []string{"catalog", "profiles"}, exitOK, []string{"edition2: ", "  IEC 61850-7-4:2007A3"}},
+		{"edition2 MMXU", []string{"-p", "edition2", "model", "show", "MMXU"}, exitOK, []string{"logical node class MMXU (IEC 61850-7-4:2007A3)"}},
+		{"edition2 has no XFUS", []string{"-p", "edition2", "model", "show", "XFUS"}, exitUsage, nil},
+		{"release by ID", []string{"-p", "IEC 61850-7-4:2007B4", "model", "show", "MMXU"}, exitOK, []string{"(IEC 61850-7-4:2007B4)"}},
+		{"select 2007", []string{"catalog", "select", "IEC 61850-7-4:2007"}, exitOK, []string{"profile edition2", "  IEC 61850-7-4:2007A3"}},
 		{"select with sources", []string{"-s", "../../testdata/nsd", "catalog", "select", "IEC 61850-7-4:2007B"}, exitUsage, nil},
 		{"select no argument", []string{"catalog", "select"}, exitUsage, nil},
 	}
@@ -137,6 +143,24 @@ func TestGenerateCatalog(t *testing.T) {
 	}
 	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "--all-releases", "-o", filepath.Join(dir, "pub"), "--index", index, "--publish")...); code != exitPermission {
 		t.Errorf("--all-releases --publish without a lock: %d", code)
+	}
+	// generate docs --all-releases lists the release the profile leaves out
+	// on index.md; without the flag the index has no such table.
+	for _, tc := range []struct {
+		args  []string
+		other bool
+	}{{[]string{"--all-releases"}, true}, {nil, false}} {
+		docs := filepath.Join(dir, fmt.Sprintf("docs-%t", tc.other))
+		if o, e, code := nsdctl(t, withProfile(append([]string{"generate", "docs", "-o", docs}, tc.args...)...)...); code != exitOK {
+			t.Fatalf("generate docs %v: %d %s %s", tc.args, code, o, e)
+		}
+		index, err := os.ReadFile(filepath.Join(docs, "index.md"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.Contains(string(index), "## Other releases"); got != tc.other {
+			t.Errorf("generate docs %v: other releases %t, want %t\n%s", tc.args, got, tc.other, index)
+		}
 	}
 	if _, _, code := nsdctl(t, withProfile("generate", "catalog", "-o", filepath.Join(dir, "bare"), "--package", "embedded", "--index", "")...); code != exitOK {
 		t.Errorf("without profiles: %d", code)

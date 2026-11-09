@@ -174,6 +174,8 @@ func (a *app) generateKindCmd(kind, short string, gen func(*genFlags) func(gener
 		fl.StringVar(&f.goPkg, "package", "official", "Go package name")
 		fl.StringVar(&f.index, "index", "sources/index.json", "Source registry with the named profiles (empty: none)")
 		fl.BoolVar(&f.allReleases, "all-releases", false, "Embed every namespace of --source, every release, not only the profile's; the named profiles select from them")
+	case "docs":
+		fl.BoolVar(&f.allReleases, "all-releases", false, "List every other release of --source on index.md; the pages document the profile")
 	}
 	return cmd
 }

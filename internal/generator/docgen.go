@@ -83,11 +83,68 @@ func (g *docGen) index() []byte {
 	documented := g.in.Profile.Namespaces()
 	namespaceTable(&b, documented)
 	b.WriteString("\n- [Logical node classes](logical-nodes.md)\n- [Common data classes](cdcs.md)\n- [Constructed types and enumerations](types.md)\n- [Coverage](coverage.md)\n")
-	if other := otherReleases(g.in.namespaces(), documented); len(other) > 0 {
+	other := otherReleases(g.in.namespaces(), documented)
+	if len(other) > 0 {
 		b.WriteString("\n## Other releases\n\nThe catalog also holds these releases. The pages above document the profile only; select another release with a profile of its own.\n\n")
 		namespaceTable(&b, other)
 	}
+	stageLegend(&b, append(append([]*model.Namespace(nil), documented...), other...))
 	return b.Bytes()
+}
+
+// stageNames explains the publication stages an NSD document may declare
+// in its publicationStage attribute: the IEC project stages.
+var stageNames = map[string]string{
+	"WD":    "working draft",
+	"DC":    "draft for comments",
+	"DC2":   "second draft for comments",
+	"CD":    "committee draft",
+	"CD2":   "second committee draft",
+	"CD3":   "third committee draft",
+	"CDV":   "committee draft for vote",
+	"FDIS":  "final draft International Standard",
+	"IS":    "International Standard, the published normative standard",
+	"DTS":   "draft Technical Specification",
+	"TS":    "Technical Specification, published and normative, not (yet) an International Standard",
+	"DTR":   "draft Technical Report",
+	"TR":    "Technical Report, published informative guidance and extensions, not a standard",
+	"CDPAS": "committee draft Publicly Available Specification",
+	"DPAS":  "draft Publicly Available Specification",
+	"PAS":   "Publicly Available Specification",
+}
+
+// stageMeaning explains one declared stage; a "draft" prefix marks the
+// internal draft of the stage it names.
+func stageMeaning(stage string) string {
+	if stage == "" {
+		return "not declared; the NSD schema then means IS"
+	}
+	if m, ok := stageNames[stage]; ok {
+		return m
+	}
+	if base, ok := strings.CutPrefix(stage, "draft"); ok {
+		if m, ok := stageNames[base]; ok {
+			return "internal draft of the " + base + " stage (" + strings.SplitN(m, ",", 2)[0] + ")"
+		}
+	}
+	return "a stage this generator does not know"
+}
+
+// stageLegend explains the stages the tables show.
+func stageLegend(b *bytes.Buffer, nss []*model.Namespace) {
+	seen := map[string]bool{}
+	var stages []string
+	for _, ns := range nss {
+		if !seen[ns.PublicationStage] {
+			seen[ns.PublicationStage] = true
+			stages = append(stages, ns.PublicationStage)
+		}
+	}
+	sort.Strings(stages)
+	b.WriteString("\n## Stage\n\nStage is the publication stage the NSD document of a namespace declares (its `publicationStage`), in IEC's codes:\n\n")
+	for _, st := range stages {
+		fmt.Fprintf(b, "- **%s** — %s\n", cell(st), stageMeaning(st))
+	}
 }
 
 // namespaceTable writes one row per namespace with its definition counts.
