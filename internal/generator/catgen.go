@@ -50,15 +50,17 @@ func Catalog(in Input, pkg string, profiles []ProfileSpec) (Files, error) {
 	}
 	doc := jsonDoc{Generated: Marker + " generate catalog; DO NOT EDIT.", Generator: "nsdctl " + orDev(in.ToolVersion),
 		Format: FormatVersion, Distribution: in.distribution(), Namespaces: nss}
-	data, err := json.MarshalIndent(doc, "", "  ")
+	compact, err := json.Marshal(doc)
 	if err != nil {
 		return nil, err
 	}
-	data = append(data, '\n')
-	gz, err := compressCatalog(doc)
-	if err != nil {
-		return nil, err
-	}
+	// The same document indented, for review: what json.MarshalIndent
+	// writes. Indenting valid JSON cannot fail.
+	var indented bytes.Buffer
+	_ = json.Indent(&indented, compact, "", "  ")
+	indented.WriteByte('\n')
+	data := indented.Bytes()
+	gz := gzipBest(compact)
 
 	var b bytes.Buffer
 	for _, l := range in.headerLines("catalog") {
@@ -92,25 +94,14 @@ func Catalog(in Input, pkg string, profiles []ProfileSpec) (Files, error) {
 	return files, nil
 }
 
-// compressCatalog returns the catalog as compact JSON compressed with
-// gzip at the best compression. The gzip header carries no name and no
-// modification time, so the output depends on the data and the Go
-// release only.
-func compressCatalog(doc jsonDoc) ([]byte, error) {
-	compact, err := json.Marshal(doc)
-	if err != nil {
-		return nil, err
-	}
+// gzipBest compresses data with gzip at the best compression. The gzip
+// header carries no name and no modification time, so the output
+// depends on the data and the Go release only. The level is valid and
+// writes to a bytes.Buffer do not fail, so there is no error to return.
+func gzipBest(data []byte) []byte {
 	var buf bytes.Buffer
-	zw, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := zw.Write(compact); err != nil {
-		return nil, err
-	}
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	_, _ = zw.Write(data)
+	_ = zw.Close()
+	return buf.Bytes()
 }
