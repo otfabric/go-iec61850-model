@@ -42,7 +42,9 @@ Messages start with `iec61850-model:`.
 ### `*ReferenceError`
 
 A malformed reference. Unwraps to `Wrapped` when set, otherwise to
-`ErrInvalidReference`.
+`ErrInvalidReference`. An MMS domain or item ID longer than the MMS
+maxIdentifier size of 64 (`Ref.ToMMS`, `FromMMS`; IEC 61850-8-1 §8.1.3.2.2)
+wraps both `ErrInvalidReference` and `ErrLimitExceeded`.
 
 ```go
 type ReferenceError struct {

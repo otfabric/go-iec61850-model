@@ -606,27 +606,59 @@ FunctionalConstraint is a two-letter functional constraint, e.g. ST or MX. The s
 const (
 	FCST FunctionalConstraint = "ST" // Status information
 	FCMX FunctionalConstraint = "MX" // Measurands (analogue values)
-	FCSP FunctionalConstraint = "SP" // Setpoint
+	FCSP FunctionalConstraint = "SP" // Setting (outside setting group)
 	FCSV FunctionalConstraint = "SV" // Substitution
 	FCCF FunctionalConstraint = "CF" // Configuration
 	FCDC FunctionalConstraint = "DC" // Description
 	FCSG FunctionalConstraint = "SG" // Setting group
 	FCSE FunctionalConstraint = "SE" // Setting group editable
-	FCSR FunctionalConstraint = "SR" // Service response
+	FCSR FunctionalConstraint = "SR" // Service response (service tracking)
 	FCOR FunctionalConstraint = "OR" // Operate received
 	FCBL FunctionalConstraint = "BL" // Blocking
-	FCEX FunctionalConstraint = "EX" // Extended definition
-	FCCO FunctionalConstraint = "CO" // Control
-	FCUS FunctionalConstraint = "US" // Unicast sampled values
-	FCMS FunctionalConstraint = "MS" // Multicast sampled values
-	FCRP FunctionalConstraint = "RP" // Unbuffered report
-	FCBR FunctionalConstraint = "BR" // Buffered report
-	FCLG FunctionalConstraint = "LG" // Log control
-	FCGO FunctionalConstraint = "GO" // GOOSE control
+	FCEX FunctionalConstraint = "EX" // Extended definition (name space)
 )
 ```
 
-Functional constraints of IEC 61850-7-2. The set a profile actually defines comes from its NSD files; these constants are conveniences.
+Functional constraints. The set a profile actually defines comes from its NSD files; these constants are conveniences.
+
+The ACSI functional constraints are those of IEC 61850-7-2:2010 Table 20, which the 7-2 NSD defines too.
+
+```go
+const (
+	FCCO FunctionalConstraint = "CO" // Control service parameters
+	FCUS FunctionalConstraint = "US" // Unicast sampled value control blocks
+	FCMS FunctionalConstraint = "MS" // Multicast sampled value control blocks
+	FCRP FunctionalConstraint = "RP" // Unbuffered report control blocks
+	FCBR FunctionalConstraint = "BR" // Buffered report control blocks
+	FCLG FunctionalConstraint = "LG" // Log control blocks
+	FCGO FunctionalConstraint = "GO" // GOOSE control blocks
+	FCGS FunctionalConstraint = "GS" // GSSE control blocks
+)
+```
+
+SCSM functional constraints of the MMS mapping, IEC 61850-8-1:2011 Figure 4 and its NOTE 1: control service parameters and the control blocks, which 7-2 Edition 2 does not list as FCs.
+
+```go
+const FCXX FunctionalConstraint = "XX"
+```
+
+FCXX is the wildcard functional constraint of IEC 61850-7-2:2010 Table 20, for use in services only. No data attribute has it, and IEC 61850-8-1:2011 does not map it (Figure 4, NOTE 2). It is not [FunctionalConstraint.IsStandard](#func-functionalconstraint-isstandard).
+
+#### func (FunctionalConstraint) IsACSI
+
+```go
+func (fc FunctionalConstraint) IsACSI() bool
+```
+
+IsACSI reports whether fc is one of the twelve data attribute functional constraints of IEC 61850-7-2:2010 Table 20.
+
+#### func (FunctionalConstraint) IsSCSM
+
+```go
+func (fc FunctionalConstraint) IsSCSM() bool
+```
+
+IsSCSM reports whether fc is one of the functional constraints that IEC 61850-8-1:2011 Figure 4 adds for the MMS mapping (CO, RP, LG, BR, GO, GS, MS, US).
 
 #### func (FunctionalConstraint) IsStandard
 
@@ -634,7 +666,7 @@ Functional constraints of IEC 61850-7-2. The set a profile actually defines come
 func (fc FunctionalConstraint) IsStandard() bool
 ```
 
-IsStandard reports whether fc is one of the IEC 61850-7-2 functional constraints listed as constants in this package.
+IsStandard reports whether fc is an ACSI functional constraint ([FunctionalConstraint.IsACSI](#func-functionalconstraint-isacsi)) or an SCSM functional constraint of IEC 61850-8-1 ([FunctionalConstraint.IsSCSM](#func-functionalconstraint-isscsm)). The service-only wildcard FCXX is not.
 
 ### type FunctionalConstraintDef
 

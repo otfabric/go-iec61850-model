@@ -3,19 +3,35 @@
 package reference
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/otfabric/go-iec61850-model/model"
 )
 
-// MaxStrictLength is the conservative maximum reference length enforced
-// by [ParseStrict], inspired by the IEC 61850-7-2 VisibleString129
-// type of ObjectReference attributes.
+// MaxStrictLength is the maximum length of an ObjectReference enforced
+// by [ParseStrict]: IEC 61850-7-2:2010 Table 4 types ObjectReference as
+// VISIBLE STRING129. The functional constraint suffix "[FC]" is not
+// part of the ObjectReference (7-2 §22.2 NOTE 1) and is not counted.
 const MaxStrictLength = 129
 
+// MaxLDLength is the maximum length of a logical device name, and
+// MaxPathLength the maximum length of the path below it (LN.DO.DA),
+// IEC 61850-7-2:2010 Table 4: "up to 64 characters for the LD name
+// followed by one separator "/" followed by up to 64 characters for the
+// path below the LD name".
+const (
+	MaxLDLength   = 64
+	MaxPathLength = 64
+)
+
+// MaxMMSIdentifier is the MMS maxIdentifier size that bounds MMS domain
+// and object names, IEC 61850-8-1:2011 §8.1.3.2.2 (see F.3.2).
+const MaxMMSIdentifier = 64
+
 // maxLDLength is the maximum length of a logical device name.
-const maxLDLength = 64
+const maxLDLength = MaxLDLength
 
 // Ref is a parsed instance-level IEC 61850 object reference, as used on
 // devices: LogicalDevice / LogicalNode . DataObject . DataAttribute,
@@ -73,9 +89,6 @@ func Parse(s string) (Ref, error) {
 	if ld == "" {
 		return Ref{}, &model.ReferenceError{Input: s, Reason: "empty logical device name"}
 	}
-	if len(ld) > maxLDLength {
-		return Ref{}, &model.ReferenceError{Input: s, Reason: fmt.Sprintf("logical device name exceeds %d characters", maxLDLength)}
-	}
 	rest := work[slash+1:]
 	if rest == "" {
 		return Ref{}, &model.ReferenceError{Input: s, Reason: "empty content after '/'"}
@@ -102,13 +115,37 @@ func validated(r Ref) (Ref, error) {
 	return r, nil
 }
 
-// ParseStrict is like [Parse] but rejects references longer than
-// [MaxStrictLength] characters.
+// ParseStrict is like [Parse] and also enforces the length limits of
+// IEC 61850-7-2:2010 Table 4 on the ObjectReference, the reference
+// without its "[FC]" suffix: at most [MaxStrictLength] characters, a
+// logical device name of at most [MaxLDLength] and a path below it of
+// at most [MaxPathLength] characters. The naming rules of 7-2 §22.2
+// (character set, start characters, name lengths) are checked
+// separately by [Ref.ValidateNames].
 func ParseStrict(s string) (Ref, error) {
-	if len(s) > MaxStrictLength {
+	if len(s) > MaxStrictLength+4 { // cheap bound before parsing: "[FC]" is 4 characters
 		return Ref{}, &model.ReferenceError{Input: s, Reason: fmt.Sprintf("exceeds maximum length (%d)", MaxStrictLength)}
 	}
-	return Parse(s)
+	r, err := Parse(s)
+	if err != nil {
+		return Ref{}, err
+	}
+	if err := r.checkLengths(); err != nil {
+		return Ref{}, err
+	}
+	return r, nil
+}
+
+// checkLengths enforces the limits of 7-2:2010 Table 4.
+func (r Ref) checkLengths() error {
+	obj := r.ObjectReference()
+	if len(obj) > MaxStrictLength {
+		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("exceeds maximum length (%d)", MaxStrictLength)}
+	}
+	if below := len(obj) - len(r.LD) - 1; r.LN != "" && below > MaxPathLength {
+		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("path below the logical device exceeds %d characters", MaxPathLength)}
+	}
+	return nil
 }
 
 // splitFC removes a trailing "[FC]" suffix and returns the remainder
@@ -130,22 +167,35 @@ func splitFC(s string) (string, model.FunctionalConstraint, error) {
 		return "", "", &model.ReferenceError{Input: s, Reason: "malformed functional constraint brackets"}
 	}
 	fc := s[idx+1 : end]
-	if len(fc) != 2 {
-		return "", "", &model.ReferenceError{Input: s, Reason: fmt.Sprintf("functional constraint must be 2 characters, got %q", fc)}
+	if !validFC(fc) {
+		return "", "", &model.ReferenceError{Input: s, Reason: fmt.Sprintf("functional constraint must be 2 upper-case letters, got %q", fc)}
 	}
 	return s[:idx], model.FunctionalConstraint(fc), nil
 }
 
+// validFC reports whether fc is two upper-case letters. The FC values
+// of IEC 61850-7-2:2010 Table 20 and IEC 61850-8-1:2011 Figure 4 are
+// all of that form; "[mx]" is not a functional constraint.
+func validFC(fc string) bool {
+	return len(fc) == 2 && fc[0] >= 'A' && fc[0] <= 'Z' && fc[1] >= 'A' && fc[1] <= 'Z'
+}
+
 // Validate checks the structural invariants of the reference:
 //
-//   - LD is non-empty
+//   - LD is non-empty and at most [MaxLDLength] characters
+//     (IEC 61850-7-2:2010 §22.2 and Table 4)
 //   - Path and FC require LN
 //   - no empty path components
-//   - FC, when set, has exactly two characters
+//   - FC, when set, is two upper-case letters
 //   - no component contains a separator (/ . $ [ ])
+//   - an array index "(n)" is a decimal number closing a path
+//     component (7-2:2010 §6.1.2.3)
 func (r Ref) Validate() error {
 	if r.LD == "" {
 		return &model.ReferenceError{Input: r.String(), Reason: "empty logical device name"}
+	}
+	if len(r.LD) > maxLDLength {
+		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("logical device name exceeds %d characters", maxLDLength)}
 	}
 	if err := validateComponent(r.LD, "logical device"); err != nil {
 		return &model.ReferenceError{Input: r.String(), Reason: err.Error()}
@@ -164,8 +214,8 @@ func (r Ref) Validate() error {
 	if err := validatePath(r.Path); err != nil {
 		return &model.ReferenceError{Input: r.String(), Reason: err.Error()}
 	}
-	if r.FC != "" && len(r.FC) != 2 {
-		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("functional constraint must be 2 characters, got %q", r.FC)}
+	if r.FC != "" && !validFC(string(r.FC)) {
+		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("functional constraint must be 2 upper-case letters, got %q", r.FC)}
 	}
 	return nil
 }
@@ -177,6 +227,9 @@ func validatePath(path []string) error {
 		}
 		if err := validateComponent(p, fmt.Sprintf("path component [%d]", i)); err != nil {
 			return err
+		}
+		if _, _, _, err := SplitIndex(p); err != nil {
+			return fmt.Errorf("path component [%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -249,6 +302,9 @@ func (r Ref) Child(name string) (Ref, error) {
 	if strings.ContainsAny(name, "/.$[]") {
 		return Ref{}, &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("child name %q contains illegal separator character", name)}
 	}
+	if _, _, _, err := SplitIndex(name); err != nil {
+		return Ref{}, &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("child name %q: %v", name, err)}
+	}
 	path := make([]string, len(r.Path), len(r.Path)+1)
 	copy(path, r.Path)
 	return Ref{LD: r.LD, LN: r.LN, Path: append(path, name), FC: r.FC}, nil
@@ -286,10 +342,46 @@ func (r Ref) Class() (ClassRef, error) {
 // ToMMS returns the MMS domain and item ID of the reference, following
 // the IEC 61850-8-1 mapping LN$FC$DO$DA. A reference with a path needs
 // a functional constraint.
+//
+// The domain and the item ID are MMS identifiers: each is at most
+// [MaxMMSIdentifier] characters (IEC 61850-8-1:2011 §8.1.3.2.2 and
+// §7.3.1); longer names fail with a [*model.ReferenceError] that wraps
+// both [model.ErrInvalidReference] and [model.ErrLimitExceeded]. An
+// array element "(n)" has no item ID form, because 8-1 addresses array
+// elements with MMS alternate access, so a reference with an index
+// fails too.
 func (r Ref) ToMMS() (domain, item string, err error) {
 	if err := r.Validate(); err != nil {
 		return "", "", err
 	}
+	for _, p := range r.Path {
+		if _, _, ok, _ := SplitIndex(p); ok {
+			return "", "", &model.ReferenceError{Input: r.String(), Reason: "an array element has no MMS item ID; IEC 61850-8-1 addresses it with alternate access"}
+		}
+	}
+	domain, item, err = r.toMMS()
+	if err != nil {
+		return "", "", err
+	}
+	if err := checkMMSIdentifiers(r.String(), domain, item); err != nil {
+		return "", "", err
+	}
+	return domain, item, nil
+}
+
+// checkMMSIdentifiers enforces the MMS maxIdentifier size of 64 on the
+// domain and the item ID (8-1:2011 §8.1.3.2.2).
+func checkMMSIdentifiers(input, domain, item string) error {
+	for _, n := range []struct{ what, v string }{{"MMS domain name", domain}, {"MMS item ID", item}} {
+		if len(n.v) > MaxMMSIdentifier {
+			return &model.ReferenceError{Input: input, Reason: fmt.Sprintf("%s exceeds the MMS maxIdentifier size %d (%d characters)", n.what, MaxMMSIdentifier, len(n.v)),
+				Wrapped: errors.Join(model.ErrInvalidReference, model.ErrLimitExceeded)}
+		}
+	}
+	return nil
+}
+
+func (r Ref) toMMS() (domain, item string, err error) {
 	if r.LN == "" {
 		return r.LD, "", nil
 	}
@@ -304,10 +396,14 @@ func (r Ref) ToMMS() (domain, item string, err error) {
 }
 
 // FromMMS builds a reference from an MMS domain and item ID of the form
-// LN$FC$DO$DA.
+// LN$FC$DO$DA. The domain and item ID are bounded by the MMS
+// maxIdentifier size, as in [Ref.ToMMS].
 func FromMMS(domain, item string) (Ref, error) {
 	if domain == "" {
 		return Ref{}, &model.ReferenceError{Input: item, Reason: "empty MMS domain"}
+	}
+	if err := checkMMSIdentifiers(domain+"/"+item, domain, item); err != nil {
+		return Ref{}, err
 	}
 	if item == "" {
 		return validated(Ref{LD: domain})
