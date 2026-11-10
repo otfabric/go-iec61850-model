@@ -41,3 +41,9 @@ testdata/fuzz/
 # Build artefacts live in /bin/ and /release/ (otfabric/engineering REPO-005)
 /release/
 coverage.out
+
+# Locally generated doc sets contain text extracted from the IEC
+# standards: local-only, never committed (docs/licensing.md).
+/official/docs_gen.json.gz
+/official/docs_gen.json
+/.docs-work/
