@@ -33,7 +33,9 @@ DefaultMaxDepth bounds the nesting depth the resolver follows when it expands da
 func IsMultiInstance(p model.PresenceCondition) bool
 ```
 
-IsMultiInstance reports whether a presence condition allows numbered instances of a data object (Omulti, Mmulti and their variants).
+IsMultiInstance reports whether a presence condition allows numbered instances of a data object: Mmulti, Omulti, MmultiRange, OmultiRange or MmultiF.
+
+A bare name without an instance number also resolves: the Data-Instance-ID of IEC 61850-7-2:2010 §22.2 is optional.
 
 ## Types
 
@@ -281,6 +283,10 @@ type Step struct {
 	// Instance is the instance number of a numbered data object, e.g.
 	// "1" for Ind1 of the multi-instance data object Ind.
 	Instance string `json:"instance,omitempty"`
+	// Index is the array element index of an indexed path element,
+	// e.g. "3" for phsAHar(3) (IEC 61850-7-2:2010 §6.1.2.3). Name keeps
+	// the element as written, with the index.
+	Index string `json:"index,omitempty"`
 	// Variant is the CDC variant that declares a data attribute, e.g.
 	// "SG" for setVal of SPG/SG.
 	Variant string `json:"variant,omitempty"`
@@ -317,6 +323,14 @@ const (
 	StepSubDataObject    StepKind = "SubDataObject"
 	StepDataAttribute    StepKind = "DataAttribute"
 	StepSubDataAttribute StepKind = "SubDataAttribute"
+	// StepControlService is a control service structure of a
+	// controllable data object, mapped with FC CO by IEC 61850-8-1:2011
+	// §20.3 and Table 81: SBO, SBOw, Oper and Cancel.
+	StepControlService StepKind = "ControlService"
+	// StepServiceParameter is a parameter of a control service
+	// structure, IEC 61850-8-1:2011 Table 80: ctlVal (typed by the CDC's
+	// service parameter), operTm, origin, ctlNum, T, Test and Check.
+	StepServiceParameter StepKind = "ServiceParameter"
 )
 ```
 

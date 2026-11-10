@@ -30,6 +30,21 @@ device or engineering tool.
   check` contacts no server, and the weekly `nsd.yml` run only detects packages
   that changed or disappeared at their pinned locations.
 
+## References and resolution
+
+- **Name rules are opt-in.** `reference.Parse` accepts names outside the
+  character set and start rules of IEC 61850-7-2 §22.2, as devices use them;
+  `Ref.ValidateNames` checks them.
+- **Array bounds.** An array index (`phsAHar(3)`) is accepted on array
+  elements only; its upper bound (`maxPts`) is device configuration and is not
+  checked.
+- **Control services follow 8-1.** `SBO`, `SBOw`, `Oper` and `Cancel` (FC CO)
+  are the IEC 61850-8-1 mapping. Which of them a device has depends on its
+  `ctlModel`, which the model does not know.
+- **Presence conditions are not evaluated.** Conditional forms (`MOcond`,
+  `AtLeastOne`, ...) are carried verbatim; equal instance-number widths
+  (7-2 §22.2) are not checked.
+
 ## Model gaps from upstream
 
 - Not every data object resolves to leaf types: paths through a type that no
