@@ -113,12 +113,9 @@ func OpenDocumented(name, lang string) (*catalog.Profile, error) {
 	if p, ok := docProfiles[key]; ok {
 		return p, nil
 	}
-	c, ok := docCatalogs[lang]
-	if !ok {
-		if c, err = documentedCatalog(set); err != nil {
-			return nil, err
-		}
-		docCatalogs[lang] = c
+	c, err := cachedDocumentedCatalog(lang, set)
+	if err != nil {
+		return nil, err
 	}
 	p, err := profileOf(c, name)
 	if err != nil {
@@ -126,6 +123,43 @@ func OpenDocumented(name, lang string) (*catalog.Profile, error) {
 	}
 	docProfiles[key] = p
 	return p, nil
+}
+
+// cachedDocumentedCatalog returns the documented catalog of the
+// language, building it once; docMu must be held.
+func cachedDocumentedCatalog(lang string, set *nsd.DocSet) (*catalog.Catalog, error) {
+	if c, ok := docCatalogs[lang]; ok {
+		return c, nil
+	}
+	c, err := documentedCatalog(set)
+	if err != nil {
+		return nil, err
+	}
+	docCatalogs[lang] = c
+	return c, nil
+}
+
+// DocumentedCatalog is like [Catalog], with the texts of the doc set of
+// the language applied to every embedded namespace. It is built once
+// per language and shared; it fails with [ErrNoDocs] when no texts are
+// available.
+func DocumentedCatalog(lang string) (*catalog.Catalog, error) {
+	set, err := Docs(lang)
+	if err != nil {
+		return nil, err
+	}
+	docMu.Lock()
+	defer docMu.Unlock()
+	return cachedDocumentedCatalog(lang, set)
+}
+
+// CatalogWithDocs returns the catalog of every embedded namespace with
+// the texts of set applied. It is built on every call.
+func CatalogWithDocs(set *nsd.DocSet) (*catalog.Catalog, error) {
+	if set == nil {
+		return nil, ErrNoDocs
+	}
+	return documentedCatalog(set)
 }
 
 // DefaultDocumented returns the default profile with texts; see

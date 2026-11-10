@@ -75,6 +75,12 @@ func TestNoDocs(t *testing.T) {
 	if _, err := DefaultDocumented("en"); !errors.Is(err, ErrNoDocs) {
 		t.Errorf("DefaultDocumented: %v", err)
 	}
+	if _, err := DocumentedCatalog("en"); !errors.Is(err, ErrNoDocs) {
+		t.Errorf("DocumentedCatalog: %v", err)
+	}
+	if _, err := CatalogWithDocs(nil); !errors.Is(err, ErrNoDocs) {
+		t.Errorf("CatalogWithDocs(nil): %v", err)
+	}
 	if _, err := OpenWithDocs("default", nil); !errors.Is(err, ErrNoDocs) {
 		t.Errorf("OpenWithDocs(nil): %v", err)
 	}
@@ -132,6 +138,19 @@ func TestDocumentedProfilesFromEnv(t *testing.T) {
 		t.Errorf("unknown profile: %v", err)
 	}
 	set, _ := Docs("en")
+	dc, err := DocumentedCatalog("en")
+	if err != nil || len(dc.IDs()) != len(Namespaces()) {
+		t.Fatalf("DocumentedCatalog: %v", err)
+	}
+	if again, _ := DocumentedCatalog("en"); again != dc {
+		t.Error("documented catalogs are cached")
+	}
+	if c, err := CatalogWithDocs(set); err != nil || c == dc {
+		t.Errorf("CatalogWithDocs: %v", err)
+	}
+	if _, err := DocumentedCatalog("de"); !errors.Is(err, ErrNoDocs) {
+		t.Errorf("DocumentedCatalog(de): %v", err)
+	}
 	if p, err := OpenWithDocs("edition2", set); err != nil || p == nil {
 		t.Errorf("OpenWithDocs: %v", err)
 	}
