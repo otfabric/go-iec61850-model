@@ -472,7 +472,10 @@ func copyNamespaces(in Input) ([]*model.Namespace, error) {
 		cp.Provenance.Source = baseSource(cp.Provenance.Source)
 		if !in.IncludeDocText {
 			for _, d := range cp.Docs() {
-				d.Title, d.Description = "", ""
+				d.Clear()
+			}
+			for _, p := range cp.Presences() {
+				p.ArgsText = ""
 			}
 		}
 		out = append(out, &cp)

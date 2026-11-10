@@ -136,7 +136,9 @@ vuln: ## Run govulncheck
 
 fuzz: ## Run all fuzz targets for FUZZTIME each (default 15s)
 	@echo "Fuzzing nsd.Parse"
-	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./nsd
+	@go test -run='^$$' -fuzz='^FuzzParse$$' -fuzztime=$(FUZZTIME) ./nsd
+	@echo "Fuzzing nsd.ReadDocSets"
+	@go test -run='^$$' -fuzz=FuzzReadDocSets -fuzztime=$(FUZZTIME) ./nsd
 	@echo "Fuzzing reference.Parse"
 	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./reference
 

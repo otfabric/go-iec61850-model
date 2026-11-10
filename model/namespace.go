@@ -256,10 +256,11 @@ func find[T any](items []T, name string, key func(*T) string) *T {
 }
 
 // Doc holds the documentation identifiers of a definition and, when an
-// NSDoc file was applied, the resolved texts.
+// NSDoc file or a doc set (nsd.DocSet) was applied, the resolved texts.
 //
-// The texts originate from IEC NSDoc files. They are available at run
-// time but are not redistributable; see docs/licensing.md.
+// The texts originate from IEC NSDoc files or from a doc set generated
+// locally from the standards. They are available at run time; this
+// repository ships none of them (see docs/licensing.md).
 type Doc struct {
 	// TitleID references the title text in an NSDoc file.
 	TitleID string `json:"titleID,omitempty"`
@@ -271,6 +272,30 @@ type Doc struct {
 	// was applied.
 	Description string `json:"description,omitempty"`
 }
+
+// Text returns the title, or the description when there is no title;
+// "" when no text was applied.
+func (d Doc) Text() string {
+	if d.Title != "" {
+		return d.Title
+	}
+	return d.Description
+}
+
+// Long returns the description, or the title when there is no
+// description; "" when no text was applied.
+func (d Doc) Long() string {
+	if d.Description != "" {
+		return d.Description
+	}
+	return d.Title
+}
+
+// HasText reports whether a title or a description was applied.
+func (d Doc) HasText() bool { return d.Title != "" || d.Description != "" }
+
+// Clear removes the applied texts and keeps the identifiers.
+func (d *Doc) Clear() { d.Title, d.Description = "", "" }
 
 // BasicType is a basic (primitive) attribute type, e.g. BOOLEAN,
 // INT32 or FLOAT32.
@@ -317,6 +342,41 @@ type Abbreviation struct {
 	Name   string      `json:"name"`
 	Doc    Doc         `json:"doc,omitzero"`
 	Source NamespaceID `json:"source"`
+}
+
+// Presences returns pointers to the presence conditions of every data
+// object, sub data object, data attribute, service parameter and sub
+// data attribute in the namespace, in a stable order: Presence, then
+// DSPresence for data objects. Use it to fill or clear argument texts
+// (PresenceCondition.ArgsText).
+func (ns *Namespace) Presences() []*PresenceCondition {
+	var out []*PresenceCondition
+	for i := range ns.ConstructedAttributes {
+		c := &ns.ConstructedAttributes[i]
+		for j := range c.SubDataAttributes {
+			out = append(out, &c.SubDataAttributes[j].Presence)
+		}
+	}
+	for i := range ns.CDCs {
+		c := &ns.CDCs[i]
+		for j := range c.SubDataObjects {
+			out = append(out, &c.SubDataObjects[j].Presence, &c.SubDataObjects[j].DSPresence)
+		}
+		for j := range c.DataAttributes {
+			out = append(out, &c.DataAttributes[j].Presence)
+		}
+		for j := range c.ServiceParameters {
+			out = append(out, &c.ServiceParameters[j].Presence)
+		}
+	}
+	for _, lns := range [][]LogicalNodeClass{ns.AbstractLNClasses, ns.LNClasses} {
+		for i := range lns {
+			for j := range lns[i].DataObjects {
+				out = append(out, &lns[i].DataObjects[j].Presence, &lns[i].DataObjects[j].DSPresence)
+			}
+		}
+	}
+	return out
 }
 
 // Docs returns pointers to the documentation of the namespace and of

@@ -141,6 +141,10 @@ type PresenceCondition struct {
 	Args string `json:"args,omitempty"`
 	// ArgsID references a documentation text for the argument.
 	ArgsID string `json:"argsID,omitempty"`
+	// ArgsText is the documentation text of ArgsID, e.g. the condition
+	// behind MOcond(1). It is filled when an NSDoc file is applied
+	// (nsd.ApplyDoc) and empty otherwise.
+	ArgsText string `json:"argsText,omitempty"`
 }
 
 // IsZero reports whether no presence condition is set.
