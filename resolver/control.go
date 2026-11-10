@@ -138,7 +138,7 @@ func (w *walker) enterServiceParameter(name string) error {
 		if presence.IsZero() {
 			presence = model.PresenceCondition{Name: "M"} // Table 90: ctlVal is mandatory
 		}
-		step.Type, step.TypeKind, step.Parameterized, step.Presence = typ, kind, param, presence
+		step.Type, step.TypeKind, step.Parameterized, step.Presence, step.Doc = typ, kind, param, presence, sp.Doc
 	} else {
 		p := controlParameters[name]
 		kind, err := w.r.kindOf(ctl.Source, name, p.typ, p.kind)

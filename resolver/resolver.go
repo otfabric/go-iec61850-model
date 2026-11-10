@@ -130,6 +130,11 @@ type Step struct {
 	DeclaredIn string `json:"declaredIn"`
 	// Source is the namespace of DeclaredIn.
 	Source model.NamespaceID `json:"source"`
+	// Doc is the documentation of the element: its IDs and, when an
+	// NSDoc or a doc set was applied to the namespace (for example with
+	// official.DefaultDocumented), its title and description. Control
+	// service structures and their fixed parameters have none.
+	Doc model.Doc `json:"doc,omitzero"`
 }
 
 // Resolution is a resolved model path, from a logical node class down
@@ -156,6 +161,13 @@ type Resolution struct {
 
 // Leaf returns the last step.
 func (r *Resolution) Leaf() Step { return r.Steps[len(r.Steps)-1] }
+
+// Doc returns the documentation of the leaf.
+func (r *Resolution) Doc() model.Doc { return r.Leaf().Doc }
+
+// Description returns the description of the leaf, or its title when
+// it has no description; "" when no texts were applied.
+func (r *Resolution) Description() string { return r.Leaf().Doc.Long() }
 
 // Path returns the class path, e.g. "MMXU.Hz.mag.f".
 func (r *Resolution) Path() string { return joinSteps(r.Steps, nil) }
@@ -364,7 +376,7 @@ func (r *Resolver) start(lnClass string) (*walker, error) {
 		return nil, err
 	}
 	w := &walker{r: r, res: &Resolution{LNClass: ln}}
-	w.res.Steps = []Step{{Name: ln.Name, Kind: StepLogicalNode, Type: ln.Name, DeclaredIn: ln.Name, Source: ln.Source}}
+	w.res.Steps = []Step{{Name: ln.Name, Kind: StepLogicalNode, Type: ln.Name, DeclaredIn: ln.Name, Source: ln.Source, Doc: ln.Doc}}
 	return w, nil
 }
 
@@ -471,7 +483,7 @@ func (w *walker) stepName(name string, fc model.FunctionalConstraint) error {
 		w.res.CDC, w.res.Attribute = cdc, da
 		step := Step{
 			Name: name, Kind: StepDataAttribute, Type: typ, TypeKind: kind, FC: da.FC, Presence: da.Presence,
-			IsArray: da.IsArray, Parameterized: param, DeclaredIn: cdc.Key(), Source: cdc.Source, Variant: cdc.Variant,
+			IsArray: da.IsArray, Parameterized: param, DeclaredIn: cdc.Key(), Source: cdc.Source, Variant: cdc.Variant, Doc: da.Doc,
 		}
 		if len(variants) > 1 {
 			// The FC depends on the variant the device realizes.
@@ -503,7 +515,7 @@ func (w *walker) stepName(name string, fc model.FunctionalConstraint) error {
 		w.res.Attribute = sda
 		w.res.Steps = append(w.res.Steps, Step{
 			Name: name, Kind: StepSubDataAttribute, Type: typ, TypeKind: kind, FC: cur.FC, Presence: sda.Presence,
-			IsArray: sda.IsArray, DeclaredIn: ca.Name, Source: ca.Source,
+			IsArray: sda.IsArray, DeclaredIn: ca.Name, Source: ca.Source, Doc: sda.Doc,
 		})
 		w.attr = &w.res.Steps[len(w.res.Steps)-1]
 		return nil
@@ -642,7 +654,7 @@ func (w *walker) enterDataObject(do *model.DataObject, kind StepKind, declaredIn
 	w.cdc, w.cdcs, w.do, w.doFrom = cdc, cdcs, do, src
 	w.res.CDC = cdc
 	w.res.Steps = append(w.res.Steps, Step{
-		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src,
+		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src, Doc: do.Doc,
 	})
 	return nil
 }
