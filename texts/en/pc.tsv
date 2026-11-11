@@ -1,6 +1,6 @@
 # Presence condition descriptions.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
-AllAtLeastOneGroup	At least one element of every group is present	?
+AllAtLeastOneGroup	At least one member of each numbered group is present; the groups are independent
 AllOnlyOneGroup	Only one group is present, and then with all of its elements
 AllOrNonePerGroup	Within each group, either all elements are present or none
 AtLeastOne	At least one element of the group is present
@@ -8,7 +8,7 @@ AtMostOne	At most one element of the group is present
 F	Forbidden
 FM	Forbidden when the condition applies, otherwise mandatory
 M	Mandatory
-MAllOrNonePerGroup	Mandatory if the stated condition holds, otherwise all or none of the elements of each group are present	?
+MAllOrNonePerGroup	The members of each numbered group are present together or not at all, such as the status value of a control with its quality and time stamp
 MF	Mandatory if the stated condition holds, otherwise forbidden
 MFcond	Mandatory if the stated condition holds, otherwise forbidden
 MFln0	Mandatory in the LLN0 logical node, forbidden in all other logical nodes
