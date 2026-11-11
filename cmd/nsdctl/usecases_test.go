@@ -18,6 +18,11 @@ func TestUseCaseOutput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if src := official.DocsSource(); src != official.PublicDocsSource {
+		// docs/use-cases.md shows the public OT Fabric texts; a local doc
+		// set (-tags iecdocs or IEC61850_MODEL_DOCS) changes them.
+		t.Skipf("documentation texts from %q, not the public texts", src)
+	}
 	blocks := strings.Split(string(data), "```console\n")[1:]
 	checked := 0
 	for _, b := range blocks {
@@ -28,11 +33,6 @@ func TestUseCaseOutput(t *testing.T) {
 		}
 		want := lines[1 : len(lines)-1]
 		args := shellWords(t, strings.TrimPrefix(cmd, "nsdctl "))
-		if src := official.DocsSource(); src != "" && src != official.PublicDocsSource {
-			// docs/use-cases.md shows the public texts; a binary built with
-			// -tags iecdocs (or IEC61850_MODEL_DOCS) adds IEC texts.
-			args = append([]string{"--lang", ""}, args...)
-		}
 		out, errOut, _ := nsdctl(t, args...)
 		got := strings.Split(strings.TrimRight(out+errOut, "\n"), "\n")
 		switch {
