@@ -19,7 +19,9 @@ or when a catalog element has no text.
 Enumeration and literal texts (`ENUM:`, `LIT:`) are derived from the names.
 
 Format: `name<TAB>text`, optionally `<TAB>?` to flag a text for review; lines
-starting with `#` are comments. A data object description is the expansions
+starting with `#` are comments. In `abbreviations.tsv` the text `-` means no
+public text on purpose (a term no data object uses whose meaning is not
+established); a data object name that needs such a term fails the run. A data object description is the expansions
 of its terms in order, with the split into the fewest terms (`OpTmClsAlm` →
 "Operate time close alarm"); digits stand for themselves.
 

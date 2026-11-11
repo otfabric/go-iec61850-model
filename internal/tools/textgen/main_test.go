@@ -75,6 +75,9 @@ func TestBuildFixture(t *testing.T) {
 	if !strings.Contains(report, "20 keys") || !strings.Contains(report, "composed=2 table=2") {
 		t.Errorf("report %q", report)
 	}
+	if !strings.Contains(report, "omitted=0") {
+		t.Errorf("report %q", report)
+	}
 	again, _, _ := build("testdata/texts", "testdata/catalog.json")
 	if !bytes.Equal(again, data) {
 		t.Error("output is not deterministic")
@@ -116,6 +119,7 @@ func TestBuildErrors(t *testing.T) {
 		{"duplicate", "fc.tsv", "ST\tA\nST\tB\n", `duplicate "ST"`},
 		{"malformed", "bt.tsv", "BOOLEAN\n", "want name<TAB>text"},
 		{"no split", "abbreviations.tsv", "Tot\ttotal\nTm\ttime\n", "DO:MMXU.TotW"},
+		{"omitted term in use", "abbreviations.tsv", "Tot\ttotal\nW\t-\nTm\ttime\n", "DO:MMXU.TotW"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -140,6 +144,32 @@ func TestBuildErrors(t *testing.T) {
 	_ = os.WriteFile(bad, []byte("{"), 0o600)
 	if _, _, err := build("testdata/texts", bad); err == nil {
 		t.Error("bad catalog accepted")
+	}
+}
+
+// A term with the text "-" gets no ABBR text and counts as omitted.
+func TestBuildOmittedTerm(t *testing.T) {
+	raw, err := os.ReadFile("testdata/catalog.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat := filepath.Join(t.TempDir(), "catalog.json")
+	if err := os.WriteFile(cat, bytes.Replace(raw, []byte(`{"name":"Tm"}`), []byte(`{"name":"Tm"},{"name":"Unused"}`), 1), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dir := copyTexts(t)
+	if err := os.WriteFile(filepath.Join(dir, "abbreviations.tsv"), []byte("Tot\ttotal\nW\tactive power\nTm\ttime\nUnused\t-\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	data, report, err := build(dir, cat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := decode(t, data)["ABBR:Unused"]; ok {
+		t.Error("omitted term has a text")
+	}
+	if !strings.Contains(report, "20 keys") || !strings.Contains(report, "omitted=1") {
+		t.Errorf("report %q", report)
 	}
 }
 

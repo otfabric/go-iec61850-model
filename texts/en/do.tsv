@@ -66,5 +66,10 @@ RADR.PstTmms	Post-trigger recording time in milliseconds
 RBDR.PstTmms	Post-trigger recording time in milliseconds
 RDRE.PstTmms	Post-trigger recording time in milliseconds
 RecorderLN.PstTmms	Post-trigger recording time in milliseconds
-CSYN.AccClc	Calculated acceleration of the frequency difference	?
-CSYN.AccClcDev	Deviation of the calculated acceleration of the frequency difference	?
+CSYN.AccClc	Calculated rate of change of the frequency difference
+CSYN.AccClcDev	Change in the calculated acceleration of the frequency difference
+HLVL.LevM	Water level at the measurement location
+SFOD.LevM	Water level at the flood monitoring location
+MachineSpeedMonitoringLN.SpdMOv	Mechanical overspeed detected
+YPTR.OvlTEmg	Maximum permitted transformer overload duration in emergency operation without cooling
+YPTR.OvlTEmgSpt	Emergency overload duration setting without cooling

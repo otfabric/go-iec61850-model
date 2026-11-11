@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -104,8 +105,8 @@ func TestPublicDocsOnly(t *testing.T) {
 	}
 }
 
-// Every key of every embedded namespace has a public text, and every
-// public key names an element.
+// Every key of every embedded namespace has a public text, except the
+// terms opted out with "-", and every public key names an element.
 func TestPublicDocsCoverAllElements(t *testing.T) {
 	resetDocs(t)
 	t.Setenv(DocsEnv, "")
@@ -117,10 +118,27 @@ func TestPublicDocsCoverAllElements(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Terms marked "-" in texts/en/abbreviations.tsv have no text on purpose.
+	omitted := map[string]bool{}
+	raw, err := os.ReadFile(filepath.Join("..", "texts", "en", "abbreviations.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range strings.Split(string(raw), "\n") {
+		if f := strings.Split(l, "\t"); len(f) >= 2 && f[1] == "-" {
+			omitted["ABBR:"+f[0]] = true
+		}
+	}
 	want := map[string]bool{}
 	for _, ns := range nss {
 		for _, k := range nsd.DocKeys(ns) {
 			want[k] = true
+			if omitted[k] {
+				if _, ok := pub.Text(k); ok {
+					t.Errorf("%s: omitted term has a text", k)
+				}
+				continue
+			}
 			if txt, ok := pub.Text(k); !ok || txt.Title == "" && txt.Description == "" {
 				t.Errorf("%s: no public text", k)
 			}

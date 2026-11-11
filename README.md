@@ -384,7 +384,7 @@ in CI without caches or artifacts.
 
 The library ships **public texts** written by OT Fabric (MIT,
 [texts/](texts/README.md)): a title or description for every element of every
-embedded namespace, 10,056 keys. Logical node, CDC, attribute, type and
+embedded namespace (10,042 keys; 14 abbreviation terms that no data object uses have none on purpose). Logical node, CDC, attribute, type and
 condition texts are written by hand; data object descriptions are composed
 from the expansions of the terms their names are built from (`TotW` →
 "Total active power"); enumeration texts are derived from the names.

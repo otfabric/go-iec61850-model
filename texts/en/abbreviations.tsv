@@ -1,5 +1,6 @@
 # Expansions of the terms data object names are built from; data object texts are composed from them.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+# A text of "-" means no public text on purpose: a term no data object uses whose meaning is not established.
 A	current
 ABC	phases A, B and C
 AC	alternating current
@@ -31,7 +32,7 @@ Ahr	ampere-hours
 Air	air
 Alg	algorithm
 Alm	alarm
-Alr	already	?
+Alr	-
 Als	alarm setting
 Alt	altitude
 Altn	alternate
@@ -64,7 +65,7 @@ Aux	auxiliary
 Av	average
 Ava	absorbed apparent power
 Avar	reactive power
-Avi	available	?
+Avi	-
 Avl	available
 Ax	axial
 Azi	azimuth
@@ -74,9 +75,9 @@ Bac	binary-controlled analog step
 Bar	barrier
 Base	base
 Bat	battery
-Bb	busbar	?
+Bb	-
 Bck	back
-Bdl	bundle	?
+Bdl	-
 Bec	beacon
 Beh	behavior
 Ber	bit error rate
@@ -90,7 +91,7 @@ Boil	boiler
 Bot	bottom
 Bra	branch
 Brcb	buffered report control block
-Brd	board	?
+Brd	-
 Brg	bearing
 Bri	bridge
 Brk	brake
@@ -128,7 +129,7 @@ Cea	cease
 Ceil	ceiling
 Cel	cell
 Cf	crest factor
-Cfd	confirmed	?
+Cfd	-
 Cff	coefficient
 Cfg	configuration
 Cfm	confirmation
@@ -137,7 +138,7 @@ Ch	channel
 Cha	charge
 Chg	change
 Chk	check
-Chld	child	?
+Chld	-
 Chr	characteristic
 Chs	chassis
 Circ	circuit
@@ -156,10 +157,10 @@ Cmft	comfort
 Cmpl	complete
 Cmpn	compensation
 Cmpr	compressor
-Cmsp	compression spring	?
+Cmsp	-
 Cmut	commutation
 Cndct	conductivity
-Cnr	corner	?
+Cnr	-
 Cnst	constant
 Cnt	count
 Cntt	contract
@@ -172,7 +173,7 @@ Com	communication
 Comb	combination
 Comm	communication
 Comp	compensation
-Con	contact	?
+Con	-
 Conf	configuration
 ConfRev	configuration revision
 Conn	connection
@@ -267,7 +268,7 @@ Dsa	disable
 Dsc	discrepancy
 Dsch	discharge
 Dscon	disconnect
-Dsg	design	?
+Dsg	-
 Dsp	displacement
 Dst	destination
 Dtc	detection
@@ -626,7 +627,7 @@ Lst	list
 Ltg	lightning
 Lub	lubrication
 Lum	luminance
-M	meter	?
+M	meter
 MV	measured value
 Mac	MAC
 Made	made
@@ -685,7 +686,7 @@ Nam	name
 Name	name
 Nav	navigation
 Ndl	needle
-Nds	needs	?
+Nds	-
 NdsCom	needs commissioning
 Neut	neutral
 Ng	negative
@@ -843,7 +844,7 @@ Ris	resistance
 Rl	relative
 Rlf	relief
 Rm	mutual resistance
-Rmn	remanence	?
+Rmn	-
 Rmp	ramp
 Rms	RMS
 Rn	rain
@@ -982,8 +983,8 @@ Swg	swing
 Swl	swell
 Syn	synchronization
 Sys	system
-T	time constant	?
-TOTO	term TOTO, not yet expanded	?
+T	time constant
+TOTO	-
 TP	three-pole
 Ta	armature time constant
 Tag	tag

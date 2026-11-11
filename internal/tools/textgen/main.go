@@ -13,7 +13,8 @@
 //     has an entry for the class and name or for the name;
 //   - ENUM and LIT texts are derived from the names.
 //
-// A key without a text fails the run, so the set always covers the whole
+// A term whose text is "-" gets no ABBR text on purpose. Any other key
+// without a text fails the run, so the set always covers the whole
 // catalog. With -check the output is compared with the committed file.
 package main
 
@@ -36,6 +37,9 @@ import (
 )
 
 const (
+	// omit as a term's text means it has no public text on purpose; a
+	// data object name that needs the term then fails composition.
+	omit   = "-"
 	format = "otfabric-docset/1"
 	source = "OT Fabric public texts (texts/en, MIT)"
 )
@@ -148,6 +152,7 @@ func build(textsDir, catalogPath string) ([]byte, string, error) {
 	g := &gen{t: t, terms: t["abbreviations"]}
 	out := map[string]nsd.DocText{}
 	var missing []string
+	omitted := map[string]bool{}
 	for _, ns := range doc.Namespaces {
 		for _, key := range nsd.DocKeys(ns) {
 			if _, done := out[key]; done {
@@ -156,6 +161,10 @@ func build(textsDir, catalogPath string) ([]byte, string, error) {
 			txt, ok := g.text(key)
 			if !ok {
 				missing = append(missing, key)
+				continue
+			}
+			if txt == (nsd.DocText{}) {
+				omitted[key] = true
 				continue
 			}
 			out[key] = txt
@@ -197,11 +206,11 @@ func build(textsDir, catalogPath string) ([]byte, string, error) {
 		kinds[k[:strings.IndexByte(k, ':')]]++
 	}
 	var rep strings.Builder
-	fmt.Fprintf(&rep, "textgen: %d keys (all elements)", len(out))
+	fmt.Fprintf(&rep, "textgen: %d keys", len(out))
 	for _, k := range sortedKeys(kinds) {
 		fmt.Fprintf(&rep, " %s=%d", k, kinds[k])
 	}
-	fmt.Fprintf(&rep, "; DO composed=%d table=%d\n", g.composed, g.doTable)
+	fmt.Fprintf(&rep, "; DO composed=%d table=%d; omitted=%d\n", g.composed, g.doTable, len(omitted))
 	return buf.Bytes(), rep.String(), nil
 }
 
@@ -264,6 +273,9 @@ func (g *gen) text(key string) (nsd.DocText, bool) {
 		return desc(g.get("da", member))
 	case nsd.KeyAbbreviation:
 		v, ok := g.terms[path]
+		if v == omit {
+			return nsd.DocText{}, true
+		}
 		return desc(capitalize(v), ok)
 	case nsd.KeyDataObject:
 		if v, ok := g.get("do", path); ok {
@@ -319,6 +331,7 @@ func (g *gen) compose(name string) (string, bool) {
 		for j := len(name); j > i; j-- {
 			part := name[i:j]
 			exp, ok := g.terms[part]
+			ok = ok && exp != omit
 			if !ok && isDigits(part) {
 				exp, ok = part, true
 			}
