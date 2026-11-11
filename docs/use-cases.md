@@ -178,17 +178,17 @@ $ nsdctl model show DBAT | grep -E 'class|^title|inheritance|^DATA| M  |^Soc|^Av
 logical node class DBAT (IEC 61850-7-420:2019A4)
 title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS  TEXT
-Beh           ENS  M          DomainLN                     IEC 61850-7-4:2007B6    -          Behavior
-SocPro        SPS  O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge protection
-BatSt         SPS  M          DBAT                         IEC 61850-7-420:2019A4  -          Battery status
-Amp           MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Current
-Watt          MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Watts
-AvlChaAhr     MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Available charge ampere-hours
-AvlDschAhr    MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Available discharge ampere-hours
-SocEffAhrPct  MV   O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge effective ampere-hours percent
-SocDvPct      MV   O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge deviation percent
-BatTyp        ENG  M          DBAT                         IEC 61850-7-420:2019A4  -          Battery type
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS        TEXT
+Beh           ENS  M          DomainLN                     IEC 61850-7-4:2007B6    -                Behavior
+SocPro        SPS  O          DBAT                         IEC 61850-7-420:2019A4  -                State of charge protection
+BatSt         SPS  M          DBAT                         IEC 61850-7-420:2019A4  -                Battery status
+Amp           MV   O          DBAT                         IEC 61850-7-420:2019A4  current          Current
+Watt          MV   O          DBAT                         IEC 61850-7-420:2019A4  active-power     Watts
+AvlChaAhr     MV   O          DBAT                         IEC 61850-7-420:2019A4  charge           Available charge ampere-hours
+AvlDschAhr    MV   O          DBAT                         IEC 61850-7-420:2019A4  charge           Available discharge ampere-hours
+SocEffAhrPct  MV   O          DBAT                         IEC 61850-7-420:2019A4  state-of-charge  State of charge effective ampere-hours percent
+SocDvPct      MV   O          DBAT                         IEC 61850-7-420:2019A4  -                State of charge deviation percent
+BatTyp        ENG  M          DBAT                         IEC 61850-7-420:2019A4  -                Battery type
 ```
 
 Search by name when you know part of it, e.g. state of charge (`Soc`):
@@ -209,11 +209,11 @@ inherited from the storage base classes:
 
 ```console
 $ nsdctl model show DSTO | grep -E '^(ChaWMax|DschWMax|WhRtg|EffWh|EffWhPct) '
-EffWh         MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Effective active energy
-EffWhPct      MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Effective active energy percent
-ChaWMax       ASG  M              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Charge active power maximum
-DschWMax      ASG  O              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Discharge active power maximum
-WhRtg         ASG  O              StorageNameplateRatingsLN     IEC 61850-7-420:2019A4  -          Active energy rating
+EffWh         MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -                Effective active energy
+EffWhPct      MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -                Effective active energy percent
+ChaWMax       ASG  M              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -                Charge active power maximum
+DschWMax      ASG  O              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -                Discharge active power maximum
+WhRtg         ASG  O              StorageNameplateRatingsLN     IEC 61850-7-420:2019A4  -                Active energy rating
 ```
 
 ## 5. Monitor a circuit breaker
@@ -226,13 +226,13 @@ $ nsdctl model show XCBR | grep -E 'class|^title|inheritance|^DATA|^(Loc|OpCnt|P
 logical node class XCBR (IEC 61850-7-4:2007B6)
 title        Circuit breaker
 inheritance  XCBR → SwitchingEquipmentLN → EquipmentInterfaceLN → FunctionLN → StatisticsLN → DomainLN
-DATA OBJECT  CDC  PRESENCE   DECLARED IN           NAMESPACE             SEMANTICS  TEXT
-Loc          SPS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Local
-OpCnt        INS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Operate count
-Pos          DPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Position
-BlkOpn       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Blocked open
-BlkCls       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Blocked close
-CBOpCap      ENS  O          XCBR                  IEC 61850-7-4:2007B6  -          Circuit breaker operate capability
+DATA OBJECT  CDC  PRESENCE   DECLARED IN           NAMESPACE             SEMANTICS        TEXT
+Loc          SPS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -                Local
+OpCnt        INS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  operation-count  Operate count
+Pos          DPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  switch-position  Position
+BlkOpn       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -                Blocked open
+BlkCls       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -                Blocked close
+CBOpCap      ENS  O          XCBR                  IEC 61850-7-4:2007B6  -                Circuit breaker operate capability
 ```
 
 ```console
@@ -244,6 +244,10 @@ STEP           NAME   TYPE   FC  PRESENCE  DECLARED IN           NAMESPACE
 LogicalNode    XCBR   XCBR   -   -         XCBR                  IEC 61850-7-4:2007B6
 DataObject     Pos    DPC    -   M         SwitchingEquipmentLN  IEC 61850-7-4:2007B6
 DataAttribute  stVal  Dbpos  ST  M         DPC                   IEC 61850-7-3:2007B6
+
+quantity     switch-position
+component    state
+mapping      rule switching.pos, rule, high confidence (otfabric-default)
 ```
 
 `Dbpos` is the double-point position (intermediate, off, on, bad state).
