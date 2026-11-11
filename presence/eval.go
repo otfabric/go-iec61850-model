@@ -277,8 +277,6 @@ func verdict(req Requirement, present bool) Verdict {
 	switch {
 	case req == Required && !present, req == Forbidden && present:
 		return Violated
-	case req == Undetermined:
-		return Unresolved
 	default:
 		return Satisfied
 	}
