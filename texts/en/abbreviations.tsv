@@ -11,7 +11,7 @@ Abn	abnormal
 Abr	abrasion
 Abs	absolute
 Absb	absorbing
-Acc	accuracy	?
+Acc	accuracy
 Accl	acceleration
 Accm	accumulated
 Ack	acknowledge
@@ -183,7 +183,7 @@ Cost	cost
 Crank	crank
 Crd	coordination
 Crit	critical
-Crl	correlation	?
+Crl	correlation
 Crp	creep
 Crtl	control
 Crv	curve
@@ -377,7 +377,7 @@ Gain	gain
 Gas	gas
 Gbx	gearbox
 Gdv	guide vane
-Gen	general	?
+Gen	general
 Glob	global
 Gm	grandmaster
 Gn	generator
@@ -611,7 +611,7 @@ Lin	line
 Liv	live
 Lkd	locked
 Lkg	leakage
-Ll	previous long interval	?
+Ll	previous long interval
 Lo	low
 Loc	local
 Locb	log control block
@@ -621,7 +621,7 @@ Lok	locked
 Lolo	low-low
 Loop	loop
 Los	loss
-Ls	previous short interval	?
+Ls	previous short interval
 Lst	list
 Ltg	lightning
 Lub	lubrication
@@ -676,7 +676,7 @@ Mtx	matrix
 Mult	multiplier
 Mvm	movement
 Mx	maximum
-N	filter parameter N	?
+N	ramp-tracking filter degree
 N2	nitrogen
 NOx	nitrogen oxides
 NQS	normalized quantity number
@@ -785,7 +785,7 @@ Prt	part
 Ps	positive
 Psk	penstock
 Pss	power system stabilizer
-Pst	post	?
+Pst	post
 Pt	point
 Pth	path
 Pub	publisher
@@ -826,7 +826,7 @@ Rel	release
 Rem	remote
 Ren	renewable
 Req	request
-Res	restraint	?
+Res	residual
 Reset	reset
 Reso	resonance
 Reuse	reuse
@@ -920,7 +920,7 @@ Sign	sign
 Sim	simulation
 Sink	sink
 Slave	slave
-Sld	slide
+Sld	solidity
 Slnt	salinity
 Slope	slope
 Slot	slot
@@ -950,7 +950,7 @@ Srfc	surface
 St	status
 Sta	station
 Stab	stabilization
-Stat	statistics	?
+Stat	statistics
 Stc	stack
 Std	standard
 Stdby	standby
@@ -1036,7 +1036,7 @@ Tq0s	q-axis open-circuit subtransient time constant
 Tqp	q-axis transient time constant
 Tqs	q-axis subtransient time constant
 Tr	trip
-Tra	transformer	?
+Tra	transformer
 Trf	transformer
 Trg	trigger
 Trip	trip

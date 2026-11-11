@@ -4,10 +4,10 @@ CO2Ems	Carbon dioxide emissions
 COEms	Carbon monoxide emissions
 CTrd	Participation in carbon emissions trading
 ClcNxTmms	Time until the next calculation in milliseconds
-DisplA	Apparent displacement current at the bushing tap	?
+DisplA	Displacement current measured at the bushing tap
 Droop	Droop
 FldAmpRtgO	No-load field current at rated stator voltage
-GrnTag	Green tag (environmental label)	?
+GrnTag	Participation in green tag (renewable energy certificate) trading
 HKf	Harmonic K factor
 HTif	Telephone influence factor
 LeakA	Leakage current
@@ -46,3 +46,25 @@ APSF.OutL	Low-band output
 APSF.OutHBG	High-band output before gain
 APSF.OutIBG	Intermediate-band output before gain
 APSF.OutLBG	Low-band output before gain
+APST.M	Ramp-tracking filter degree M
+APST.N	Ramp-tracking filter degree N
+APST.T1Tms	Stabilizer time constant T1 in seconds
+APST.T2Tms	Stabilizer time constant T2 in seconds
+APST.T3Tms	Stabilizer time constant T3 in seconds
+APST.T4Tms	Stabilizer time constant T4 in seconds
+APST.T6Tms	Stabilizer time constant T6 in seconds
+APST.T7Tms	Stabilizer time constant T7 in seconds
+APST.T8Tms	Stabilizer time constant T8 in seconds
+APST.T9Tms	Stabilizer time constant T9 in seconds
+APST.T10Tms	Stabilizer time constant T10 in seconds
+APST.T11Tms	Stabilizer time constant T11 in seconds
+TGSN.GenSv	Generic sensor sampled value
+LTRK.GenTrk	Generic service tracking
+CCGR.FanCtlGen	General fan control
+CCGR.PmpCtlGen	General pump control
+RADR.PstTmms	Post-trigger recording time in milliseconds
+RBDR.PstTmms	Post-trigger recording time in milliseconds
+RDRE.PstTmms	Post-trigger recording time in milliseconds
+RecorderLN.PstTmms	Post-trigger recording time in milliseconds
+CSYN.AccClc	Calculated acceleration of the frequency difference	?
+CSYN.AccClcDev	Deviation of the calculated acceleration of the frequency difference	?

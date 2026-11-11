@@ -1,7 +1,7 @@
 # Presence condition descriptions.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
 AllAtLeastOneGroup	At least one element of every group is present	?
-AllOnlyOneGroup	Only one group is present, and then with all of its elements	?
+AllOnlyOneGroup	Only one group is present, and then with all of its elements
 AllOrNonePerGroup	Within each group, either all elements are present or none
 AtLeastOne	At least one element of the group is present
 AtMostOne	At most one element of the group is present
@@ -31,12 +31,12 @@ MOrootLD	Mandatory in the root logical device, otherwise optional
 MOsbo	Mandatory for select-before-operate control models, otherwise optional
 Mmulti	Mandatory with one or more instances
 MmultiF	One or more instances are mandatory if the stated condition holds, otherwise forbidden
-MmultiRange	Mandatory with a number of instances within the stated range	?
+MmultiRange	One or more instances with numbers within the specified range
 O	Optional
 OF	Optional if the stated condition holds, otherwise forbidden
 OFcond	Optional if the stated condition holds, otherwise forbidden
 OM	Optional if the stated condition holds, otherwise mandatory
 OMSynPh	Optional in general, but mandatory when the logical node provides synchrophasor data
 Omulti	Optional with any number of instances
-OmultiRange	Optional with a number of instances within the stated range	?
+OmultiRange	Zero or more instances with numbers within the specified range
 na	Not applicable

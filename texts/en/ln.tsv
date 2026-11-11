@@ -1,7 +1,7 @@
 # Logical node class titles.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
 AATS	Automatic transfer switching
-ACTM	Control mode selection	?
+ACTM	Control mode selection
 AEBR	Electrical braking control
 AEMC	Electrical machine management
 AENC	Energy control
@@ -225,7 +225,7 @@ GLOG	Generic log
 GRST	Operational restriction tagging
 GSAL	Security violation supervision
 GTMO	Maintenance lockout and tag management
-GTSK	Operational task management	?
+GTSK	Task manager
 GUNT	Generic generating unit
 GeneratingUnitMgmtFunLN	Generating unit management function (abstract)
 GeneratorNameplateRatingsLN	Generator nameplate ratings (abstract)
@@ -292,7 +292,7 @@ HysteresisSnapshotLN	Hysteresis and snapshot function (abstract)
 IARC	Archiving
 IFIR	Fire detection and alarm
 IHMI	Human machine interface
-IHND	Manual operator interface	?
+IHND	Local hand interface
 ISAF	Safety alarm function
 ITCI	Telecontrol interface
 ITMI	Telemonitoring interface
@@ -305,7 +305,7 @@ KDFL	Flow deflector
 KFAN	Fan
 KFIL	Filter
 KFIM	Fire fighting system interface
-KFLV	Fuel delivery system	?
+KFLV	Fuel delivery system
 KFSL	Fluid sealing device
 KFUL	Fuel consumption and characteristics
 KFVL	Controllable fluid valve
@@ -551,7 +551,7 @@ VoltageOpFunLN	Voltage operating function (abstract)
 VoltageProtectionLN	Voltage protection (abstract)
 WaterFlowOpFunLN	Water flow operating function (abstract)
 XCBR	Circuit breaker
-XDCC	DC circuit configuration	?
+XDCC	DC connection and configuration status
 XFFL	Field flashing
 XFPE	Fast protective device
 XFUS	Fuse
