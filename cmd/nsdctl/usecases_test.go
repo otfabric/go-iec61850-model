@@ -28,9 +28,9 @@ func TestUseCaseOutput(t *testing.T) {
 		}
 		want := lines[1 : len(lines)-1]
 		args := shellWords(t, strings.TrimPrefix(cmd, "nsdctl "))
-		if official.DocsSource() != "" {
-			// docs/use-cases.md shows a build without IEC texts; a binary
-			// built with -tags iecdocs (or IEC61850_MODEL_DOCS) adds them.
+		if src := official.DocsSource(); src != "" && src != official.PublicDocsSource {
+			// docs/use-cases.md shows the public texts; a binary built with
+			// -tags iecdocs (or IEC61850_MODEL_DOCS) adds IEC texts.
 			args = append([]string{"--lang", ""}, args...)
 		}
 		out, errOut, _ := nsdctl(t, args...)
