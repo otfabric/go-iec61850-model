@@ -42,7 +42,7 @@ dirPhsA	Direction of the detected fault in phase A
 dirPhsB	Direction of the detected fault in phase B
 dirPhsC	Direction of the detected fault in phase C
 dstAddress	Destination address to which the messages of the control block are published
-ePSName	Name of the electric power system to which the device belongs	?
+ePSName	Name of the electric power system to which the device belongs
 editSG	Number of the setting group currently selected for editing
 entry	Log entries returned by the tracked log query service
 entryID	Identifier of the most recent entry in the report buffer
@@ -106,12 +106,12 @@ opOk	Indicates that an operate command was accepted and is being executed
 opRcvd	Indicates that an operate command was received by the object
 operTimeout	Maximum time allowed for the operation to complete after the command was accepted
 operTm	Time at which a time-activated control command is to be executed
-operTmPhsA	Operate time of the protection function for phase A	?
-operTmPhsB	Operate time of the protection function for phase B	?
-operTmPhsC	Operate time of the protection function for phase C	?
+operTmPhsA	Timestamp of the phase A switching operation
+operTmPhsB	Timestamp of the phase B switching operation
+operTmPhsC	Timestamp of the phase C switching operation
 optFlds	Optional fields that the control block includes in its messages
 origin	Originator of the last control command that changed the value
-originSrc	Originator of the activation, such as the function that caused it	?
+originSrc	Originator information propagated from the initiating control action
 originatorID	Identifier of the client that invoked the tracked service
 owner	Owner of the device, or the client currently associated with the report control block
 paramRev	Revision counter of parameter changes made while the device is running

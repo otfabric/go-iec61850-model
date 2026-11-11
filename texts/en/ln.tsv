@@ -1,14 +1,14 @@
 # Logical node class titles.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
 AATS	Automatic transfer switching
-ACTM	Control mode management	?
+ACTM	Control mode selection	?
 AEBR	Electrical braking control
-AEMC	Excitation management control	?
+AEMC	Electrical machine management
 AENC	Energy control
 AENN	Energy minimum limit
 AENX	Energy maximum limit
 AEPC	Emergency power control
-AESC	Excitation sequence control	?
+AESC	Electrical machine operating mode control
 AFCR	Field current regulator
 AFFL	Field flashing control
 AFLK	Flicker control	?
@@ -25,15 +25,15 @@ AOPC	Opening control
 APFC	Power factor control
 APFL	Power factor limit
 APOD	Power oscillation damping
-APSF	Power system stabilizer filter	?
+APSF	Power system stabilizer (multi-band type)
 APSS	Power system stabilizer
-APST	Power system stabilizer input limits	?
+APST	Power system stabilizer (dual-input type)
 AQCL	Generation reactive power control function
 AQMN	Reactive power minimum limit
 AQMX	Reactive power maximum limit
 ARCO	Reactive power controller
 ARIS	Neutral resistor control
-AROP	Active power reserve offer	?
+AROP	Balancing reserve operation
 ARPC	Reactive power compensation control
 ARUB	Power run-up and run-back
 ASCL	Stator current limiter
@@ -69,18 +69,18 @@ BatteryLN	Battery (abstract)
 BulkGenerationMgmtFunLN	Bulk generation management function (abstract)
 BulkGenerationOpFunLN	Bulk generation operating function (abstract)
 CALH	Alarm handling
-CCAP	Series capacitor bank control	?
+CCAP	Series capacitor bank control
 CCGR	Cooling group control
 CFAN	Fan control
-CFPC	Converter power flow control	?
-CFVL	Proportional flow valve control	?
-CHCY	Hydraulic cylinder control	?
+CFPC	Converter power flow control
+CFVL	Fluid valve position controller	?
+CHCY	Direct hydraulic cylinder controller	?
 CHTR	Heater control
 CILO	Interlocking
-CJCL	Joint control interface	?
+CJCL	Joint control interface
 CPMP	Pump control
 CPOW	Point-on-wave switching
-CREL	Relay control	?
+CREL	Relay control
 CSWI	Switch controller
 CSYN	Synchronizer controller
 CTGR	Turning gear control
@@ -102,7 +102,7 @@ DCCT	Generation cost parameters
 DCHB	Boiler
 DCHC	Combined heat and power controller
 DCIP	Reciprocating engine
-DCST	Generation operating cost	?
+DCST	Generation operating cost
 DCTE	Cease to energize and return to service
 DCTS	Thermal storage
 DECP	Electrical connection point
@@ -129,7 +129,7 @@ DLFT	Low frequency ride-through
 DLFW	Low frequency active power response
 DLOD	Distributed load
 DLVT	Low voltage ride-through
-DMDR	Aggregated distributed resources	?
+DMDR	Aggregated distributed resources
 DPCC	Point of common coupling
 DPMC	Plant power management controller
 DPVA	Photovoltaic array
@@ -137,17 +137,17 @@ DPVC	Photovoltaic array controller
 DPVM	Photovoltaic module ratings
 DRChannelLN	Disturbance recorder channel (abstract)
 DRGS	Dynamic reactive current support
-DRTF	Rectifier and converter characteristics	?
+DRTF	Rectifier and converter characteristics
 DSTK	Fuel cell stack
 DSTO	Energy storage
-DTCD	Storage charge target scheduling	?
+DTCD	Coordinated storage charging and discharging
 DTRC	Solar tracking controller
 DVAR	Fixed reactive power
-DVER	Virtual electrical reference	?
+DVER	Virtual electrical reference
 DVVR	Volt-var function
 DVWC	Volt-watt function
-DWFL	Active power following	?
-DWGC	Active power set-point control	?
+DWFL	Active power following
+DWGC	Active power operating setpoint
 DWMN	DER active power minimum limit
 DWMX	DER active power maximum limit
 DWVR	Watt-var function
@@ -163,7 +163,7 @@ EFMN	Flow minimum limit
 EFMX	Flow maximum limit
 EGEN	Thermal unit generator
 EGOV	Thermal unit governor
-EGTM	Gas turbine management	?
+EGTM	Gas turbine management
 EGTU	Gas turbine
 EJCM	Thermal joint control management
 ELRC	Load range control
@@ -181,7 +181,7 @@ ETMN	Temperature minimum limit
 ETMX	Temperature maximum limit
 ETPC	Temperature control
 ETRM	Thermal unit mechanical transmission
-ETSC	Thermal turbine sequence control	?
+ETSC	Thermal turbine sequence control
 EUMC	Thermal unit management control
 EUNT	Thermal generating unit
 EUSC	Thermal unit sequence control
@@ -222,10 +222,10 @@ FunctionOutputLN	Function with output (abstract)
 GAPC	Generic automatic process control
 GGIO	Generic process input/output
 GLOG	Generic log
-GRST	Restriction management	?
+GRST	Operational restriction tagging	?
 GSAL	Security violation supervision
-GTMO	Tag management	?
-GTSK	Task scheduling	?
+GTMO	Maintenance lockout and tag management	?
+GTSK	Operational task management	?
 GUNT	Generic generating unit
 GeneratingUnitMgmtFunLN	Generating unit management function (abstract)
 GeneratorNameplateRatingsLN	Generator nameplate ratings (abstract)
@@ -234,9 +234,9 @@ GeneratorUnitLN	Generator unit (abstract)
 HBRG	Hydro unit bearing
 HCNL	Canal
 HCOM	Combinator
-HCSW	Hydraulic conduit section	?
+HCSW	Spillway crest equipment
 HCTH	Hydro unit clutch
-HCTN	Counter-torque braking device	?
+HCTN	Counter-jet braking nozzle
 HDAM	Dam
 HDFL	Jet deflector
 HDLS	Dam leakage supervision
@@ -249,7 +249,7 @@ HGEN	Hydro unit generator
 HGOV	Hydro unit governor
 HGPI	Gate position indicator
 HGTE	Gate
-HHDM	Hydraulic management	?
+HHDM	Hydropower device management
 HITG	Intake gate
 HJCL	Hydro joint control
 HJCM	Hydro joint control management
@@ -261,11 +261,11 @@ HLVL	Water level indicator
 HMBR	Mechanical brake
 HMMC	Mechanical machine management control
 HNDL	Needle valve
-HNDM	Needle management	?
+HNDM	Needle management
 HNHD	Net head
 HOTP	Operating threshold	?
 HPSK	Penstock
-HPYM	Hydraulic pump motor	?
+HPYM	Auxiliary starting motor
 HRES	Reservoir
 HSEQ	Start and stop sequencer
 HSMF	Hydro unit synchronous machine field
@@ -276,7 +276,7 @@ HTGV	Guide vanes
 HTRB	Runner blades
 HTRK	Trash rack
 HTRM	Hydro unit mechanical transmission
-HTSC	Hydro turbine sequence control	?
+HTSC	Hydro turbine sequence control
 HTUR	Hydro turbine
 HUMC	Hydro unit management control
 HUNT	Hydro generating unit
@@ -292,41 +292,41 @@ HysteresisSnapshotLN	Hysteresis and snapshot function (abstract)
 IARC	Archiving
 IFIR	Fire detection and alarm
 IHMI	Human machine interface
-IHND	Local hand control unit	?
+IHND	Manual operator interface	?
 ISAF	Safety alarm function
 ITCI	Telecontrol interface
 ITMI	Telemonitoring interface
 ITPC	Teleprotection communication interface
 InstrumentTransformerLN	Instrument transformer (abstract)
 JointControlMgmtFunLN	Joint control management function (abstract)
-KBRP	Mechanical brake (non-controlled equipment)	?
-KCTH	Cathodic protection	?
-KDFL	Jet deflector (non-controlled equipment)	?
+KBRP	Mechanical brake pad
+KCTH	Mechanical clutch
+KDFL	Flow deflector	?
 KFAN	Fan
 KFIL	Filter
-KFIM	Fire fighting system interface	?
+KFIM	Fire fighting system interface
 KFLV	Fuel delivery system	?
-KFSL	Shaft seal	?
+KFSL	Fluid sealing device
 KFUL	Fuel consumption and characteristics
-KFVL	Fluid control valve	?
+KFVL	Controllable fluid valve	?
 KGTE	Gate (non-controlled equipment)
-KHCY	Hydraulic cylinder	?
+KHCY	Hydraulic cylinder
 KHTR	Heater
 KILL	Illumination
-KPBP	Pipe burst protection	?
+KPBP	Penstock burst protection
 KPMP	Pump
-KSPP	Mechanical speed protection	?
-KTGR	Turning gear	?
-KTGV	Turbine guide vanes	?
+KSPP	Rotational overspeed and underspeed protection	?
+KTGR	Turning gear
+KTGV	Turbine guide vanes
 KTNK	Tank
 KTOW	Tower
-KTRB	Turbine runner blades	?
+KTRB	Turbine runner blades
 KVLV	Valve
-KVSL	Valve seal	?
+KVSL	Valve seal
 LBRI	Network bridge
 LBSP	Bridge port spanning tree state
 LCCH	Physical communication channel supervision
-LCMF	Multicast address filter	?
+LCMF	Multicast address filter
 LCVF	VLAN filter
 LGOS	GOOSE subscription supervision
 LLN0	Logical device common node
@@ -395,9 +395,9 @@ PHAR	Harmonic restraint
 PHIZ	High impedance ground fault protection
 PIOC	Instantaneous overcurrent protection
 PLFR	Line fault recovery	?
-PMHE	Varistor energy protection	?
-PMHT	Varistor thermal protection	?
-PMOV	Varistor overcurrent protection	?
+PMHE	Varistor energy protection
+PMHT	Varistor thermal protection
+PMOV	Varistor overcurrent protection
 PMRI	Motor restart inhibition
 PMSS	Motor starting time supervision
 POPF	Over power factor protection
@@ -417,7 +417,7 @@ PTRC	Trip conditioning
 PTTR	Thermal overload protection
 PTUC	Undercurrent protection
 PTUF	Underfrequency protection
-PTUI	Injection-based ground fault protection	?
+PTUI	Injection-based ground fault protection
 PTUV	Undervoltage protection
 PUPF	Under power factor protection
 PVOC	Voltage controlled time overcurrent protection
@@ -446,13 +446,13 @@ RBRF	Breaker failure
 RDIR	Directional element
 RDRE	Disturbance recorder function
 RDRS	Disturbance record handling
-RFBC	Frequency bias control	?
+RFBC	Field breaker configuration
 RFLO	Fault locator
 RMXU	Differential measurements
 RPSB	Power swing detection and blocking
 RREC	Autoreclosing
-RRFV	Reclosing with fault verification	?
-RRIN	Series capacitor reinsertion	?
+RRFV	Reclosing with fault verification
+RRIN	Series capacitor reinsertion
 RSYN	Synchronism check
 RTWD	Traveling wave fault detection
 RTWI	Traveling wave signal injection	?
@@ -466,21 +466,21 @@ RideThroughLN	Ride-through function (abstract)
 RotatingMachineLN	Rotating machine (abstract)
 SARC	Arc monitoring and diagnostics
 SBAT	Battery supervision
-SBRP	Brake wear supervision	?
+SBRP	Brake pad wear monitoring
 SCBR	Circuit breaker supervision
 SCGR	Cooling and oil system supervision	?
 SCND	Conductivity supervision
 SCPI	Current presence indicator
 SEAM	Equipment aging monitoring
-SECW	Water conductivity supervision	?
+SECW	Water conductivity supervision
 SFIR	Fire detection
 SFLW	Flow supervision
 SFOD	Flood detection
-SFPE	Fast protective device supervision	?
+SFPE	Fast protective device supervision
 SFPI	Fault passage indicator
-SFSL	Shaft seal wear supervision	?
+SFSL	Shaft seal wear supervision
 SFST	Fault statistics
-SGPD	Seismic activity detection	?
+SGPD	Seismic activity detection
 SIMG	Insulation gas supervision
 SIML	Insulation liquid supervision
 SIMS	Insulation loss angle supervision
@@ -489,10 +489,10 @@ SLTC	Tap changer supervision
 SLVL	Level supervision
 SOPM	Operating mechanism supervision
 SPDC	Partial discharge supervision
-SPES	Power electronic switch supervision	?
+SPES	Power electronic switch supervision
 SPOS	Position supervision
 SPRS	Pressure supervision
-SPSE	Personnel safety supervision	?
+SPSE	Site presence monitoring
 SPTR	Power transformer supervision
 SSMK	Smoke detection
 SSTP	Transformer solid insulation supervision	?
@@ -553,7 +553,7 @@ WaterFlowOpFunLN	Water flow operating function (abstract)
 XCBR	Circuit breaker
 XDCC	DC circuit configuration	?
 XFFL	Field flashing
-XFPE	Fast protective device	?
+XFPE	Fast protective device
 XFUS	Fuse
 XSWI	Switch
 YEFN	Ground fault neutralizer
@@ -581,10 +581,10 @@ ZRES	Resistor
 ZRRC	Rotating reactive component
 ZSAR	Surge arrester
 ZSCR	Semiconductor controlled rectifier
-ZSMA	Synchronous machine armature	?
+ZSMA	Synchronous machine armature
 ZSMC	Synchronous machine
-ZSMF	Synchronous machine field	?
-ZSUR	Surge tank equipment	?
+ZSMF	Synchronous machine field
+ZSUR	Uncontrolled semiconductor rectifier
 ZTCF	Thyristor controlled frequency converter
 ZTCR	Thyristor controlled reactive component
 ZTCRExt	Thyristor controlled reactive component (extended)

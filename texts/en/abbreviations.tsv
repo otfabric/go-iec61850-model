@@ -5,11 +5,11 @@ ABC	phases A, B and C	?
 AC	alternating current
 AGC	automatic generation control
 ASG	analog setting
-AWatt	active current component	?
-Abc	absence	?
+AWatt	active current component
+Abc	absence
 Abn	abnormal
 Abr	abrasion
-Abs	absolute	?
+Abs	absolute
 Absb	absorbing
 Acc	accuracy	?
 Accl	acceleration
@@ -19,7 +19,7 @@ Acs	access
 Act	active
 Actr	actuator
 Actual	actual
-Acu	acute	?
+Acu	acoustic	?
 Add	additional
 Addr	address
 Adj	adjustment
@@ -32,7 +32,7 @@ Air	air
 Alg	algorithm
 Alm	alarm
 Alr	already	?
-Als	alarm setting	?
+Als	alarm setting
 Alt	altitude	?
 Altn	alternate
 Alwd	allowed
@@ -42,13 +42,13 @@ An	analog
 Anc	ancillary
 Ane	anemometer	?
 Ang	angle
-Ani	animal	?
+Ani	animal
 Ann	announcement
 Any	any
 Ap	access point
 Apc	analog setpoint control
 App	apparent
-Ar	arming	?
+Ar	arming
 Arc	arc
 Area	area
 Arr	array
@@ -62,7 +62,7 @@ Auth	authorization
 Auto	automatic
 Aux	auxiliary
 Av	average
-Ava	apparent power	?
+Ava	absorbed apparent power	?
 Avar	reactive power
 Avi	available	?
 Avl	available
@@ -71,7 +71,7 @@ Azi	azimuth
 B	phase B
 BG	band gain	?
 Bac	binary-controlled analog step
-Bar	barrier	?
+Bar	barrier
 Base	base
 Bat	battery
 Bb	busbar	?
@@ -84,7 +84,7 @@ Bias	bias
 Bl	blade	?
 Blb	bulb
 Blk	blocked
-Blow	blow-by	?
+Blow	blow-by
 Bnd	band
 Boil	boiler
 Bot	bottom
@@ -95,8 +95,8 @@ Brg	bearing
 Bri	bridge
 Brk	brake
 Bsc	binary-controlled step position
-Bst	burst	?
-Bt	heartbeat	?
+Bst	burst
+Bt	heartbeat
 Bub	bubbling
 Bus	bus
 Byp	bypass
@@ -105,8 +105,8 @@ C2H2	acetylene
 C2H4	ethylene
 C2H6	ethane
 CB	circuit breaker
-CE	cooling equipment	?
-CG	core ground	?
+CE	cooling equipment
+CG	core ground
 CH4	methane
 CHP	combined heat and power
 CO	carbon monoxide
@@ -122,7 +122,7 @@ Cbn	carbon	?
 Cbr	calibration
 Ccw	counterclockwise
 Ccy	currency
-Cds	condensate	?
+Cds	condensate
 Cdt	conductivity
 Cea	cease
 Ceil	ceiling
@@ -209,7 +209,7 @@ DER	distributed energy resource
 DExt	de-excitation
 DPCSO	double-point control output
 DQ0	direct-quadrature-zero
-DS	discharged	?
+DS	discharged
 DT	daylight saving time
 Dam	dam
 Damp	damping
@@ -236,7 +236,7 @@ Df	difference	?
 Dff	diffuse
 Dfl	deflector
 Dft	default
-Dia	diaphragm	?
+Dia	diaphragm
 Diag	diagnostics
 Dif	differential
 Dig	digital
@@ -257,7 +257,7 @@ Door	door
 Dpc	double-point control
 Dpt	department	?
 Drag	drag
-Drn	drone	?
+Drn	drone
 Dropout	dropout
 Drp	droop
 Drt	derating
@@ -292,11 +292,11 @@ Ecnm	economic	?
 Ecp	electrical connection point
 Edt	edit	?
 Efc	efficiency
-Eff	effective	?
+Eff	effective
 Egr	egress
 Egz	energize
 El	elevation
-Ela	elasticity	?
+Ela	elasticity
 Elc	electrical
 Ele	element
 Em	emission
@@ -314,7 +314,7 @@ Entr	entry
 Enum	enumeration
 Env	environmental
 Eps	electric power system
-Eq	equipment	?
+Eq	equipment
 Eqmt	equipment
 Err	error
 Esp	estimated setpoint	?
@@ -326,7 +326,7 @@ Evn	even
 Evo	evolving
 Evp	evaporation
 Evt	event
-Ex	external	?
+Ex	external
 ExIm	export and import	?
 Exc	exceeded
 Excl	exclusion
@@ -335,16 +335,16 @@ Expc	expected
 Exps	exponent
 Expt	export
 Ext	external
-F	frequency	?
-FA	fault arc	?
+F	frequency
+FA	fault arc
 FPM	fuel processing module
-Fa	fault	?
+Fa	fault
 Fact	factor
 Fail	failure
 Fan	fan
 Fast	fast
-Fbc	feedback	?
-Fct	forecast	?
+Fbc	field breaker configuration	?
+Fct	forecast
 Fer	frame error rate
 Fght	fighting
 Fil	filter
@@ -574,8 +574,8 @@ Isld	islanded
 Iso	isolation
 Itm	intermittent
 Iu	term Iu, not yet expanded	?
-Iva	apparent current	?
-Ivar	reactive current	?
+Iva	injected apparent power	?
+Ivar	injected reactive power	?
 Ix	index
 Jmp	jump
 Jnt	joint
@@ -611,7 +611,7 @@ Lin	line
 Liv	live
 Lkd	locked
 Lkg	leakage
-Ll	linear scale	?
+Ll	previous long interval	?
 Lo	low
 Loc	local
 Locb	log control block
@@ -621,7 +621,7 @@ Lok	locked
 Lolo	low-low
 Loop	loop
 Los	loss
-Ls	logarithmic scale	?
+Ls	previous short interval	?
 Lst	list
 Ltg	lightning	?
 Lub	lubrication
@@ -696,7 +696,7 @@ Nml	normal
 No	no
 Noi	noise
 Nom	nominal
-Nph	non-phase-related	?
+Nph	non-phase-related
 Num	number
 Nxt	next
 O2	oxygen
@@ -704,7 +704,7 @@ O3	ozone
 Obl	obstruction light	?
 Oc	open circuit
 Odd	odd
-Of	offset	?
+Of	offset
 Off	off
 Ofs	offset
 Oil	oil
@@ -714,7 +714,7 @@ Op	operate
 Operate	operate
 Opl	open loop
 Opn	open
-Opt	optimization	?
+Opt	optimization
 Ord	order
 Osc	oscillation
 Out	output
@@ -751,14 +751,14 @@ Pin	pin
 Pipe	pipe
 Pk	peak
 Pl	plate	?
-Plc	PLC	?
+Plc	programmable logic controller	?
 Ple	pole
 Plg	plug	?
 Pls	pulse
 Plt	plate
 Pm	permanent
 Pmp	pump
-Po	polar	?
+Po	polar
 Poa	plane of array
 Pod	power oscillation damping
 Pol	polarizing
@@ -769,7 +769,7 @@ Pos	position
 Pot	potentiometer
 Prc	price
 Pre	pre
-Prec	preceding	?
+Prec	preceding
 Pres	pressure
 Prg	in progress
 Prim	primary
@@ -783,7 +783,7 @@ Proxy	proxy
 Prs	presence
 Prt	part	?
 Ps	positive
-Psk	penstock	?
+Psk	penstock
 Pss	power system stabilizer
 Pst	post	?
 Pt	point
@@ -803,7 +803,7 @@ Rad	radians
 Ral	rail
 Ramp	ramp
 Rat	ratio
-Rb	runner blade	?
+Rb	runner blade
 Rcd	record
 Rch	reach
 Rcl	reclaim
@@ -814,17 +814,17 @@ React	reactance
 Rear	rear
 Rec	reclosing
 Rec1	single-pole reclosing
-Rec13	single- or three-pole reclosing	?
+Rec13	single- or three-pole reclosing
 Rec3	three-pole reclosing
 Recha	recharge
 Recov	recovery
 Rect	rectifier
-Red	redundancy	?
+Red	redundancy
 Ref	reference
 Reg	regulation
 Rel	release
 Rem	remote
-Ren	renewable	?
+Ren	renewable
 Req	request
 Res	restraint	?
 Reset	reset
@@ -837,7 +837,7 @@ Ri	internal resistance	?
 Rign	reignition
 Rin	reinsertion
 Rin1	single-pole reinsertion
-Rin13	single- or three-pole reinsertion	?
+Rin13	single- or three-pole reinsertion
 Rin3	three-pole reinsertion
 Ris	resistance
 Rl	relative
@@ -848,7 +848,7 @@ Rmp	ramp
 Rms	RMS
 Rn	rain
 Rnbk	runback
-Rnd	round	?
+Rnd	round
 Rng	range
 Rnt	round-trip
 Rod	rod
@@ -856,7 +856,7 @@ Root	root
 Rot	rotation
 Rp	receipt
 Rpd	ramp down
-Rpt	repeat	?
+Rpt	repeat
 Rpu	ramp up
 Rs	reset
 Rsl	result
@@ -869,7 +869,7 @@ Rt	ride-through
 Rte	rate
 Rtg	rating
 Rtn	return
-Rub	rub	?
+Rub	rub
 Run	running
 Rv	reverse
 Rvc	reverse current	?
@@ -894,9 +894,9 @@ Sc	short circuit
 Scale	scale
 Schd	schedule
 Scnd	secondary
-Sco	start-up control	?
+Sco	start-up control
 Sct	section	?
-Sec	security	?
+Sec	security
 Seg	segment
 Seism	seismic
 Sel	selection
@@ -906,7 +906,7 @@ Seq	sequence
 Ser	series
 Ses	session
 Set	setting
-Sfx	self-extinguishing	?
+Sfx	self-extinguishing
 Sgcb	setting group control block
 Sh	shunt
 Shar	share
@@ -920,7 +920,7 @@ Sign	sign
 Sim	simulation
 Sink	sink
 Slave	slave
-Sld	slide	?
+Sld	slide
 Slnt	salinity
 Slope	slope
 Slot	slot
@@ -941,7 +941,7 @@ Spcf	specific
 Spd	speed
 Spec	spectrum
 Spir	spiral case
-Spm	semi-permanent	?
+Spm	semi-permanent
 Spn	span	?
 Spt	setpoint
 Sq	square
@@ -952,7 +952,7 @@ Sta	station
 Stab	stabilization
 Stat	statistics	?
 Stc	stack
-Std	standard	?
+Std	standard
 Stdby	standby
 Step	step
 Stepsr	steps removed
@@ -960,7 +960,7 @@ Stg	stage	?
 Stk	stroke
 Stl	stall
 Stm	steam
-Stnd	standstill	?
+Stnd	standstill
 Sto	storage
 Stop	stop
 Storm	storm
@@ -992,7 +992,7 @@ Task	task
 Tc	time constant
 Tcp	TCP
 Tcr	thyristor-controlled reactor
-Td	total distortion	?
+Td	total distortion
 Td0p	d-axis open-circuit transient time constant
 Td0s	d-axis open-circuit subtransient time constant
 Tdd	total demand distortion
@@ -1047,11 +1047,11 @@ Trs	transient
 Truck	truck
 Trunk	trunk
 Trv	travel	?
-Ts	total signed	?
-Tu	total unsigned	?
+Ts	total signed
+Tu	total unsigned
 Tun	tuning
 Tur	turbine
-Tw	washout time constant	?
+Tw	washout time constant
 Two	two
 Tx	transmit
 Txt	text
@@ -1099,12 +1099,12 @@ Vlv	valve
 Vol	voltage
 VolAmpr	volt-amperes
 Volts	volts
-Vsi	stabilizer input voltage	?
+Vsi	stabilizer input voltage
 Vss	visible string	?
-Vst	stabilizer output voltage	?
+Vst	stabilizer output voltage
 W	active power
 W200	at 200 W/m2	?
-Wac	watchdog	?
+Wac	watchdog
 Wash	washout
 Watt	watts
 Wav	waveform

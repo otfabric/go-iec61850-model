@@ -51,7 +51,7 @@ NTS	Unicast sampled value control block tracking
 STS	Setting group control block tracking
 CTS	Control service tracking
 ORS	Object reference status
-TCS	Transient condition status	?
-VSD	Visible string description	?
-RST	Reference setting	?
+TCS	Time value status
+VSD	Visible string description
+RST	Operational restriction
 TAG	Controllable tag

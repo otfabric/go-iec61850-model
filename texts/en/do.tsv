@@ -3,7 +3,7 @@
 CO2Ems	Carbon dioxide emissions
 COEms	Carbon monoxide emissions
 CTrd	Carbon trading	?
-ClcNxTmms	Time until the next calculation in milliseconds	?
+ClcNxTmms	Time until the next calculation in milliseconds
 DisplA	Displacement current	?
 Droop	Droop
 FldAmpRtgO	Field current rating	?
@@ -13,8 +13,22 @@ HTif	Telephone influence factor
 LeakA	Leakage current
 NOxEms	Nitrogen oxide emissions
 PartSens	Particulate matter sensor setting	?
-RegClas	Regulatory class	?
+RegClas	Regulatory class
 SOxEms	Sulfur oxide emissions
 StatLeakX	Stator leakage reactance
-Tm1ldTmms	First lead time constant in milliseconds	?
-Tm2ldTmms	Second lead time constant in milliseconds	?
+Tm1ldTmms	First lead time constant in milliseconds
+Tm2ldTmms	Second lead time constant in milliseconds
+MFLK.PPPst	Short-term flicker severity, phase to phase
+MFLK.PhPst	Short-term flicker severity per phase
+MFLK.PPPlt	Long-term flicker severity, phase to phase
+MFLK.PhPlt	Long-term flicker severity per phase
+ZSMC.StatRis	Stator resistance
+ZSMC.StatRisTmp	Temperature at which the stator resistance applies
+SCBR.AccAbr	Accumulated contact abrasion
+SSWI.AccAbr	Accumulated contact abrasion
+GeneratorNameplateRatingsLN.ConsWMaxRtg	Continuous active power maximum rating
+GeneratorNameplateRatingsLN.ConsWMinRtg	Continuous active power minimum rating
+PTTR.ConsTms	Thermal time constant in seconds
+PMHT.ConsTms	Thermal time constant in seconds
+APST.Tc6Tra	Transducer time constant 6
+APST.Tc7Tra	Transducer time constant 7
