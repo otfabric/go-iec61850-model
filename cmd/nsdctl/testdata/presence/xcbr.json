@@ -1,0 +1,8 @@
+{
+  "class": "XCBR",
+  "present": ["Beh", "Loc", "OpCnt", "Pos", "BlkOpn", "BlkCls", "CBOpCap"],
+  "context": {"ldNs": "IEC 61850-7-4:2007B"},
+  "children": {
+    "Pos": {"present": ["stVal", "q", "t", "ctlModel"], "values": {"ctlModel": "sbo-with-normal-security"}}
+  }
+}
