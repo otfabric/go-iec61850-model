@@ -74,7 +74,7 @@ type FunctionalConstraint string
 const (
 	FCST FunctionalConstraint = "ST" // Status information
 	FCMX FunctionalConstraint = "MX" // Measurands (analogue values)
-	FCSP FunctionalConstraint = "SP" // Setting (outside setting group)
+	FCSP FunctionalConstraint = "SP" // Setting that no setting group holds
 	FCSV FunctionalConstraint = "SV" // Substitution
 	FCCF FunctionalConstraint = "CF" // Configuration
 	FCDC FunctionalConstraint = "DC" // Description
