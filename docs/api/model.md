@@ -552,9 +552,41 @@ type Doc struct {
 }
 ```
 
-Doc holds the documentation identifiers of a definition and, when an NSDoc file was applied, the resolved texts.
+Doc holds the documentation identifiers of a definition and, when an NSDoc file or a doc set (nsd.DocSet) was applied, the resolved texts.
 
-The texts originate from IEC NSDoc files. They are available at run time but are not redistributable; see docs/licensing.md.
+The texts originate from IEC NSDoc files or from a doc set generated locally from the standards. They are available at run time; this repository ships none of them (see docs/licensing.md).
+
+#### func (Doc) Clear
+
+```go
+func (d *Doc) Clear()
+```
+
+Clear removes the applied texts and keeps the identifiers.
+
+#### func (Doc) HasText
+
+```go
+func (d Doc) HasText() bool
+```
+
+HasText reports whether a title or a description was applied.
+
+#### func (Doc) Long
+
+```go
+func (d Doc) Long() string
+```
+
+Long returns the description, or the title when there is no description; "" when no text was applied.
+
+#### func (Doc) Text
+
+```go
+func (d Doc) Text() string
+```
+
+Text returns the title, or the description when there is no title; "" when no text was applied.
 
 ### type Enumeration
 
@@ -606,27 +638,59 @@ FunctionalConstraint is a two-letter functional constraint, e.g. ST or MX. The s
 const (
 	FCST FunctionalConstraint = "ST" // Status information
 	FCMX FunctionalConstraint = "MX" // Measurands (analogue values)
-	FCSP FunctionalConstraint = "SP" // Setpoint
+	FCSP FunctionalConstraint = "SP" // Setting that no setting group holds
 	FCSV FunctionalConstraint = "SV" // Substitution
 	FCCF FunctionalConstraint = "CF" // Configuration
 	FCDC FunctionalConstraint = "DC" // Description
 	FCSG FunctionalConstraint = "SG" // Setting group
 	FCSE FunctionalConstraint = "SE" // Setting group editable
-	FCSR FunctionalConstraint = "SR" // Service response
+	FCSR FunctionalConstraint = "SR" // Service response (service tracking)
 	FCOR FunctionalConstraint = "OR" // Operate received
 	FCBL FunctionalConstraint = "BL" // Blocking
-	FCEX FunctionalConstraint = "EX" // Extended definition
-	FCCO FunctionalConstraint = "CO" // Control
-	FCUS FunctionalConstraint = "US" // Unicast sampled values
-	FCMS FunctionalConstraint = "MS" // Multicast sampled values
-	FCRP FunctionalConstraint = "RP" // Unbuffered report
-	FCBR FunctionalConstraint = "BR" // Buffered report
-	FCLG FunctionalConstraint = "LG" // Log control
-	FCGO FunctionalConstraint = "GO" // GOOSE control
+	FCEX FunctionalConstraint = "EX" // Extended definition (name space)
 )
 ```
 
-Functional constraints of IEC 61850-7-2. The set a profile actually defines comes from its NSD files; these constants are conveniences.
+Functional constraints. The set a profile actually defines comes from its NSD files; these constants are conveniences.
+
+The ACSI functional constraints are those of IEC 61850-7-2:2010 Table 20, which the 7-2 NSD defines too.
+
+```go
+const (
+	FCCO FunctionalConstraint = "CO" // Control service parameters
+	FCUS FunctionalConstraint = "US" // Unicast sampled value control blocks
+	FCMS FunctionalConstraint = "MS" // Multicast sampled value control blocks
+	FCRP FunctionalConstraint = "RP" // Unbuffered report control blocks
+	FCBR FunctionalConstraint = "BR" // Buffered report control blocks
+	FCLG FunctionalConstraint = "LG" // Log control blocks
+	FCGO FunctionalConstraint = "GO" // GOOSE control blocks
+	FCGS FunctionalConstraint = "GS" // GSSE control blocks
+)
+```
+
+SCSM functional constraints of the MMS mapping, IEC 61850-8-1:2011 Figure 4 and its NOTE 1: control service parameters and the control blocks, which 7-2 Edition 2 does not list as FCs.
+
+```go
+const FCXX FunctionalConstraint = "XX"
+```
+
+FCXX is the wildcard functional constraint of IEC 61850-7-2:2010 Table 20, for use in services only. No data attribute has it, and IEC 61850-8-1:2011 does not map it (Figure 4, NOTE 2). It is not [FunctionalConstraint.IsStandard](#func-functionalconstraint-isstandard).
+
+#### func (FunctionalConstraint) IsACSI
+
+```go
+func (fc FunctionalConstraint) IsACSI() bool
+```
+
+IsACSI reports whether fc is one of the twelve data attribute functional constraints of IEC 61850-7-2:2010 Table 20.
+
+#### func (FunctionalConstraint) IsSCSM
+
+```go
+func (fc FunctionalConstraint) IsSCSM() bool
+```
+
+IsSCSM reports whether fc is one of the functional constraints that IEC 61850-8-1:2011 Figure 4 adds for the MMS mapping (CO, RP, LG, BR, GO, GS, MS, US).
 
 #### func (FunctionalConstraint) IsStandard
 
@@ -634,7 +698,7 @@ Functional constraints of IEC 61850-7-2. The set a profile actually defines come
 func (fc FunctionalConstraint) IsStandard() bool
 ```
 
-IsStandard reports whether fc is one of the IEC 61850-7-2 functional constraints listed as constants in this package.
+IsStandard reports whether fc is an ACSI functional constraint ([FunctionalConstraint.IsACSI](#func-functionalconstraint-isacsi)) or an SCSM functional constraint of IEC 61850-8-1 ([FunctionalConstraint.IsSCSM](#func-functionalconstraint-isscsm)). The service-only wildcard FCXX is not.
 
 ### type FunctionalConstraintDef
 
@@ -862,6 +926,14 @@ func (ns *Namespace) Namespaces() []*Namespace
 
 Namespaces returns ns as a one-element slice. It lets a single namespace be passed wherever a source of namespaces is accepted.
 
+#### func (Namespace) Presences
+
+```go
+func (ns *Namespace) Presences() []*PresenceCondition
+```
+
+Presences returns pointers to the presence conditions of every data object, sub data object, data attribute, service parameter and sub data attribute in the namespace, in a stable order: Presence, then DSPresence for data objects. Use it to fill or clear argument texts (PresenceCondition.ArgsText).
+
 ### type NamespaceChange
 
 ```go
@@ -954,6 +1026,10 @@ type PresenceCondition struct {
 	Args string `json:"args,omitempty"`
 	// ArgsID references a documentation text for the argument.
 	ArgsID string `json:"argsID,omitempty"`
+	// ArgsText is the documentation text of ArgsID, e.g. the condition
+	// behind MOcond(1). It is filled when an NSDoc file is applied
+	// (nsd.ApplyDoc) and empty otherwise.
+	ArgsText string `json:"argsText,omitempty"`
 }
 ```
 

@@ -1,0 +1,42 @@
+# Presence condition descriptions.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+AllAtLeastOneGroup	At least one member of each numbered group is present; the groups are independent
+AllOnlyOneGroup	Only one group is present, and then with all of its elements
+AllOrNonePerGroup	Within each group, either all elements are present or none
+AtLeastOne	At least one element of the group is present
+AtMostOne	At most one element of the group is present
+F	Forbidden
+FM	Forbidden when the condition applies, otherwise mandatory
+M	Mandatory
+MAllOrNonePerGroup	The members of each numbered group are present together or not at all, such as the status value of a control with its quality and time stamp
+MF	Mandatory if the stated condition holds, otherwise forbidden
+MFcond	Mandatory if the stated condition holds, otherwise forbidden
+MFln0	Mandatory in the LLN0 logical node, forbidden in all other logical nodes
+MFscaledAV	Mandatory if the analogue value is also provided as a scaled integer, otherwise forbidden
+MFscaledAngV	Mandatory if the angle is also provided as a scaled integer, otherwise forbidden
+MFscaledMagV	Mandatory if the magnitude is also provided as a scaled integer, otherwise forbidden
+MFsubst	Mandatory if substitution is supported, otherwise forbidden
+MO	Mandatory if the stated condition holds, otherwise optional
+MONamPlt	Mandatory if the name plate information differs from that of the containing logical device, otherwise optional
+MORange	Mandatory if range supervision is used for the value, otherwise optional
+MOcdcNs	Mandatory if the common data class comes from a namespace other than that of the logical node, otherwise optional
+MOcond	Mandatory if the stated condition holds, otherwise optional
+MOdataNs	Mandatory if the data object comes from a namespace other than that of its logical node, otherwise optional
+MOenhanced	Mandatory for control models with enhanced security, otherwise optional
+MOln0	Mandatory in the LLN0 logical node, optional in all other logical nodes
+MOlnNs	Mandatory if the logical node namespace differs from that of its logical device, otherwise optional
+MOoperTm	Mandatory if time-activated operation is supported, otherwise optional
+MOrms	Mandatory if the harmonic values are referenced to the rms value, otherwise optional
+MOrootLD	Mandatory in the root logical device, otherwise optional
+MOsbo	Mandatory for select-before-operate control models, otherwise optional
+Mmulti	Mandatory with one or more instances
+MmultiF	One or more instances are mandatory if the stated condition holds, otherwise forbidden
+MmultiRange	One or more instances with numbers within the specified range
+O	Optional
+OF	Optional if the stated condition holds, otherwise forbidden
+OFcond	Optional if the stated condition holds, otherwise forbidden
+OM	Optional if the stated condition holds, otherwise mandatory
+OMSynPh	Optional in general, but mandatory when the logical node provides synchrophasor data
+Omulti	Optional with any number of instances
+OmultiRange	Zero or more instances with numbers within the specified range
+na	Not applicable

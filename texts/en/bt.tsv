@@ -1,0 +1,29 @@
+# Basic type titles.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+BOOLEAN	Boolean value
+Check	Control check conditions
+Currency	Currency code
+Dbpos	Double point position
+EntryID	Log or report entry identifier
+EntryTime	Log or report entry time
+FLOAT32	Single-precision floating-point number
+INT16	Signed 16-bit integer
+INT16U	Unsigned 16-bit integer
+INT32	Signed 32-bit integer
+INT32U	Unsigned 32-bit integer
+INT64	Signed 64-bit integer
+INT8	Signed 8-bit integer
+INT8U	Unsigned 8-bit integer
+ObjRef	Object reference
+Octet64	Octet string of up to 64 octets
+OptFlds	Report optional fields
+PhyComAddr	Physical communication address
+Quality	Quality flags
+SvOptFlds	Sampled value optional fields
+Tcmd	Step command
+Timestamp	Time stamp
+TrgOps	Trigger options
+Unicode255	Unicode string of up to 255 characters
+VisString129	Visible string of up to 129 characters
+VisString255	Visible string of up to 255 characters
+VisString64	Visible string of up to 64 characters

@@ -47,6 +47,9 @@ type Options struct {
 	// Language selects the NSDoc language applied to namespaces by the
 	// package loaders. Empty disables applying documentation.
 	Language string
+	// FallbackDocs is a doc set the package loaders apply after the
+	// NSDoc files, to the titles and descriptions those left empty.
+	FallbackDocs *DocSet
 }
 
 // Option configures parsing.
@@ -112,3 +115,10 @@ func WithSchemaNamespaces(uris ...string) Option {
 // WithLanguage selects the NSDoc language the package loaders apply
 // (default "en"). An empty language disables applying documentation.
 func WithLanguage(lang string) Option { return func(o *Options) { o.Language = lang } }
+
+// WithFallbackDocs makes the package loaders fill the titles and
+// descriptions that the package's own NSDoc files leave empty from set,
+// e.g. official.Docs("en"). The package's NSDoc always wins. The set
+// applies when its language is the [WithLanguage] language (or the set
+// declares none); an empty language disables it, as it disables NSDoc.
+func WithFallbackDocs(set *DocSet) Option { return func(o *Options) { o.FallbackDocs = set } }

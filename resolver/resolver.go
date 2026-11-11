@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/otfabric/go-iec61850-model/catalog"
@@ -82,6 +83,14 @@ const (
 	StepSubDataObject    StepKind = "SubDataObject"
 	StepDataAttribute    StepKind = "DataAttribute"
 	StepSubDataAttribute StepKind = "SubDataAttribute"
+	// StepControlService is a control service structure of a
+	// controllable data object, mapped with FC CO by IEC 61850-8-1:2011
+	// §20.3 and Table 81: SBO, SBOw, Oper and Cancel.
+	StepControlService StepKind = "ControlService"
+	// StepServiceParameter is a parameter of a control service
+	// structure, IEC 61850-8-1:2011 Table 80: ctlVal (typed by the CDC's
+	// service parameter), operTm, origin, ctlNum, T, Test and Check.
+	StepServiceParameter StepKind = "ServiceParameter"
 )
 
 // Step is one element of a resolved path.
@@ -101,6 +110,10 @@ type Step struct {
 	// Instance is the instance number of a numbered data object, e.g.
 	// "1" for Ind1 of the multi-instance data object Ind.
 	Instance string `json:"instance,omitempty"`
+	// Index is the array element index of an indexed path element,
+	// e.g. "3" for phsAHar(3) (IEC 61850-7-2:2010 §6.1.2.3). Name keeps
+	// the element as written, with the index.
+	Index string `json:"index,omitempty"`
 	// Variant is the CDC variant that declares a data attribute, e.g.
 	// "SG" for setVal of SPG/SG.
 	Variant string `json:"variant,omitempty"`
@@ -117,6 +130,11 @@ type Step struct {
 	DeclaredIn string `json:"declaredIn"`
 	// Source is the namespace of DeclaredIn.
 	Source model.NamespaceID `json:"source"`
+	// Doc is the documentation of the element: its IDs and, when an
+	// NSDoc or a doc set was applied to the namespace (for example with
+	// official.DefaultDocumented), its title and description. Control
+	// service structures and their fixed parameters have none.
+	Doc model.Doc `json:"doc,omitzero"`
 }
 
 // Resolution is a resolved model path, from a logical node class down
@@ -144,6 +162,13 @@ type Resolution struct {
 // Leaf returns the last step.
 func (r *Resolution) Leaf() Step { return r.Steps[len(r.Steps)-1] }
 
+// Doc returns the documentation of the leaf.
+func (r *Resolution) Doc() model.Doc { return r.Leaf().Doc }
+
+// Description returns the description of the leaf, or its title when
+// it has no description; "" when no texts were applied.
+func (r *Resolution) Description() string { return r.Leaf().Doc.Long() }
+
 // Path returns the class path, e.g. "MMXU.Hz.mag.f".
 func (r *Resolution) Path() string { return joinSteps(r.Steps, nil) }
 
@@ -156,7 +181,20 @@ func (r *Resolution) DataObjectPath() string {
 // AttributePath returns the attribute part of the path, e.g. "mag.f";
 // empty when the path ends at a data object.
 func (r *Resolution) AttributePath() string {
-	return joinSteps(r.Steps, func(s Step) bool { return s.Kind == StepDataAttribute || s.Kind == StepSubDataAttribute })
+	return joinSteps(r.Steps, func(s Step) bool { return s.Kind.isAttribute() })
+}
+
+// isAttribute reports whether a step of this kind is an attribute: a
+// data attribute, a sub data attribute or, with FC CO, a control
+// service structure or one of its parameters.
+func (k StepKind) isAttribute() bool {
+	switch k {
+	case StepDataAttribute, StepSubDataAttribute, StepControlService, StepServiceParameter:
+		return true
+	case StepLogicalNode, StepDataObject, StepSubDataObject:
+		return false
+	}
+	return false
 }
 
 // Type returns the type of the leaf: the CDC name for a data object, or
@@ -171,10 +209,7 @@ func (r *Resolution) TypeKind() model.TypeKind { return r.Leaf().TypeKind }
 func (r *Resolution) FC() model.FunctionalConstraint { return r.Leaf().FC }
 
 // IsAttribute reports whether the path ends at an attribute.
-func (r *Resolution) IsAttribute() bool {
-	k := r.Leaf().Kind
-	return k == StepDataAttribute || k == StepSubDataAttribute
-}
+func (r *Resolution) IsAttribute() bool { return r.Leaf().Kind.isAttribute() }
 
 // ClassRef returns the class reference of the resolved path, with the
 // leaf FC for attribute paths.
@@ -224,7 +259,32 @@ func (r *Resolver) ResolveString(s string) (*Resolution, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.ResolveClass(ref)
+	res, err := r.ResolveClass(ref)
+	if err != nil && errors.Is(err, model.ErrUnknownLogicalNode) {
+		return nil, r.instanceHint(ref.LNClass, err)
+	}
+	return res, err
+}
+
+// instanceHint explains a failed class lookup of input without "/"
+// whose head is an instance name of a known class ("MMXU1"): an
+// instance reference needs its logical device (IEC 61850-7-2:2010
+// §6.1.2.3, "LDName/LNName[.Name[. ...]]").
+func (r *Resolver) instanceHint(head string, err error) error {
+	n, perr := reference.ParseLNName(head)
+	if perr != nil || n.Class == head {
+		return err
+	}
+	if _, lerr := r.start(n.Class); lerr != nil {
+		return err
+	}
+	var re *model.ResolutionError
+	if errors.As(err, &re) {
+		cp := *re
+		cp.Reason = fmt.Sprintf("%s; %q is an instance name of class %s, and an instance reference needs its logical device (\"LD/%s...\")", re.Reason, head, n.Class, head)
+		return &cp
+	}
+	return fmt.Errorf("%w; %q is an instance name of class %s, and an instance reference needs its logical device", err, head, n.Class)
 }
 
 // ResolveClass resolves a class reference, e.g. "MMXU.Hz.mag.f[MX]".
@@ -297,6 +357,9 @@ type walker struct {
 	cdcs []*model.CommonDataClass // all variants of cdc
 	do   *model.DataObject
 	attr *Step
+	// ctlCDC is the controllable CDC (the variant with service
+	// parameters) while the path is inside a control service.
+	ctlCDC *model.CommonDataClass
 	// doFrom is the namespace that declares the current data object;
 	// typeFrom the namespace from which the type of the current
 	// attribute is referenced. Lookups are scoped to them.
@@ -315,7 +378,7 @@ func (r *Resolver) start(lnClass string) (*walker, error) {
 		return nil, err
 	}
 	w := &walker{r: r, res: &Resolution{LNClass: ln}}
-	w.res.Steps = []Step{{Name: ln.Name, Kind: StepLogicalNode, Type: ln.Name, DeclaredIn: ln.Name, Source: ln.Source}}
+	w.res.Steps = []Step{{Name: ln.Name, Kind: StepLogicalNode, Type: ln.Name, DeclaredIn: ln.Name, Source: ln.Source, Doc: ln.Doc}}
 	return w, nil
 }
 
@@ -356,10 +419,35 @@ func (w *walker) annotate(err error, element string) error {
 	return err
 }
 
-func (w *walker) step(name string, fc model.FunctionalConstraint) error {
+func (w *walker) step(elem string, fc model.FunctionalConstraint) error {
 	if len(w.res.Steps) > w.r.maxDepth {
-		return w.fail(model.ErrLimitExceeded, name, fmt.Sprintf("path deeper than %d elements", w.r.maxDepth), "", "")
+		return w.fail(model.ErrLimitExceeded, elem, fmt.Sprintf("path deeper than %d elements", w.r.maxDepth), "", "")
 	}
+	name, _, indexed, err := reference.SplitIndex(elem)
+	if err != nil {
+		return w.fail(model.ErrInvalidReference, elem, err.Error(), "", "")
+	}
+	if err := w.stepName(name, fc); err != nil {
+		return err
+	}
+	last := &w.res.Steps[len(w.res.Steps)-1]
+	if indexed {
+		// IEC 61850-7-2:2010 §6.1.2.3: "(…)" indicates an array element,
+		// so only an array element takes an index.
+		if !last.IsArray {
+			w.res.Steps = w.res.Steps[:len(w.res.Steps)-1]
+			sentinel := model.ErrUnknownAttribute
+			if last.Kind == StepDataObject {
+				sentinel = model.ErrUnknownDataObject
+			}
+			return w.fail(sentinel, elem, fmt.Sprintf("%s is not an array and takes no index", name), "", "")
+		}
+		last.Name, last.Index = elem, elem[len(name)+1:len(elem)-1]
+	}
+	return nil
+}
+
+func (w *walker) stepName(name string, fc model.FunctionalConstraint) error {
 	switch {
 	case len(w.res.Steps) == 1: // logical node → data object
 		ido, inst, err := w.r.dataObject(w.res.LNClass.Name, name)
@@ -375,6 +463,11 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 	case w.attr == nil: // data object → sub data object or data attribute
 		if sdo, ok := w.cdc.SubDataObject(name); ok {
 			return w.enterDataObject(sdo, StepSubDataObject, w.cdc.Name, w.cdc.Source)
+		}
+		if _, ok := controlServices[name]; ok {
+			if ctl := controllable(w.cdcs); ctl != nil {
+				return w.enterControlService(ctl, name, fc)
+			}
 		}
 		cdc, da, variants, err := w.selectAttribute(name, fc)
 		if err != nil {
@@ -392,7 +485,7 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		w.res.CDC, w.res.Attribute = cdc, da
 		step := Step{
 			Name: name, Kind: StepDataAttribute, Type: typ, TypeKind: kind, FC: da.FC, Presence: da.Presence,
-			IsArray: da.IsArray, Parameterized: param, DeclaredIn: cdc.Key(), Source: cdc.Source, Variant: cdc.Variant,
+			IsArray: da.IsArray, Parameterized: param, DeclaredIn: cdc.Key(), Source: cdc.Source, Variant: cdc.Variant, Doc: da.Doc,
 		}
 		if len(variants) > 1 {
 			// The FC depends on the variant the device realizes.
@@ -401,6 +494,8 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		w.res.Steps = append(w.res.Steps, step)
 		w.attr = &w.res.Steps[len(w.res.Steps)-1]
 		return nil
+	case w.attr.Kind == StepControlService: // control service → service parameter
+		return w.enterServiceParameter(name)
 	default: // attribute → sub data attribute
 		cur := *w.attr
 		if cur.TypeKind != model.TypeKindConstructed {
@@ -422,7 +517,7 @@ func (w *walker) step(name string, fc model.FunctionalConstraint) error {
 		w.res.Attribute = sda
 		w.res.Steps = append(w.res.Steps, Step{
 			Name: name, Kind: StepSubDataAttribute, Type: typ, TypeKind: kind, FC: cur.FC, Presence: sda.Presence,
-			IsArray: sda.IsArray, DeclaredIn: ca.Name, Source: ca.Source,
+			IsArray: sda.IsArray, DeclaredIn: ca.Name, Source: ca.Source, Doc: sda.Doc,
 		})
 		w.attr = &w.res.Steps[len(w.res.Steps)-1]
 		return nil
@@ -449,7 +544,36 @@ func (r *Resolver) dataObject(lnClass, name string) (catalog.InheritedDataObject
 	if berr != nil || !IsMultiInstance(base.Presence) {
 		return ido, "", err
 	}
+	if lo, hi, ok := multiRange(base.Presence); ok {
+		// MmultiRange/OmultiRange(min, max): the instance numbers the
+		// NSD permits, e.g. TmAChr OmultiRange(33, 48) of IEC 61850-7-4.
+		n, cerr := strconv.Atoi(name[i:])
+		if cerr != nil || n < lo || n > hi {
+			return ido, "", &model.ResolutionError{
+				Element: name, Reason: fmt.Sprintf("instance %s of %s is outside the range %d..%d of %s", name[i:], base.Name, lo, hi, base.Presence),
+				Err: model.ErrUnknownDataObject,
+			}
+		}
+	}
 	return base, name[i:], nil
+}
+
+// multiRange returns the bounds of a MmultiRange or OmultiRange
+// condition, whose argument is "min, max".
+func multiRange(p model.PresenceCondition) (lo, hi int, ok bool) {
+	if p.Name != "MmultiRange" && p.Name != "OmultiRange" {
+		return 0, 0, false
+	}
+	a, b, found := strings.Cut(p.Args, ",")
+	if !found {
+		return 0, 0, false
+	}
+	lo, err1 := strconv.Atoi(strings.TrimSpace(a))
+	hi, err2 := strconv.Atoi(strings.TrimSpace(b))
+	if err1 != nil || err2 != nil || lo > hi {
+		return 0, 0, false
+	}
+	return lo, hi, true
 }
 
 func (r *Resolver) lookupDataObject(lnClass, name string) (catalog.InheritedDataObject, error) {
@@ -459,11 +583,17 @@ func (r *Resolver) lookupDataObject(lnClass, name string) (catalog.InheritedData
 	return r.l.DataObject(lnClass, name)
 }
 
+// multiInstance lists the presence conditions of the IEC 61850-7-2
+// NSD that allow numbered instances of a data object.
+var multiInstance = map[string]bool{"Mmulti": true, "Omulti": true, "MmultiRange": true, "OmultiRange": true, "MmultiF": true}
+
 // IsMultiInstance reports whether a presence condition allows numbered
-// instances of a data object (Omulti, Mmulti and their variants).
-func IsMultiInstance(p model.PresenceCondition) bool {
-	return strings.Contains(strings.ToLower(p.Name), "multi")
-}
+// instances of a data object: Mmulti, Omulti, MmultiRange, OmultiRange
+// or MmultiF.
+//
+// A bare name without an instance number also resolves: the
+// Data-Instance-ID of IEC 61850-7-2:2010 §22.2 is optional.
+func IsMultiInstance(p model.PresenceCondition) bool { return multiInstance[p.Name] }
 
 // selectAttribute finds a data attribute among the variants of the
 // current CDC, by exact name or by base name (setMag also matches the
@@ -490,6 +620,10 @@ func (w *walker) selectAttribute(name string, fc model.FunctionalConstraint) (*m
 	}
 	switch {
 	case len(all) == 0:
+		if ctl := controllable(w.cdcs); ctl != nil && isControlParameter(ctl, name) {
+			return nil, nil, nil, w.fail(model.ErrUnknownAttribute, name,
+				fmt.Sprintf("%s is a control service parameter of CDC %s; IEC 61850-8-1 §20.3 maps it as Oper.%s[CO] (also SBOw, Cancel)", name, ctl.Name, name), "", "")
+		}
 		return nil, nil, nil, w.fail(model.ErrUnknownAttribute, name, fmt.Sprintf("CDC %s has no member %s", w.cdc.Name, name), "", "")
 	case len(found) == 0:
 		fcs := make([]string, len(all))
@@ -522,7 +656,7 @@ func (w *walker) enterDataObject(do *model.DataObject, kind StepKind, declaredIn
 	w.cdc, w.cdcs, w.do, w.doFrom = cdc, cdcs, do, src
 	w.res.CDC = cdc
 	w.res.Steps = append(w.res.Steps, Step{
-		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src,
+		Name: do.Name, Kind: kind, Type: do.Type, Presence: do.Presence, IsArray: do.IsArray, DeclaredIn: declaredIn, Source: src, Doc: do.Doc,
 	})
 	return nil
 }
@@ -533,6 +667,9 @@ func (w *walker) finish() error {
 		return nil
 	}
 	leaf := w.res.Leaf()
+	if leaf.Kind == StepControlService && leaf.TypeKind == model.TypeKindConstructed {
+		return nil // an 8-1 structure, not a constructed type of a namespace
+	}
 	var err error
 	switch leaf.TypeKind {
 	case model.TypeKindEnumerated:
@@ -640,6 +777,9 @@ func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.Functi
 			}
 		}
 	}
+	if fc == model.FCCO && controllable(variants) != nil {
+		return true, nil
+	}
 	for i := range variants[0].SubDataObjects {
 		ok, err := r.hasFC(variants[0].Source, variants[0].SubDataObjects[i].Type, fc, visiting)
 		if err != nil || ok {
@@ -703,6 +843,16 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 			return nil, err
 		}
 		members = ms
+	case leaf.Kind == StepControlService && leaf.TypeKind == model.TypeKindConstructed:
+		typeKey = "ctl:" + leaf.Name
+		for _, p := range controlServices[leaf.Name] {
+			// A CDC without a ctlVal service parameter (the deprecated
+			// 7-410 TAG declares only operTm) has no ctlVal member.
+			if p == "ctlVal" && ctlVal(res.CDC) == nil {
+				continue
+			}
+			members = append(members, member{name: p})
+		}
 	case leaf.TypeKind == model.TypeKindConstructed:
 		typeKey = "ca:" + leaf.Type
 		for _, m := range res.Constructed.SubDataAttributes {
@@ -766,6 +916,14 @@ func (r *Resolver) cdcMembers(from model.NamespaceID, name string, fc model.Func
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].pos < out[j].pos })
+	if (fc == "" || fc == model.FCCO) && controllable(variants) != nil {
+		// The FC=CO control structures of IEC 61850-8-1:2011 §20.3 follow
+		// the data attributes. Which of them a device has depends on its
+		// ctlModel (Table 81); the model lists all of them.
+		for _, svc := range controlServiceOrder {
+			out = append(out, member{name: svc, fc: model.FCCO})
+		}
+	}
 	return out, nil
 }
 

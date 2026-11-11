@@ -28,6 +28,30 @@ NSD files and their documentation texts are IEC content. This package reads them
 
 ```go
 const (
+	KeyLogicalNode          = "LN"   // LN:<class>, abstract or concrete; title
+	KeyDataObject           = "DO"   // DO:<class>.<data object>; description
+	KeyCDC                  = "CDC"  // CDC:<cdc>, all variants; title
+	KeyDataAttribute        = "DA"   // DA:<cdc>.<attribute>, device name (setMag for _setMag); description
+	KeySubDataObject        = "SDO"  // SDO:<cdc>.<sub data object>; description
+	KeyServiceParameter     = "SP"   // SP:<cdc>.<service parameter>; description
+	KeyConstructedAttribute = "CA"   // CA:<type>; title
+	KeySubDataAttribute     = "SDA"  // SDA:<type>.<member>; description
+	KeyEnumeration          = "ENUM" // ENUM:<enumeration>; title
+	KeyLiteral              = "LIT"  // LIT:<enumeration>.<literal>; description
+	KeyFunctionalConstraint = "FC"   // FC:<abbreviation>; title
+	KeyBasicType            = "BT"   // BT:<type>; title
+	KeyPresenceCondition    = "PC"   // PC:<condition>; description
+	KeyTriggerOption        = "TRG"  // TRG:<abbreviation>; title
+	KeyAbbreviation         = "ABBR" // ABBR:<name part>; description
+)
+```
+
+Doc set keys name a model element by kind and path, independently of the namespace release, e.g. "LN:MMXU", "DO:MMXU.TotW", "CDC:MV", "DA:MV.mag" or "FC:ST". Documentation IDs (titleID, descID) differ between releases of a namespace; a path key does not, so one doc set serves every release that defines the element.
+
+A key may end in "#title" or "#desc" to name the field explicitly; without it the kind's default field is used (see [DocKind](#type-dockind)).
+
+```go
+const (
 	DefaultMaxDocumentSize     = 32 << 20  // 32 MiB per XML document
 	DefaultMaxArchiveSize      = 256 << 20 // 256 MiB uncompressed per archive
 	DefaultMaxArchiveEntries   = 1024
@@ -65,7 +89,39 @@ SchemaNamespace2016 is the XML namespace of NSD documents defined by IEC 61850-7
 func ApplyDoc(ns *model.Namespace, doc *NSDoc) int
 ```
 
-ApplyDoc fills the Title and Description fields of every definition in ns from doc and returns the number of texts applied. It modifies ns, so call it before the namespace is added to a catalog.
+ApplyDoc fills the Title and Description fields of every definition in ns from doc, and the ArgsText of every presence condition whose presCondArgsID or dsPresCondArgsID doc names, and returns the number of texts applied. It modifies ns, so call it before the namespace is added to a catalog.
+
+### func ApplyDocSet
+
+```go
+func ApplyDocSet(ns *model.Namespace, set *DocSet) int
+```
+
+ApplyDocSet fills the Title and Description fields that are empty in ns from set, by element path, and returns the number of texts applied. Texts an NSDoc already applied are kept, so applying a set after [ApplyDoc](#func-applydoc) only fills the gaps. It modifies ns, so call it before the namespace is added to a catalog.
+
+### func DocKey
+
+```go
+func DocKey(kind string, path ...string) string
+```
+
+DocKey returns the doc set key of a kind and path elements, e.g. DocKey(KeyDataObject, "MMXU", "TotW") = "DO:MMXU.TotW".
+
+### func DocKeys
+
+```go
+func DocKeys(ns *model.Namespace) []string
+```
+
+DocKeys returns the doc set keys of every element of ns, sorted and without duplicates.
+
+### func EncodeDocSets
+
+```go
+func EncodeDocSets(sets ...*DocSet) ([]byte, error)
+```
+
+EncodeDocSets returns the JSON form of the sets, with sorted keys.
 
 ### func ParseNamespace
 
@@ -105,6 +161,138 @@ type Attr struct {
 ```
 
 Attr is an XML attribute.
+
+### type DocKind
+
+```go
+type DocKind struct {
+	Prefix string
+	// Title reports whether the default field is the title; otherwise
+	// it is the description.
+	Title bool
+}
+```
+
+DocKind describes a doc set key kind: its prefix and the field a key without "#title" or "#desc" fills.
+
+#### func DocKinds
+
+```go
+func DocKinds() []DocKind
+```
+
+DocKinds returns the key kinds, sorted by prefix.
+
+### type DocSet
+
+```go
+type DocSet struct {
+	// contains filtered or unexported fields
+}
+```
+
+DocSet holds documentation texts keyed by model path, in one language. Load one with [ReadDocSets](#func-readdocsets) or [LoadDocSets](#func-loaddocsets), build one with [NewDocSet](#func-newdocset) and [DocSet.Set](#func-docset-set), or convert an NSDoc file whose Doc IDs are path keys with [DocSetFromNSDoc](#func-docsetfromnsdoc). Apply it with [ApplyDocSet](#func-applydocset) or, as a fallback behind a package's own NSDoc, with [WithFallbackDocs](#func-withfallbackdocs).
+
+A DocSet is not safe for concurrent modification; once built it may be read and applied concurrently.
+
+#### func DocSetFromNSDoc
+
+```go
+func DocSetFromNSDoc(d *NSDoc) (*DocSet, error)
+```
+
+DocSetFromNSDoc converts an NSDoc file whose Doc IDs are doc set keys (an NSDoc-compatible doc set, e.g. \<Doc id="DO:MMXU.TotW">) into a DocSet. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) on the first ID that is not a key, e.g. for an IEC NSDoc keyed by documentation IDs: apply those with [ApplyDoc](#func-applydoc).
+
+#### func LoadDocSets
+
+```go
+func LoadDocSets(path string) ([]*DocSet, error)
+```
+
+LoadDocSets reads doc sets from a file; see [ReadDocSets](#func-readdocsets). Errors wrap [model.ErrSourceUnavailable](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrSourceUnavailable) when the file cannot be read.
+
+#### func NewDocSet
+
+```go
+func NewDocSet(lang string) *DocSet
+```
+
+NewDocSet returns an empty doc set for the language, e.g. "en".
+
+#### func ReadDocSets
+
+```go
+func ReadDocSets(data []byte) ([]*DocSet, error)
+```
+
+ReadDocSets parses doc sets: the JSON form (optionally gzip compressed), {"format": "otfabric-docset/1", "sets": \[{"lang", "texts": {key: {"title", "description"}}}]}, or an NSDoc-compatible XML file with path keys as Doc IDs. Input is bounded by DefaultMaxDocumentSize after decompression. Errors wrap [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) or [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded).
+
+#### func SelectDocSet
+
+```go
+func SelectDocSet(sets []*DocSet, lang string) *DocSet
+```
+
+SelectDocSet returns the set of the language among sets, or nil.
+
+#### func (DocSet) Keys
+
+```go
+func (s *DocSet) Keys() []string
+```
+
+Keys returns the keys (without field suffix) in sorted order.
+
+#### func (DocSet) Lang
+
+```go
+func (s *DocSet) Lang() string
+```
+
+Lang returns the language code of the set.
+
+#### func (DocSet) Len
+
+```go
+func (s *DocSet) Len() int
+```
+
+Len returns the number of keys.
+
+#### func (DocSet) Set
+
+```go
+func (s *DocSet) Set(key, text string) error
+```
+
+Set stores text under key. A key with "#title" or "#desc" sets that field; otherwise the default field of the key kind. White space is normalized. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) for a malformed key.
+
+#### func (DocSet) Source
+
+```go
+func (s *DocSet) Source() string
+```
+
+Source names where the set was loaded from, if known.
+
+#### func (DocSet) Text
+
+```go
+func (s *DocSet) Text(key string) (DocText, bool)
+```
+
+Text returns the texts of a key, e.g. "DO:MMXU.TotW".
+
+### type DocText
+
+```go
+type DocText struct {
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+```
+
+DocText is the title and description of one doc set entry.
 
 ### type Document
 
@@ -308,6 +496,14 @@ type Option func(*Options)
 
 Option configures parsing.
 
+#### func WithFallbackDocs
+
+```go
+func WithFallbackDocs(set *DocSet) Option
+```
+
+WithFallbackDocs makes the package loaders fill the titles and descriptions that the package's own NSDoc files leave empty from set, e.g. official.Docs("en"). The package's NSDoc always wins. The set applies when its language is the [WithLanguage](#func-withlanguage) language (or the set declares none); an empty language disables it, as it disables NSDoc.
+
 #### func WithLanguage
 
 ```go
@@ -417,6 +613,9 @@ type Options struct {
 	// Language selects the NSDoc language applied to namespaces by the
 	// package loaders. Empty disables applying documentation.
 	Language string
+	// FallbackDocs is a doc set the package loaders apply after the
+	// NSDoc files, to the titles and descriptions those left empty.
+	FallbackDocs *DocSet
 }
 ```
 

@@ -66,40 +66,70 @@ const (
 // github.com/otfabric/go-iec61850.
 type FunctionalConstraint string
 
-// Functional constraints of IEC 61850-7-2. The set a profile actually
-// defines comes from its NSD files; these constants are conveniences.
+// Functional constraints. The set a profile actually defines comes from
+// its NSD files; these constants are conveniences.
+//
+// The ACSI functional constraints are those of IEC 61850-7-2:2010
+// Table 20, which the 7-2 NSD defines too.
 const (
 	FCST FunctionalConstraint = "ST" // Status information
 	FCMX FunctionalConstraint = "MX" // Measurands (analogue values)
-	FCSP FunctionalConstraint = "SP" // Setpoint
+	FCSP FunctionalConstraint = "SP" // Setting that no setting group holds
 	FCSV FunctionalConstraint = "SV" // Substitution
 	FCCF FunctionalConstraint = "CF" // Configuration
 	FCDC FunctionalConstraint = "DC" // Description
 	FCSG FunctionalConstraint = "SG" // Setting group
 	FCSE FunctionalConstraint = "SE" // Setting group editable
-	FCSR FunctionalConstraint = "SR" // Service response
+	FCSR FunctionalConstraint = "SR" // Service response (service tracking)
 	FCOR FunctionalConstraint = "OR" // Operate received
 	FCBL FunctionalConstraint = "BL" // Blocking
-	FCEX FunctionalConstraint = "EX" // Extended definition
-	FCCO FunctionalConstraint = "CO" // Control
-	FCUS FunctionalConstraint = "US" // Unicast sampled values
-	FCMS FunctionalConstraint = "MS" // Multicast sampled values
-	FCRP FunctionalConstraint = "RP" // Unbuffered report
-	FCBR FunctionalConstraint = "BR" // Buffered report
-	FCLG FunctionalConstraint = "LG" // Log control
-	FCGO FunctionalConstraint = "GO" // GOOSE control
+	FCEX FunctionalConstraint = "EX" // Extended definition (name space)
 )
 
-var standardFCs = map[FunctionalConstraint]bool{
+// FCXX is the wildcard functional constraint of IEC 61850-7-2:2010
+// Table 20, for use in services only. No data attribute has it, and
+// IEC 61850-8-1:2011 does not map it (Figure 4, NOTE 2). It is not
+// [FunctionalConstraint.IsStandard].
+const FCXX FunctionalConstraint = "XX"
+
+// SCSM functional constraints of the MMS mapping, IEC 61850-8-1:2011
+// Figure 4 and its NOTE 1: control service parameters and the control
+// blocks, which 7-2 Edition 2 does not list as FCs.
+const (
+	FCCO FunctionalConstraint = "CO" // Control service parameters
+	FCUS FunctionalConstraint = "US" // Unicast sampled value control blocks
+	FCMS FunctionalConstraint = "MS" // Multicast sampled value control blocks
+	FCRP FunctionalConstraint = "RP" // Unbuffered report control blocks
+	FCBR FunctionalConstraint = "BR" // Buffered report control blocks
+	FCLG FunctionalConstraint = "LG" // Log control blocks
+	FCGO FunctionalConstraint = "GO" // GOOSE control blocks
+	FCGS FunctionalConstraint = "GS" // GSSE control blocks
+)
+
+var acsiFCs = map[FunctionalConstraint]bool{
 	FCST: true, FCMX: true, FCSP: true, FCSV: true, FCCF: true, FCDC: true,
 	FCSG: true, FCSE: true, FCSR: true, FCOR: true, FCBL: true, FCEX: true,
-	FCCO: true, FCUS: true, FCMS: true, FCRP: true, FCBR: true, FCLG: true,
-	FCGO: true,
 }
 
-// IsStandard reports whether fc is one of the IEC 61850-7-2 functional
-// constraints listed as constants in this package.
-func (fc FunctionalConstraint) IsStandard() bool { return standardFCs[fc] }
+var scsmFCs = map[FunctionalConstraint]bool{
+	FCCO: true, FCUS: true, FCMS: true, FCRP: true, FCBR: true, FCLG: true,
+	FCGO: true, FCGS: true,
+}
+
+// IsStandard reports whether fc is an ACSI functional constraint
+// ([FunctionalConstraint.IsACSI]) or an SCSM functional constraint of
+// IEC 61850-8-1 ([FunctionalConstraint.IsSCSM]). The service-only
+// wildcard [FCXX] is not.
+func (fc FunctionalConstraint) IsStandard() bool { return acsiFCs[fc] || scsmFCs[fc] }
+
+// IsACSI reports whether fc is one of the twelve data attribute
+// functional constraints of IEC 61850-7-2:2010 Table 20.
+func (fc FunctionalConstraint) IsACSI() bool { return acsiFCs[fc] }
+
+// IsSCSM reports whether fc is one of the functional constraints that
+// IEC 61850-8-1:2011 Figure 4 adds for the MMS mapping (CO, RP, LG, BR,
+// GO, GS, MS, US).
+func (fc FunctionalConstraint) IsSCSM() bool { return scsmFCs[fc] }
 
 // PresenceCondition is the presence condition of a data object or
 // attribute, with its optional argument, e.g. {Name: "M"} or
@@ -111,6 +141,10 @@ type PresenceCondition struct {
 	Args string `json:"args,omitempty"`
 	// ArgsID references a documentation text for the argument.
 	ArgsID string `json:"argsID,omitempty"`
+	// ArgsText is the documentation text of ArgsID, e.g. the condition
+	// behind MOcond(1). It is filled when an NSDoc file is applied
+	// (nsd.ApplyDoc) and empty otherwise.
+	ArgsText string `json:"argsText,omitempty"`
 }
 
 // IsZero reports whether no presence condition is set.

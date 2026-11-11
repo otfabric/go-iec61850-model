@@ -58,6 +58,16 @@ func Catalog() (*catalog.Catalog, error) {
 // load parses the embedded catalog: gzip-compressed JSON, or plain JSON
 // as generated before v0.7.0.
 func load(data []byte) (*catalog.Catalog, error) {
+	nss, err := decodeNamespaces(data)
+	if err != nil {
+		return nil, err
+	}
+	return newCatalog(nss)
+}
+
+// decodeNamespaces parses the namespaces of the embedded catalog. Each
+// call returns fresh values that the caller may modify.
+func decodeNamespaces(data []byte) ([]*model.Namespace, error) {
 	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b {
 		zr, err := gzip.NewReader(bytes.NewReader(data))
 		if err != nil {
@@ -73,8 +83,12 @@ func load(data []byte) (*catalog.Catalog, error) {
 	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("%w: embedded catalog: %v", model.ErrInvalidNSD, err)
 	}
-	srcs := make([]catalog.Source, len(doc.Namespaces))
-	for i, ns := range doc.Namespaces {
+	return doc.Namespaces, nil
+}
+
+func newCatalog(nss []*model.Namespace) (*catalog.Catalog, error) {
+	srcs := make([]catalog.Source, len(nss))
+	for i, ns := range nss {
 		srcs[i] = ns
 	}
 	return catalog.New(srcs...)

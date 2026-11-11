@@ -1,0 +1,591 @@
+# Logical node class titles.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+AATS	Automatic transfer switching
+ACTM	Control mode selection
+AEBR	Electrical braking control
+AEMC	Electrical machine management
+AENC	Energy control
+AENN	Energy minimum limit
+AENX	Energy maximum limit
+AEPC	Emergency power control
+AESC	Electrical machine operating mode control
+AFCR	Field current regulator
+AFFL	Field flashing control
+AFLK	Flicker control
+AFSI	Automatic fault isolation
+AFSL	Automatic fault location
+AFVR	Field voltage regulator
+AJCL	Joint control of units
+AMSR	Converter set-point regulation
+ANCR	Neutral current regulator
+AOEL	Overexcitation limiter
+AOMN	Opening minimum limit
+AOMX	Opening maximum limit
+AOPC	Opening control
+APFC	Power factor control
+APFL	Power factor limit
+APOD	Power oscillation damping
+APSF	Power system stabilizer (multi-band type)
+APSS	Power system stabilizer
+APST	Power system stabilizer (dual-input type)
+AQCL	Generation reactive power control function
+AQMN	Reactive power minimum limit
+AQMX	Reactive power maximum limit
+ARCO	Reactive power controller
+ARIS	Neutral resistor control
+AROP	Balancing reserve operation
+ARPC	Reactive power compensation control
+ARUB	Power run-up and run-back
+ASCL	Stator current limiter
+ASEQ	Automatic sequencer
+ASMN	Speed minimum limit
+ASMX	Speed maximum limit
+ASPC	Speed control
+ASRC	Service restoration control
+ASWI	Automatic switching
+ATCC	Automatic tap changer controller
+AUEL	Underexcitation limiter
+AVCO	Voltage controller
+AVFL	Volts per hertz limiter
+AVMN	Voltage minimum limit
+AVMX	Voltage maximum limit
+AVOC	Generation voltage control function
+AWGC	Active power control
+AWMN	Generation active power minimum limit function
+AWMX	Generation active power maximum limit function
+ActivePowerLN	Active power function (abstract)
+ActivePowerLimitLN	Active power limit function (abstract)
+ActivePowerOpFunLN	Active power operating function (abstract)
+AlarmTripControlLN	Alarm and trip control (abstract)
+AllEnergyDEResourceLN	Distributed energy resource base (abstract)
+AnalogueControlOpFunLN	Analog control operating function (abstract)
+AutomatedSequenceLN	Automated sequence
+AutomaticControlLN	Automatic control (abstract)
+AutomaticSwitchingLN	Automatic switching sequence
+BaseConverterLN	Power converter base (abstract)
+BasicAssetOpModeLN	Asset operating mode (abstract)
+BatteryChargerLN	Battery charger (abstract)
+BatteryLN	Battery (abstract)
+BulkGenerationMgmtFunLN	Bulk generation management function (abstract)
+BulkGenerationOpFunLN	Bulk generation operating function (abstract)
+CALH	Alarm handling
+CCAP	Series capacitor bank control
+CCGR	Cooling group control
+CFAN	Fan control
+CFPC	Converter power flow control
+CFVL	Fluid valve position controller
+CHCY	Direct hydraulic cylinder controller
+CHTR	Heater control
+CILO	Interlocking
+CJCL	Joint control interface
+CPMP	Pump control
+CPOW	Point-on-wave switching
+CREL	Relay control
+CSWI	Switch controller
+CSYN	Synchronizer controller
+CTGR	Turning gear control
+CVLV	Valve control
+ClockPortLN	Clock synchronization port (abstract)
+ClutchLN	Clutch (abstract)
+CmdEquipmentInterfaceLN	Commandable equipment interface (abstract)
+CommonLN	Common logical node (abstract)
+ConductorLN	Line conductor (abstract)
+ControlEqLN	Control equipment (abstract)
+ControlEquipmentInterfaceLN	Control equipment interface (abstract)
+ControlledLN	Controlled function (abstract)
+ControllerLN	Controller (abstract)
+ControllingLN	Controlling function (abstract)
+CurrentProtectionLN	Current protection (abstract)
+DAGC	Automatic generation control
+DBAT	Battery system
+DCCT	Generation cost parameters
+DCHB	Boiler
+DCHC	Combined heat and power controller
+DCIP	Reciprocating engine
+DCST	Generation operating cost
+DCTE	Cease to energize and return to service
+DCTS	Thermal storage
+DECP	Electrical connection point
+DERConverterLN	DER power converter (abstract)
+DER_ActualPowerInformationLN	DER actual power information (abstract)
+DER_GeneratorLN	DER generator (abstract)
+DER_LoadLN	DER load (abstract)
+DER_NameplateRatingsLN	DER nameplate ratings (abstract)
+DER_OperationalSettingsLN	DER operational settings (abstract)
+DER_StateAbstractLN	DER operating state (abstract)
+DER_StorageLN	DER storage (abstract)
+DEResourceLN	Distributed energy resource (abstract)
+DEXC	DER excitation system
+DFCL	Fuel cell controller
+DFPF	Fixed power factor
+DFPM	Fuel processor module
+DGEN	Distributed generator
+DHFT	High frequency ride-through
+DHFW	High frequency active power response
+DHVT	High voltage ride-through
+DINV	Inverter
+DISL	Islanding detection
+DLFT	Low frequency ride-through
+DLFW	Low frequency active power response
+DLOD	Distributed load
+DLVT	Low voltage ride-through
+DMDR	Aggregated distributed resources
+DPCC	Point of common coupling
+DPMC	Plant power management controller
+DPVA	Photovoltaic array
+DPVC	Photovoltaic array controller
+DPVM	Photovoltaic module ratings
+DRChannelLN	Disturbance recorder channel (abstract)
+DRGS	Dynamic reactive current support
+DRTF	Rectifier and converter characteristics
+DSTK	Fuel cell stack
+DSTO	Energy storage
+DTCD	Coordinated storage charging and discharging
+DTRC	Solar tracking controller
+DVAR	Fixed reactive power
+DVER	Virtual electrical reference
+DVVR	Volt-var function
+DVWC	Volt-watt function
+DWFL	Active power following
+DWGC	Active power operating setpoint
+DWMN	DER active power minimum limit
+DWMX	DER active power maximum limit
+DWVR	Watt-var function
+DecelerationLN	Deceleration device (abstract)
+DomainLN	Domain logical node (abstract)
+EBCF	Block coordination function
+EBRG	Thermal unit bearing
+ECTH	Thermal unit clutch
+EEXT	Thermal unit excitation
+EFCV	Flow control valve
+EFLC	Flow control
+EFMN	Flow minimum limit
+EFMX	Flow maximum limit
+EGEN	Thermal unit generator
+EGOV	Thermal unit governor
+EGTM	Gas turbine management
+EGTU	Gas turbine
+EJCM	Thermal joint control management
+ELRC	Load range control
+EPMN	Pressure minimum limit
+EPMX	Pressure maximum limit
+EPRC	Pressure control
+ESCV	Stop and control valve
+ESMF	Thermal unit synchronous machine field
+ESPD	Thermal unit speed monitoring
+ESSL	Thermal unit shaft seal
+ESTM	Steam turbine management
+ESTU	Steam turbine
+ETGR	Thermal unit turning gear
+ETMN	Temperature minimum limit
+ETMX	Temperature maximum limit
+ETPC	Temperature control
+ETRM	Thermal unit mechanical transmission
+ETSC	Thermal turbine sequence control
+EUMC	Thermal unit management control
+EUNT	Thermal generating unit
+EUSC	Thermal unit sequence control
+EarthfaultProtectionLN	Earth fault protection (abstract)
+ElectricalContextReferenceLN	Electrical context reference (abstract)
+ElectricalOpFunLN	Electrical operating function (abstract)
+ElectricalReferenceLN	Electrical reference (abstract)
+ElectricalRotatingMachineLN	Electrical rotating machine (abstract)
+ElectricityMgmtFunLN	Electricity management function (abstract)
+EmergencyPowerControl_PowerRunUpRunBackLN	Emergency power control and run-up/run-back (abstract)
+EnergyLN	Energy accounting (abstract)
+EnergyOpFunLN	Energy operating function (abstract)
+EquipmentInterfaceLN	Equipment interface (abstract)
+ExcitationOpFunLN	Excitation operating function (abstract)
+ExcitationSystemLN	Excitation system (abstract)
+FACTSandPowerConversionLN	FACTS and power conversion (abstract)
+FCNT	Counter
+FCSD	Curve shape description
+FDBF	Dead band filter
+FFIL	Generic filter
+FFUN	Generic function block
+FHBT	Heartbeat
+FLIM	Limiter
+FMTX	Logic matrix
+FPID	PID regulator
+FRMP	Ramp function
+FSCC	Schedule controller
+FSCH	Schedule
+FSPT	Set-point control
+FXOT	Over-threshold detection
+FXPS	Function priority status
+FXUT	Under-threshold detection
+FlowForThermalPowerOpFunLN	Thermal flow operating function (abstract)
+FrequencyActivePowerLN	Frequency-active power function (abstract)
+FrequencyProtectionLN	Frequency protection (abstract)
+FunctionLN	Function logical node (abstract)
+FunctionOutputLN	Function with output (abstract)
+GAPC	Generic automatic process control
+GGIO	Generic process input/output
+GLOG	Generic log
+GRST	Operational restriction tagging
+GSAL	Security violation supervision
+GTMO	Maintenance lockout and tag management
+GTSK	Task manager
+GUNT	Generic generating unit
+GeneratingUnitMgmtFunLN	Generating unit management function (abstract)
+GeneratorNameplateRatingsLN	Generator nameplate ratings (abstract)
+GeneratorProtectionLN	Generator protection (abstract)
+GeneratorUnitLN	Generator unit (abstract)
+HBRG	Hydro unit bearing
+HCNL	Canal
+HCOM	Combinator
+HCSW	Spillway crest equipment
+HCTH	Hydro unit clutch
+HCTN	Counter-jet braking nozzle
+HDAM	Dam
+HDFL	Jet deflector
+HDLS	Dam leakage supervision
+HEBR	Hydro unit electrical brake
+HEXT	Hydro unit excitation
+HFLC	Water flow control
+HFMN	Water flow minimum limit
+HFMX	Water flow maximum limit
+HGEN	Hydro unit generator
+HGOV	Hydro unit governor
+HGPI	Gate position indicator
+HGTE	Gate
+HHDM	Hydropower device management
+HITG	Intake gate
+HJCL	Hydro joint control
+HJCM	Hydro joint control management
+HLKG	Leakage supervision
+HLMN	Level minimum limit
+HLMX	Level maximum limit
+HLVC	Level control
+HLVL	Water level indicator
+HMBR	Mechanical brake
+HMMC	Mechanical machine management control
+HNDL	Needle valve
+HNDM	Needle management
+HNHD	Net head
+HOTP	Protection against dam overtopping
+HPSK	Penstock
+HPYM	Auxiliary starting motor
+HRES	Reservoir
+HSEQ	Start and stop sequencer
+HSMF	Hydro unit synchronous machine field
+HSPD	Hydro unit speed monitoring
+HSSL	Hydro unit shaft seal
+HSST	Hydro surge tank
+HTGV	Guide vanes
+HTRB	Runner blades
+HTRK	Trash rack
+HTRM	Hydro unit mechanical transmission
+HTSC	Hydro turbine sequence control
+HTUR	Hydro turbine
+HUMC	Hydro unit management control
+HUNT	Hydro generating unit
+HUSC	Hydro unit sequence control
+HVLV	Hydro valve
+HWCL	Water control
+HarmonicsLN	Harmonics measurement (abstract)
+HydroControlLN	Hydro control device (abstract)
+HydroNonControlLN	Hydro passive structure (abstract)
+HydroOpFunLN	Hydro operating function (abstract)
+HydroOperatingDeviceLN	Hydro operating device (abstract)
+HysteresisSnapshotLN	Hysteresis and snapshot function (abstract)
+IARC	Archiving
+IFIR	Fire detection and alarm
+IHMI	Human machine interface
+IHND	Local hand interface
+ISAF	Safety alarm function
+ITCI	Telecontrol interface
+ITMI	Telemonitoring interface
+ITPC	Teleprotection communication interface
+InstrumentTransformerLN	Instrument transformer (abstract)
+JointControlMgmtFunLN	Joint control management function (abstract)
+KBRP	Mechanical brake pad
+KCTH	Mechanical clutch
+KDFL	Flow deflector
+KFAN	Fan
+KFIL	Filter
+KFIM	Fire fighting system interface
+KFLV	Fuel delivery system
+KFSL	Fluid sealing device
+KFUL	Fuel consumption and characteristics
+KFVL	Controllable fluid valve
+KGTE	Gate (non-controlled equipment)
+KHCY	Hydraulic cylinder
+KHTR	Heater
+KILL	Illumination
+KPBP	Penstock burst protection
+KPMP	Pump
+KSPP	Rotational overspeed and underspeed protection
+KTGR	Turning gear
+KTGV	Turbine guide vanes
+KTNK	Tank
+KTOW	Tower
+KTRB	Turbine runner blades
+KVLV	Valve
+KVSL	Valve seal
+LBRI	Network bridge
+LBSP	Bridge port spanning tree state
+LCCH	Physical communication channel supervision
+LCMF	Multicast address filter
+LCVF	VLAN filter
+LGOS	GOOSE subscription supervision
+LLN0	Logical device common node
+LPCP	Physical communication port
+LPHD	Physical device information
+LPLD	Port link layer discovery
+LPMS	Port mirroring session
+LSVS	Sampled values subscription supervision
+LTIM	Time management
+LTMS	Time master supervision
+LTPC	Precision time protocol clock
+LTPP	Precision time protocol clock port
+LTRK	Service tracking
+LTTC	Transparent clock
+LTTP	Transparent clock port
+LevelOpFunLN	Water level operating function (abstract)
+LineSupervisionLN	Line insulation supervision (abstract)
+LoadNameplateRatingsLN	Load nameplate ratings (abstract)
+LoadUnitLN	Load unit (abstract)
+LowPassFilterOnFunctionInputLN	Function input low-pass filter (abstract)
+LowPassFilterOnFunctionOutputLN	Function output low-pass filter (abstract)
+MENV	Environmental measurement
+MFLK	Flicker measurement
+MFLW	Flow measurement
+MHAI	Harmonics and interharmonics
+MHAN	Non-phase harmonics and interharmonics
+MHET	Heat measurement
+MHYD	Hydrological measurement
+MMDC	DC measurement
+MMET	Meteorological measurement
+MMTN	Non-phase energy metering
+MMTR	Three-phase energy metering
+MMXN	Non-phase measurement
+MMXU	Three-phase measurement
+MSQI	Sequence and imbalance
+MachineBearingLN	Machine bearing (abstract)
+MachineSpeedMonitoringLN	Machine speed monitoring (abstract)
+MechTransmissionLN	Mechanical transmission (abstract)
+MechanicalMachineMgmtFunLN	Mechanical machine management function (abstract)
+MechanicalOpFunLN	Mechanical operating function (abstract)
+MediaSupervisionLN	Media supervision (abstract)
+MotorStartupProtectionLN	Motor startup protection (abstract)
+NonControlEqLN	Non-controllable equipment (abstract)
+NonProcessControllingEquipmentInterfaceLN	Controllable non-process equipment interface (abstract)
+NonProcessInterfaceLN	Non-process equipment interface (abstract)
+NonStorageOperationalSettingsLN	Non-storage operational settings (abstract)
+OnOffControlAssetLN	On/off controllable asset (abstract)
+OnOffControlEqLN	On/off controllable equipment (abstract)
+OnOffControllerLN	On/off controller (abstract)
+OnOffNonControlEqLN	On/off non-controllable equipment (abstract)
+OpenCloseControllerLN	Open/close controller (abstract)
+OpenClosedControlAssetLN	Open/closed controllable asset (abstract)
+OpenClosedControlEqLN	Open/closed controllable equipment (abstract)
+OpenClosedNonControlEqLN	Open/closed non-controllable equipment (abstract)
+OpeningOpFunLN	Opening operating function (abstract)
+OperationalFunctionLN	Operational function (abstract)
+OperationalTransitionOpFunLN	Operational state transition function (abstract)
+PDIF	Differential protection
+PDIR	Direction comparison protection
+PDIS	Distance protection
+PDOP	Directional overpower protection
+PDUP	Directional underpower protection
+PFPE	Fast protective device protection
+PFRC	Rate of change of frequency protection
+PHAR	Harmonic restraint
+PHIZ	High impedance ground fault protection
+PIOC	Instantaneous overcurrent protection
+PLFR	Line fault recovery
+PMHE	Varistor energy protection
+PMHT	Varistor thermal protection
+PMOV	Varistor overcurrent protection
+PMRI	Motor restart inhibition
+PMSS	Motor starting time supervision
+POPF	Over power factor protection
+PPAM	Phase angle measuring protection
+PRTR	Rotor ground fault protection
+PSCH	Protection scheme
+PSDE	Sensitive directional ground fault protection
+PSOF	Switch onto fault protection
+PTDV	Voltage rate of change protection
+PTEF	Transient ground fault protection
+PTHF	Thyristor protection
+PTOC	Time overcurrent protection
+PTOF	Overfrequency protection
+PTOV	Overvoltage protection
+PTPClockLN	Precision time protocol clock (abstract)
+PTRC	Trip conditioning
+PTTR	Thermal overload protection
+PTUC	Undercurrent protection
+PTUF	Underfrequency protection
+PTUI	Injection-based ground fault protection
+PTUV	Undervoltage protection
+PUPF	Under power factor protection
+PVOC	Voltage controlled time overcurrent protection
+PVPH	Volts per hertz protection
+PZSU	Zero speed or underspeed protection
+PhysicalElectricalConnectionPointLN	Physical electrical connection point (abstract)
+PortBindingLN	Port binding (abstract)
+PowerFactorOpFunLN	Power factor operating function (abstract)
+PowerFactorProtectionLN	Power factor protection (abstract)
+PowerGenerationUnitLN	Power generation unit (abstract)
+PowerProtectionLN	Power protection (abstract)
+PowerQualityLN	Power quality event (abstract)
+PowerSystemStabilisationOpFunLN	Power system stabilizer function (abstract)
+PressureOpFunLN	Pressure operating function (abstract)
+ProtectionLN	Protection function (abstract)
+QFVR	Frequency variation event
+QITR	Current transient event
+QIUB	Current unbalance variation event
+QVTR	Voltage transient event
+QVUB	Voltage unbalance variation event
+QVVR	Voltage variation event
+RADR	Disturbance recorder analog channel
+RBDR	Disturbance recorder binary channel
+RBPF	Bypass protection failure
+RBRF	Breaker failure
+RDIR	Directional element
+RDRE	Disturbance recorder function
+RDRS	Disturbance record handling
+RFBC	Field breaker configuration
+RFLO	Fault locator
+RMXU	Differential measurements
+RPSB	Power swing detection and blocking
+RREC	Autoreclosing
+RRFV	Reclosing with fault verification
+RRIN	Series capacitor reinsertion
+RSYN	Synchronism check
+RTWD	Traveling wave fault detection
+RTWI	Traveling wave signal injection
+RTWL	Traveling wave fault location
+RampRatesLN	Ramp rates (abstract)
+ReactiveComponentInterfaceLN	Reactive component interface (abstract)
+ReactivePowerLN	Reactive power control (abstract)
+ReactivePowerOpFunLN	Reactive power operating function (abstract)
+RecorderLN	Recorder (abstract)
+RideThroughLN	Ride-through function (abstract)
+RotatingMachineLN	Rotating machine (abstract)
+SARC	Arc monitoring and diagnostics
+SBAT	Battery supervision
+SBRP	Brake pad wear monitoring
+SCBR	Circuit breaker supervision
+SCGR	Cooling and oil system supervision
+SCND	Conductivity supervision
+SCPI	Current presence indicator
+SEAM	Equipment aging monitoring
+SECW	Water conductivity supervision
+SFIR	Fire detection
+SFLW	Flow supervision
+SFOD	Flood detection
+SFPE	Fast protective device supervision
+SFPI	Fault passage indicator
+SFSL	Shaft seal wear supervision
+SFST	Fault statistics
+SGPD	Seismic activity detection
+SIMG	Insulation gas supervision
+SIML	Insulation liquid supervision
+SIMS	Insulation loss angle supervision
+SINV	Inverter supervision
+SLTC	Tap changer supervision
+SLVL	Level supervision
+SOPM	Operating mechanism supervision
+SPDC	Partial discharge supervision
+SPES	Power electronic switch supervision
+SPOS	Position supervision
+SPRS	Pressure supervision
+SPSE	Site presence monitoring
+SPTR	Power transformer supervision
+SSMK	Smoke detection
+SSTP	Transformer solid insulation supervision
+SSWI	Switch supervision
+STMP	Temperature supervision
+SVBR	Vibration supervision
+SVPI	Voltage presence indicator
+SensorLN	Sensor (abstract)
+ShaftSealLN	Shaft seal (abstract)
+SpeedOpFunLN	Speed operating function (abstract)
+StateChangeOpFunLN	State change operating function (abstract)
+StatisticsLN	Statistical calculation (abstract)
+StorageNameplateRatingsLN	Storage nameplate ratings (abstract)
+StorageOperationalSettingsLN	Storage operational settings (abstract)
+StorageUnitLN	Storage unit (abstract)
+Storage_Control_LN	Storage control (abstract)
+SubscriptionSupervisionLN	Subscription supervision (abstract)
+SupervisionLN	Supervision function (abstract)
+SwitchgearSupervisionLN	Switchgear supervision (abstract)
+SwitchingEquipmentLN	Switching equipment (abstract)
+SynchMachineFieldLN	Synchronous machine field (abstract)
+SynchronisationLN	Synchronization (abstract)
+TANG	Angle sensor
+TAXD	Axial displacement sensor
+TCND	Conductivity sensor
+TCTR	Current transformer
+TDEN	Density sensor
+TDST	Distance sensor
+TECW	Water conductivity sensor
+TFLW	Flow sensor
+TFRQ	Frequency sensor
+TGSN	Generic sensor
+THUM	Humidity sensor
+TLVL	Level sensor
+TMGF	Magnetic field sensor
+TMVM	Movement sensor
+TPOS	Position sensor
+TPRS	Pressure sensor
+TRTN	Rotation speed sensor
+TSND	Sound pressure sensor
+TTMP	Temperature sensor
+TTNS	Mechanical tension sensor
+TTRQ	Torque sensor
+TUHF	UHF sensor
+TVBR	Vibration sensor
+TVTR	Voltage transformer
+TWPH	Water pH sensor
+TemperatureOpFunLN	Temperature operating function (abstract)
+ThermalMachineMgmtFunLN	Thermal machine management function (abstract)
+ThermalOpFunLN	Thermal operating function (abstract)
+ThermalTurbineLN	Thermal turbine (abstract)
+ThresholdLN	Threshold function (abstract)
+UnbalanceDetectionLN	Unbalance detection (abstract)
+VirtualElectricalReferenceLN	Virtual electrical reference (abstract)
+VoltageOpFunLN	Voltage operating function (abstract)
+VoltageProtectionLN	Voltage protection (abstract)
+WaterFlowOpFunLN	Water flow operating function (abstract)
+XCBR	Circuit breaker
+XDCC	DC connection and configuration status
+XFFL	Field flashing
+XFPE	Fast protective device
+XFUS	Fuse
+XSWI	Switch
+YEFN	Ground fault neutralizer
+YLTC	Tap changer
+YPSH	Power shunt
+YPTR	Power transformer
+ZAXN	Auxiliary network
+ZBAT	Battery
+ZBSH	Bushing
+ZBTC	Battery charger
+ZCAB	Power cable
+ZCAP	Capacitor bank
+ZCAPExt	Capacitor bank (extended)
+ZCON	Converter
+ZCONExt	Converter (extended)
+ZGEN	Generator
+ZGIL	Gas insulated line
+ZHAF	Harmonic filter
+ZLIN	Power overhead line
+ZMOT	Motor
+ZMOV	Metal oxide varistor
+ZREA	Reactor
+ZREAExt	Reactor (extended)
+ZRES	Resistor
+ZRRC	Rotating reactive component
+ZSAR	Surge arrester
+ZSCR	Semiconductor controlled rectifier
+ZSMA	Synchronous machine armature
+ZSMC	Synchronous machine
+ZSMF	Synchronous machine field
+ZSUR	Uncontrolled semiconductor rectifier
+ZTCF	Thyristor controlled frequency converter
+ZTCR	Thyristor controlled reactive component
+ZTCRExt	Thyristor controlled reactive component (extended)
+ZUPS	Uninterruptible power supply

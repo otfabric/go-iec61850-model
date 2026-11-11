@@ -872,6 +872,13 @@ type Query struct {
 	// IncludeAbstract includes abstract logical node classes and their
 	// data objects.
 	IncludeAbstract bool
+	// Text matches elements whose name, title or description contains
+	// every whitespace-separated term of Text, case-insensitively, e.g.
+	// "frequency" or "circuit breaker". Titles and descriptions exist
+	// only when documentation texts were applied to the namespaces
+	// (official.DefaultDocumented, an NSDoc file or nsd.ApplyDocSet);
+	// without them only names match.
+	Text string
 }
 ```
 
@@ -903,6 +910,10 @@ type Result struct {
 	Variant string `json:"variant,omitempty"`
 	// Extension marks extension classes and the data objects they add.
 	Extension bool `json:"extension,omitempty"`
+	// Title and Description are the documentation texts of the element,
+	// when texts were applied.
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 ```
 

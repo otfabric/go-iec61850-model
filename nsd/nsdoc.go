@@ -47,8 +47,10 @@ func (d *NSDoc) IDs() []string {
 func (d *NSDoc) Matches(id model.NamespaceID) bool { return d.ID.SameVersion(id) }
 
 // ApplyDoc fills the Title and Description fields of every definition
-// in ns from doc and returns the number of texts applied. It modifies
-// ns, so call it before the namespace is added to a catalog.
+// in ns from doc, and the ArgsText of every presence condition whose
+// presCondArgsID or dsPresCondArgsID doc names, and returns the number
+// of texts applied. It modifies ns, so call it before the namespace is
+// added to a catalog.
 func ApplyDoc(ns *model.Namespace, doc *NSDoc) int {
 	if ns == nil || doc == nil {
 		return 0
@@ -64,5 +66,25 @@ func ApplyDoc(ns *model.Namespace, doc *NSDoc) int {
 			n++
 		}
 	}
+	for _, p := range ns.Presences() {
+		if t, ok := doc.texts[p.ArgsID]; ok && p.ArgsID != "" {
+			p.ArgsText = t
+			n++
+		}
+	}
 	return n
+}
+
+// docIDs returns the number of distinct documentation IDs that ns
+// references: titleID, descID and presence argument IDs.
+func docIDs(ns *model.Namespace) int {
+	seen := map[string]bool{}
+	for _, d := range ns.Docs() {
+		seen[d.TitleID], seen[d.DescID] = true, true
+	}
+	for _, p := range ns.Presences() {
+		seen[p.ArgsID] = true
+	}
+	delete(seen, "")
+	return len(seen)
 }

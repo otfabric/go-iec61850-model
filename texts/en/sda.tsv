@@ -1,0 +1,44 @@
+# Constructed attribute member descriptions, as type.member.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+AnalogueValue.f	Value as a floating-point number
+AnalogueValue.i	Value as a scaled integer
+AnalogueValueCtl.f	Control value as a floating-point number
+AnalogueValueCtl.i	Control value as a scaled integer
+AnalogueValueCtlF.f	Control value as a floating-point number
+AnalogueValueCtlInt.i	Control value as an integer
+CalendarTime.day	Day of the month
+CalendarTime.hr	Hour of the day
+CalendarTime.mn	Minute of the hour
+CalendarTime.month	Month of the year
+CalendarTime.occ	Occurrence number of the selected period, for example the second week
+CalendarTime.occPer	Period in which the occurrence is counted, such as hour, day, week or month
+CalendarTime.occType	Kind of occurrence, such as a time, a weekday or a day of the week in the month
+CalendarTime.weekDay	Day of the week
+Cell.xEnd	End of the cell on the x axis
+Cell.xStart	Start of the cell on the x axis
+Cell.yEnd	End of the cell on the y axis
+Cell.yStart	Start of the cell on the y axis
+Originator.orCat	Category of the originator, such as station, remote or automatic function
+Originator.orIdent	Identification of the originator
+Point.xVal	X coordinate of the point
+Point.yVal	Y coordinate of the point
+Point.zVal	Z coordinate of the point
+PulseConfig.cmdQual	Kind of output, such as pulse or persistent
+PulseConfig.numPls	Number of pulses to generate
+PulseConfig.offDur	Duration of the off phase of each pulse
+PulseConfig.onDur	Duration of the on phase of each pulse
+RangeConfig.hLim	High limit
+RangeConfig.hhLim	High-high limit
+RangeConfig.lLim	Low limit
+RangeConfig.limDb	Hysteresis applied when the value leaves a limit range
+RangeConfig.llLim	Low-low limit
+RangeConfig.max	Maximum value of the range
+RangeConfig.min	Minimum value of the range
+ScaledValueConfig.offset	Offset added after scaling the integer value
+ScaledValueConfig.scaleFactor	Factor that converts the integer value to engineering units
+Unit.SIUnit	SI unit of the value
+Unit.multiplier	Decimal multiplier applied to the unit, such as kilo or milli
+ValWithTrans.posVal	Step position value
+ValWithTrans.transInd	Indicates that the device is in transition between positions
+Vector.ang	Angle of the vector
+Vector.mag	Magnitude of the vector

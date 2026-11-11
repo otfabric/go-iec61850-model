@@ -1,0 +1,1155 @@
+# Expansions of the terms data object names are built from; data object texts are composed from them.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+# A text of "-" means no public text on purpose: a term no data object uses whose meaning is not established.
+A	current
+ABC	phases A, B and C
+AC	alternating current
+AGC	automatic generation control
+ASG	analog setting
+AWatt	active current component
+Abc	absence
+Abn	abnormal
+Abr	abrasion
+Abs	absolute
+Absb	absorbing
+Acc	accuracy
+Accl	acceleration
+Accm	accumulated
+Ack	acknowledge
+Acs	access
+Act	active
+Actr	actuator
+Actual	actual
+Acu	acoustic
+Add	additional
+Addr	address
+Adj	adjustment
+Admin	administrative
+Adp	adaptive
+Aff	affected
+Age	aging
+Ahr	ampere-hours
+Air	air
+Alg	algorithm
+Alm	alarm
+Alr	-
+Als	alarm setting
+Alt	altitude
+Altn	alternate
+Alwd	allowed
+Amnt	amount
+Amp	current
+An	analog
+Anc	ancillary
+Ane	anemometer
+Ang	angle
+Ani	animal
+Ann	announcement
+Any	any
+Ap	access point
+Apc	analog setpoint control
+App	apparent
+Ar	arming
+Arc	arc
+Area	area
+Arr	array
+Assn	association
+Ast	asset
+Asym	asymmetry
+Asyn	asynchronous
+At	at
+Ats	automatic transfer switch
+Auth	authorization
+Auto	automatic
+Aux	auxiliary
+Av	average
+Ava	absorbed apparent power
+Avar	reactive power
+Avi	-
+Avl	available
+Ax	axial
+Azi	azimuth
+B	phase B
+BG	before gain
+Bac	binary-controlled analog step
+Bar	barrier
+Base	base
+Bat	battery
+Bb	-
+Bck	back
+Bdl	-
+Bec	beacon
+Beh	behavior
+Ber	bit error rate
+Bias	bias
+Bl	blade
+Blb	bulb
+Blk	blocked
+Blow	blow-by
+Bnd	band
+Boil	boiler
+Bot	bottom
+Bra	branch
+Brcb	buffered report control block
+Brd	-
+Brg	bearing
+Bri	bridge
+Brk	brake
+Bsc	binary-controlled step position
+Bst	burst
+Bt	heartbeat
+Bub	bubbling
+Bus	bus
+Byp	bypass
+C	phase C
+C2H2	acetylene
+C2H4	ethylene
+C2H6	ethane
+CB	circuit breaker
+CE	cooling equipment
+CG	core ground
+CH4	methane
+CHP	combined heat and power
+CO	carbon monoxide
+CO2	carbon dioxide
+Cab	cable
+Cal	calorific
+Cam	cam
+Can	cancel
+Cap	capability
+Capac	capacitive
+Car	carrier
+Cbn	carbon
+Cbr	calibration
+Ccw	counterclockwise
+Ccy	currency
+Cds	condensate
+Cdt	conductivity
+Cea	cease
+Ceil	ceiling
+Cel	cell
+Cf	crest factor
+Cfd	-
+Cff	coefficient
+Cfg	configuration
+Cfm	confirmation
+Cg	combustible gas
+Ch	channel
+Cha	charge
+Chg	change
+Chk	check
+Chld	-
+Chr	characteristic
+Chs	chassis
+Circ	circuit
+Cl	cooling
+Class	class
+Clc	calculated
+Clip	clipping
+Clk	clock
+Cloud	cloud
+Clr	clear
+Cls	close
+Cm	centimeters
+Cmbu	combustible
+Cmd	command
+Cmft	comfort
+Cmpl	complete
+Cmpn	compensation
+Cmpr	compressor
+Cmsp	-
+Cmut	commutation
+Cndct	conductivity
+Cnr	-
+Cnst	constant
+Cnt	count
+Cntt	contract
+Cnv	converter
+Cod	code
+Code	code
+Col	coil
+Color	color
+Com	communication
+Comb	combination
+Comm	communication
+Comp	compensation
+Con	-
+Conf	configuration
+ConfRev	configuration revision
+Conn	connection
+Cons	constant
+Cor	correction
+Core	core
+Cost	cost
+Crank	crank
+Crd	coordination
+Crit	critical
+Crl	correlation
+Crp	creep
+Crtl	control
+Crv	curve
+Csmp	consumption
+Ctb	contribution
+Cth	clutch
+Ctl	control
+Ctr	center
+Ctry	country
+Cum	cumulative
+Cur	current
+Cush	cushion
+Cut	cut
+Cvr	cover
+Cvt	converter
+Cw	clockwise
+Cwb	crowbar
+Cyc	cycle
+Cyl	cylinder
+D	derivative
+DC	direct current
+DER	distributed energy resource
+DExt	de-excitation
+DPCSO	double-point control output
+DQ0	direct-quadrature-zero
+DS	discharged
+DT	daylight saving time
+Dam	dam
+Damp	damping
+Date	date
+Day	day
+Db	deadband
+Dcl	DC link
+Dct	direct
+De	de-
+Dea	dead
+Deb	debounce
+Dec	decrease
+Deg	degrees
+Dehum	dehumidifier
+Del	delta
+Den	density
+Dep	dependent
+Desc	description
+Det	detection
+Detun	detuning
+Dev	device
+Dew	dew
+Df	difference
+Dff	diffuse
+Dfl	deflector
+Dft	default
+Dia	diaphragm
+Diag	diagnostics
+Dif	differential
+Dig	digital
+Dip	dip
+Dir	direction
+Dis	distance
+Dist	distributed
+Dith	dither
+Div	division
+Dl	delay
+Dlt	delete
+Dlv	delivery
+Dmd	demand
+Dn	down
+Dom	domain
+Domain	domain
+Door	door
+Dpc	double-point control
+Dpt	departure
+Drag	drag
+Drn	drone
+Dropout	dropout
+Drp	droop
+Drt	derating
+Drtb	draft tube
+Drv	drive
+Dsa	disable
+Dsc	discrepancy
+Dsch	discharge
+Dscon	disconnect
+Dsg	-
+Dsp	displacement
+Dst	destination
+Dtc	detection
+Dup	duplicate
+Dur	duration
+Dust	dust
+Dv	deviation
+Dw	down
+Dyn	dynamic
+E	earth
+EE	external equipment
+EF	earth fault
+EFN	earth fault neutralizer
+EMA	electric mobility account
+ENG	enumerated setting
+ENS	enumerated status
+EPC	emergency power control
+EV	electric vehicle
+EVSE	electric vehicle supply equipment
+Echo	echo
+Ecnm	economic
+Ecp	electrical connection point
+Edt	edit
+Efc	efficiency
+Eff	effective
+Egr	egress
+Egz	energize
+El	elevation
+Ela	elasticity
+Elc	electrical
+Ele	element
+Em	emission
+Emg	emergency
+En	energy
+Ena	enabled
+Enc	enumerated control
+Encl	enclosure
+End	end
+Enf	enforced
+Eng	engine
+Engz	energized
+Ent	entity
+Entr	entry
+Enum	enumeration
+Env	environmental
+Eps	electric power system
+Eq	equipment
+Eqmt	equipment
+Err	error
+Esp	estimated setpoint
+Est	estimated
+Etg	earthing
+Eth	Ethernet
+Ev	evaluation
+Evn	even
+Evo	evolving
+Evp	evaporation
+Evt	event
+Ex	external
+ExIm	export and import
+Exc	exceeded
+Excl	exclusion
+Exp	expired
+Expc	expected
+Exps	exponent
+Expt	export
+Ext	external
+F	frequency
+FA	fault arc
+FPM	fuel processing module
+Fa	fault
+Fact	factor
+Fail	failure
+Fan	fan
+Fast	fast
+Fbc	field breaker configuration
+Fct	forecast
+Fer	frame error rate
+Fght	fighting
+Fil	filter
+Fin	final
+Fir	fire
+Fire	fire
+Fish	fish
+Fix	fixed
+Fld	field
+Flk	flicker
+Fll	fall
+Flm	flame
+Flood	flood
+Flsh	flashing
+Flt	fault
+Flush	flush
+Flw	flow
+Fol	follow
+Forc	forcing
+Free	free
+Frm	frame
+Frt	front
+Frz	freezing
+Fu	fuse
+Fuel	fuel
+Full	full
+Fun	function
+Fwd	forward
+Gain	gain
+Gas	gas
+Gbx	gearbox
+Gdv	guide vane
+Gen	general
+Glob	global
+Gm	grandmaster
+Gn	generator
+Gnd	ground
+Go	GOOSE
+GoCBRef	GOOSE control block reference
+Gocb	GOOSE control block
+Gov	governor
+Gr	group
+Gra	gradient
+Grd	guard
+Gri	grid
+Gross	gross
+Gs	grease
+Gte	gate
+Gust	gust
+H	harmonic
+H2	hydrogen
+H2O	water
+HP	hot point
+HPh	harmonic phase
+Ha	harmonic
+Har	harmonic
+Hb	harmonic bin
+Hd	head
+Health	health
+Heat	heat
+Heli	helical
+Hello	hello
+Hi	high
+Hihi	high-high
+Hlf	half
+Hmn	human
+Hold	hold
+Hor	horizontal
+Horn	horn
+Hot	hot
+Ht	heat
+Htex	heat exchanger
+Htr	heater
+Hub	hub
+Hum	humidity
+Hy	hydraulic
+Hyd	hydraulic
+Hys	hysteresis
+Hz	frequency
+Hz1	frequency 1
+Hz2	frequency 2
+I	integral
+ING	integer setting
+INS	integer status
+ISCSO	integer controllable status output
+Ia	available information
+Iafm	force majeure interruption
+Iano	available, not operating
+Ianofo	forced-outage non-operation
+Ianopca	planned-correction non-operation
+Ianos	suspended operation
+Ianosm	scheduled-maintenance non-operation
+Iao	available for operation
+Iaog	available and generating
+Iaogfp	full-performance generation
+Iaogpp	reduced-performance generation
+Iaong	available, not generating
+Iaongel	electrical-limit non-generation
+Iaongen	environmental-limit non-generation
+Iaongrs	requested-shutdown non-generation
+Iaongts	technical-standby non-generation
+Ice	ice
+Icp	intercept
+Id	identifier
+Ieee	IEEE
+IeeeKH	IEEE high-band gain
+IeeeKH1	IEEE high-band gain 1
+IeeeKH11	IEEE high-band gain 11
+IeeeKH17	IEEE high-band gain 17
+IeeeKH2	IEEE high-band gain 2
+IeeeKI	IEEE intermediate-band gain
+IeeeKI1	IEEE intermediate-band gain 1
+IeeeKI11	IEEE intermediate-band gain 11
+IeeeKI17	IEEE intermediate-band gain 17
+IeeeKI2	IEEE intermediate-band gain 2
+IeeeKL	IEEE low-band gain
+IeeeKL1	IEEE low-band gain 1
+IeeeKL11	IEEE low-band gain 11
+IeeeKL17	IEEE low-band gain 17
+IeeeKL2	IEEE low-band gain 2
+IeeeKs1	IEEE stabilizer gain 1
+IeeeKs2	IEEE stabilizer gain 2
+IeeeKs3	IEEE stabilizer gain 3
+IeeeM	IEEE filter parameter M
+IeeeN	IEEE filter parameter N
+IeeeT1	IEEE time constant 1
+IeeeT10	IEEE time constant 10
+IeeeT11	IEEE time constant 11
+IeeeT2	IEEE time constant 2
+IeeeT3	IEEE time constant 3
+IeeeT4	IEEE time constant 4
+IeeeT7	IEEE time constant 7
+IeeeT8	IEEE time constant 8
+IeeeT9	IEEE time constant 9
+IeeeTH1	IEEE high-band time constant 1
+IeeeTH10	IEEE high-band time constant 10
+IeeeTH11	IEEE high-band time constant 11
+IeeeTH12	IEEE high-band time constant 12
+IeeeTH2	IEEE high-band time constant 2
+IeeeTH3	IEEE high-band time constant 3
+IeeeTH4	IEEE high-band time constant 4
+IeeeTH5	IEEE high-band time constant 5
+IeeeTH6	IEEE high-band time constant 6
+IeeeTH7	IEEE high-band time constant 7
+IeeeTH8	IEEE high-band time constant 8
+IeeeTH9	IEEE high-band time constant 9
+IeeeTI1	IEEE intermediate-band time constant 1
+IeeeTI10	IEEE intermediate-band time constant 10
+IeeeTI11	IEEE intermediate-band time constant 11
+IeeeTI12	IEEE intermediate-band time constant 12
+IeeeTI2	IEEE intermediate-band time constant 2
+IeeeTI3	IEEE intermediate-band time constant 3
+IeeeTI4	IEEE intermediate-band time constant 4
+IeeeTI5	IEEE intermediate-band time constant 5
+IeeeTI6	IEEE intermediate-band time constant 6
+IeeeTI7	IEEE intermediate-band time constant 7
+IeeeTI8	IEEE intermediate-band time constant 8
+IeeeTI9	IEEE intermediate-band time constant 9
+IeeeTL1	IEEE low-band time constant 1
+IeeeTL10	IEEE low-band time constant 10
+IeeeTL11	IEEE low-band time constant 11
+IeeeTL12	IEEE low-band time constant 12
+IeeeTL2	IEEE low-band time constant 2
+IeeeTL3	IEEE low-band time constant 3
+IeeeTL4	IEEE low-band time constant 4
+IeeeTL5	IEEE low-band time constant 5
+IeeeTL6	IEEE low-band time constant 6
+IeeeTL7	IEEE low-band time constant 7
+IeeeTL8	IEEE low-band time constant 8
+IeeeTL9	IEEE low-band time constant 9
+IeeeTw1	IEEE washout time constant 1
+IeeeTw2	IEEE washout time constant 2
+IeeeTw3	IEEE washout time constant 3
+IeeeTw4	IEEE washout time constant 4
+IeeeVHMax	IEEE high-band output maximum
+IeeeVHMin	IEEE high-band output minimum
+IeeeVIMax	IEEE intermediate-band output maximum
+IeeeVIMin	IEEE intermediate-band output minimum
+IeeeVLMax	IEEE low-band output maximum
+IeeeVLMin	IEEE low-band output minimum
+IeeeVsi1Max	IEEE input 1 maximum
+IeeeVsi1Min	IEEE input 1 minimum
+IeeeVsi2Max	IEEE input 2 maximum
+IeeeVsi2Min	IEEE input 2 minimum
+IeeeVstMax	IEEE stabilizer output maximum
+IeeeVstMin	IEEE stabilizer output minimum
+Ign	ignition
+Illum	illumination
+Ilo	inlet
+Imb	imbalance
+Imd	immediate
+Imp	impedance
+Impact	impact
+Impt	import
+In	input
+Ina	inactivity
+Inc	integer controllable
+Incl	include
+Incr	increment
+Ind	indication
+Indp	independent
+Induc	inductive
+Iner	inertia
+Inert	inertia
+Inf	information
+Ingr	ingress
+Inh	inhibit
+Inj	injection
+Inl	inline
+Inlet	inlet
+Inn	inner
+Input	input
+Inr	inner
+Ins	insulation
+Insol	insolation
+Inst	instantaneous
+Int	integer
+Intk	intake
+Intm	intermediate
+Intn	internal
+Intr	interruption
+Intv	interval
+Inv	inverter
+Isc	integer step controllable
+Isl	island
+Isld	islanded
+Iso	isolation
+Itm	intermittent
+Iu	information unavailable
+Iva	injected apparent power
+Ivar	injected reactive power
+Ix	index
+Jmp	jump
+Jnt	joint
+K	coefficient
+K0Fact	residual compensation factor
+KFact	K-factor
+Kck	kick
+Key	key
+Kpp	proportional gain
+Ks	stabilizer gain
+L	lower
+LDC	line drop compensation
+LDCR	line drop compensation resistance
+LDCX	line drop compensation reactance
+LDCZ	line drop compensation impedance
+LED	LED
+LTC	load tap changer
+Last	last
+Lbl	label
+Lch	latch
+Ld	lead
+Ldp	LLDP
+Le	leading edge
+Leap	leap
+Len	length
+Lev	level
+Lft	lift
+Lg	lag
+Lif	life
+Life	life
+Lim	limit
+Lin	line
+Liv	live
+Lkd	locked
+Lkg	leakage
+Ll	previous long interval
+Lo	low
+Loc	local
+Locb	log control block
+Lod	load
+Log	log
+Lok	locked
+Lolo	low-low
+Loop	loop
+Los	loss
+Ls	previous short interval
+Lst	list
+Ltg	lightning
+Lub	lubrication
+Lum	luminance
+M	meter
+MV	measured value
+Mac	MAC
+Made	made
+Mag	magnitude
+Main	main
+Maint	maintenance
+Mak	make
+Man	manual
+Mass	mass
+Master	master
+Mat	material
+Mau	medium attachment unit
+Max	maximum
+Mbr	membrane
+Mchn	machine
+Md	motor drive
+Mdm	modem
+Mdul	module
+Me	mean
+Meas	measured
+Mech	mechanical
+Media	medium
+Mem	memory
+Mft	master fuel trip
+Mid	middle
+Min	minimum
+Mir	mirror
+Mlt	multiple
+Mmnt	momentary
+Mn	minimum
+Mns	mains
+Mnt	maintenance
+Mod	mode
+Modl	modulation
+Mon	monitoring
+Mot	motor
+Mov	metal oxide varistor
+Mrg	margin
+Mrk	market
+Ms	measurement
+Msk	mask
+Mst	moisture
+Msv	multicast sampled value
+Msvcb	multicast sampled value control block
+Mth	method
+Mtx	matrix
+Mult	multiplier
+Mvm	movement
+Mx	maximum
+N	ramp-tracking filter degree
+N2	nitrogen
+NOx	nitrogen oxides
+NQS	normalized quantity number
+Nac	nacelle
+Nam	name
+Name	name
+Nav	navigation
+Ndl	needle
+Nds	-
+NdsCom	needs commissioning
+Neut	neutral
+Ng	negative
+Ngt	negotiation
+Nhd	net head
+Night	night
+Nml	normal
+No	no
+Noi	noise
+Nom	nominal
+Nph	non-phase-related
+Num	number
+Nxt	next
+O2	oxygen
+O3	ozone
+Obl	obstruction light
+Oc	open circuit
+Odd	odd
+Of	offset
+Off	off
+Ofs	offset
+Oil	oil
+On	on
+Oo	out of
+Op	operate
+Operate	operate
+Opl	open loop
+Opn	open
+Opt	optimization
+Ord	order
+Osc	oscillation
+Out	output
+Ov	over
+Ovl	overload
+Ox	oxidant
+P	proportional
+P2p	peer-to-peer
+PF	power factor
+PH	pH
+PNV	phase-to-neutral voltage
+POW	point on wave
+PP	phase-to-phase
+PPV	phase-to-phase voltage
+PT1	first-order lag
+Pa	partial
+Pad	pad
+Pair	pair
+Pap	paper
+Par	parallel
+Pas	passive
+Path	path
+Pcb	probability
+Pct	percent
+Pdm	demodulated
+Pe	electrical power
+Per	period
+Ph	phase
+Phi	phase angle
+Phs	phase
+Phy	physical
+Pi	instantaneous flicker
+Pin	pin
+Pipe	pipe
+Pk	peak
+Pl	plant
+Plc	programmable logic controller
+Ple	pole
+Plg	plug
+Pls	pulse
+Plt	plate
+Pm	permanent
+Pmp	pump
+Po	polar
+Poa	plane of array
+Pod	power oscillation damping
+Pol	polarizing
+Polytr	polytropic
+Port	port
+Ports	ports
+Pos	position
+Pot	potentiometer
+Prc	price
+Pre	pre
+Prec	preceding
+Pres	pressure
+Prg	in progress
+Prim	primary
+Prio	priority
+Prm	permissive
+Prnt	parent
+Pro	protection
+Proc	process
+Profile	profile
+Proxy	proxy
+Prs	presence
+Prt	part
+Ps	positive
+Psk	penstock
+Pss	power system stabilizer
+Pst	post
+Pt	point
+Pth	path
+Pub	publisher
+Pwr	power
+Q	reactive power
+Q1	quadrant 1
+Q2	quadrant 2
+Q3	quadrant 3
+Q4	quadrant 4
+Qty	quantity
+Qu	queue
+Qud	quadrant
+R	raise
+Rad	radians
+Ral	rail
+Ramp	ramp
+Rat	ratio
+Rb	runner blade
+Rcd	record
+Rch	reach
+Rcl	reclaim
+Rct	reaction
+Rdy	ready
+Re	re-
+React	reactance
+Rear	rear
+Rec	reclosing
+Rec1	single-pole reclosing
+Rec13	single- or three-pole reclosing
+Rec3	three-pole reclosing
+Recha	recharge
+Recov	recovery
+Rect	rectifier
+Red	redundancy
+Ref	reference
+Reg	regulation
+Rel	release
+Rem	remote
+Ren	renewable
+Req	request
+Res	residual
+Reset	reset
+Reso	resonance
+Reuse	reuse
+Rev	revision
+Rf	refresh
+Rh	reheat
+Ri	internal resistance
+Rign	reignition
+Rin	reinsertion
+Rin1	single-pole reinsertion
+Rin13	single- or three-pole reinsertion
+Rin3	three-pole reinsertion
+Ris	resistance
+Rl	relative
+Rlf	relief
+Rm	mutual resistance
+Rmn	-
+Rmp	ramp
+Rms	RMS
+Rn	rain
+Rnbk	runback
+Rnd	round
+Rng	range
+Rnt	round-trip
+Rod	rod
+Root	root
+Rot	rotation
+Rp	receipt
+Rpd	ramp down
+Rpt	repeat
+Rpu	ramp up
+Rs	reset
+Rsl	result
+Rsp	response
+Rst	restraint
+Rsto	restoration
+Rstp	RSTP
+Rsv	reserve
+Rt	ride-through
+Rte	rate
+Rtg	rating
+Rtn	return
+Rub	rub
+Run	running
+Rv	reverse
+Rvc	rapid voltage change
+Rvrt	revert
+Rwy	runaway
+Rx	receive
+S10	at 1.0 per unit
+S12	at 1.2 per unit
+SM	servomotor
+SNL	speed no load
+SOx	SOx
+SPCSO	single-point controllable status output
+SPG	single-point setting
+SPS	single-point status
+SPl	single-pole
+ST	standard time
+Saf	safety
+Sag	sag
+Sar	surge arrester
+Sat	saturation
+Sc	short circuit
+Scale	scale
+Schd	schedule
+Scnd	secondary
+Sco	start-up control
+Sct	section
+Sec	security
+Seg	segment
+Seism	seismic
+Sel	selection
+Self	self
+Sens	sensitivity
+Seq	sequence
+Ser	series
+Ses	session
+Set	setting
+Sfx	self-extinguishing
+Sgcb	setting group control block
+Sh	shunt
+Shar	share
+Shd	shed
+Shft	shaft
+Shld	shield
+Sht	shutter
+Shutdn	shutdown
+Sig	signal
+Sign	sign
+Sim	simulation
+Sink	sink
+Slave	slave
+Sld	solidity
+Slnt	salinity
+Slope	slope
+Slot	slot
+Slp	slip
+Smok	smoke
+Smp	sampling
+Snd	sound
+Snpt	snapshot
+Snr	signal-to-noise ratio
+Snw	snow
+Soc	state of charge
+Soe	sequence of events
+Sof	switch onto fault
+Soh	state of health
+Soot	soot
+Spc	controllable single point
+Spcf	specific
+Spd	speed
+Spec	spectrum
+Spir	spiral case
+Spm	semi-permanent
+Spn	span
+Spt	setpoint
+Sq	square
+Src	source
+Srfc	surface
+St	status
+Sta	station
+Stab	stabilization
+Stat	statistics
+Stc	stack
+Std	standard
+Stdby	standby
+Step	step
+Stepsr	steps removed
+Stg	stage
+Stk	stroke
+Stl	stall
+Stm	steam
+Stnd	standstill
+Sto	storage
+Stop	stop
+Storm	storm
+Stow	stow
+Str	start
+Strg	string
+Sts	status
+Stt	stator
+Stuck	stuck
+Sub	sub
+Sum	sum
+Sup	supply
+Susc	susceptance
+Sv	sampled value
+SvCBRef	sampled value control block reference
+Svc	service
+Sw	switch
+Swg	swing
+Swl	swell
+Syn	synchronization
+Sys	system
+T	time constant
+TOTO	-
+TP	three-pole
+Ta	armature time constant
+Tag	tag
+Tap	tap
+Task	task
+Tc	time constant
+Tcp	TCP
+Tcr	thyristor-controlled reactor
+Td	total distortion
+Td0p	d-axis open-circuit transient time constant
+Td0s	d-axis open-circuit subtransient time constant
+Tdd	total demand distortion
+Tdf	transformer derating factor
+Tdp	d-axis transient time constant
+Tds	d-axis subtransient time constant
+Tech	technology
+Term	term
+Tes	test
+Test	test
+Tfr	transfer
+Tgt	target
+Thd	total harmonic distortion
+Thm	thermal
+Thr	threshold
+Ti	telephone influence
+Tilt	tilt
+Tm	time
+Tm1	time 1
+Tm2	time 2
+Tm3	time 3
+Tmh	time in hours
+Tmm	time in minutes
+Tmms	time in milliseconds
+Tmns	time in nanoseconds
+Tmout	timeout
+Tmp	temperature
+Tms	time in seconds
+Tnk	tank
+Tns	tension
+Top	top
+Topo	topology
+Torq	torque
+Tot	total
+Tow	tower
+Tp	type
+Tpc	teleprotection
+Tpy	temporary
+Tq0p	q-axis open-circuit transient time constant
+Tq0s	q-axis open-circuit subtransient time constant
+Tqp	q-axis transient time constant
+Tqs	q-axis subtransient time constant
+Tr	trip
+Tra	transformer
+Trf	transformer
+Trg	trigger
+Trip	trip
+Trk	tracking
+Trn	turn
+Trp	transient performance
+Trs	transient
+Truck	truck
+Trunk	trunk
+Trv	travel
+Ts	total signed
+Tu	total unsigned
+Tun	tuning
+Tur	turbine
+Tw	washout time constant
+Two	two
+Tx	transmit
+Txt	text
+Typ	type
+UPS	UPS
+UTC	UTC
+Udp	UDP
+Uhf	UHF
+Un	under-excited
+Unav	unavailable
+Unb	unbalance
+Unit	unit
+Unld	unload
+Unt	unit
+Up	up
+Ups	UPS
+Urcb	unbuffered report control block
+Use	use
+Used	used
+Usvcb	unicast sampled value control block
+Utc	UTC
+Util	utility
+Uxp	unexpected
+V	voltage
+V1	voltage 1
+V2	voltage 2
+VA	apparent power
+VAh	apparent energy
+VAr	reactive power
+VArh	reactive energy
+Va	variation
+Vac	vacuum
+Val	value
+Var	variance
+Vbr	vibration
+Ver	vertical
+Viol	violation
+Virt	virtual
+Vis	visibility
+Visc	viscosity
+Vlan	VLAN
+Vld	valid
+Vlm	volume
+Vlv	valve
+Vol	voltage
+VolAmpr	volt-amperes
+Volts	volts
+Vsi	stabilizer input voltage
+Vss	visible string
+Vst	stabilizer output voltage
+W	active power
+W200	at 200 W/m2
+Wac	watchdog
+Wash	washout
+Watt	watts
+Wav	waveform
+Wd	wind
+Wdv	wind direction variation
+Wear	wear
+Week	week
+Wei	weak infeed
+Wet	wet
+Wgt	weight
+Wh	active energy
+Wid	width
+Win	window
+Wire	wire
+Wkup	wake-up
+Wld	weld
+Wnd	winding
+Wrm	warm
+Wrn	warning
+Wrs	warning setpoint
+Ws	wind speed
+Wst	waste
+Wtr	water
+Wup	warm-up
+X	reactance
+X0	zero-sequence reactance
+X1	positive-sequence reactance
+X2	negative-sequence reactance
+Xd	d-axis synchronous reactance
+Xdir	x-direction
+Xdp	d-axis transient reactance
+Xds	d-axis subtransient reactance
+Xm	mutual reactance
+Xq	q-axis synchronous reactance
+Xqp	q-axis transient reactance
+Xqs	q-axis subtransient reactance
+Xsec	cross-section
+Ydir	y-direction
+Yw	yaw
+Z	impedance
+Zer	zero-sequence
+Zero	zero
+Zm	mutual impedance
+Zn	zone
+Zro	zero-sequence
+km	kilometers
+ppm	parts per million

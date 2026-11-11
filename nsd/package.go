@@ -475,21 +475,47 @@ func (b *builder) finish() (*Package, error) {
 		if b.o.Language == "" {
 			continue
 		}
-		applied := false
-		for _, d := range p.docs {
-			if d.Lang == b.o.Language && d.Matches(ns.ID) {
-				ApplyDoc(ns, d)
-				applied = true
-			}
+		b.applyDocs(ns)
+	}
+	return p, nil
+}
+
+// applyDocs applies the NSDoc files of the configured language that
+// match ns, then the fallback doc set to what they left empty.
+//
+// Documentation IDs are release-specific (the descIDs of IEC 61850-7-4
+// differ between 2007A, 2007B3-B5 and 2007B6), while Matches ignores the
+// release: an NSDoc of the exact release is applied last, so it wins,
+// and a matching NSDoc that applies no text is reported with the
+// warning "doc-ids-unmatched" (MDL-09).
+func (b *builder) applyDocs(ns *model.Namespace) {
+	p := b.pkg
+	var matching []*NSDoc
+	for _, d := range p.docs {
+		if d.Lang == b.o.Language && d.Matches(ns.ID) {
+			matching = append(matching, d)
 		}
-		if !applied && len(p.docs) > 0 {
+	}
+	sort.SliceStable(matching, func(i, j int) bool {
+		return matching[i].ID.Release != ns.ID.Release && matching[j].ID.Release == ns.ID.Release
+	})
+	for _, d := range matching {
+		if n := ApplyDoc(ns, d); n == 0 && docIDs(ns) > 0 {
 			p.diagnostics = append(p.diagnostics, model.Diagnostic{
-				Severity: model.SeverityInfo, Code: "no-documentation", Namespace: ns.ID, Source: ns.Provenance.Source,
-				Message: fmt.Sprintf("no %q documentation file for this namespace", b.o.Language),
+				Severity: model.SeverityWarning, Code: "doc-ids-unmatched", Namespace: ns.ID, Source: ns.Provenance.Source,
+				Message: fmt.Sprintf("documentation file for %s (%s) applies no text: its IDs do not match the %d IDs of this release", d.ID, d.Lang, docIDs(ns)),
 			})
 		}
 	}
-	return p, nil
+	if len(matching) == 0 && len(p.docs) > 0 {
+		p.diagnostics = append(p.diagnostics, model.Diagnostic{
+			Severity: model.SeverityInfo, Code: "no-documentation", Namespace: ns.ID, Source: ns.Provenance.Source,
+			Message: fmt.Sprintf("no %q documentation file for this namespace", b.o.Language),
+		})
+	}
+	if set := b.o.FallbackDocs; set != nil && (set.Lang() == "" || set.Lang() == b.o.Language) {
+		ApplyDocSet(ns, set)
+	}
 }
 
 func sha256Hex(data []byte) string {

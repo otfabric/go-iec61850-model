@@ -1,4 +1,4 @@
-.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-pkg-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean docs-check
+.PHONY: help all check test test-race coverage coverage-html coverage-check coverage-pkg-check coverage-clean fmt fmt-check vet lint lint-ci vuln fuzz bench tidy build build-all install golden official nsd-fetch nsd-lock nsd-check nsd-generate nsd-generate-check nsd-publish nsd-publish-check nsd-clean generate generate-check clean docs-check docs-extract build-docs test-docs texts texts-check
 
 help: ## This help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -66,7 +66,7 @@ LDFLAGS    := -s -w -X main.version=$(VERSION) -X main.tag=$(TAG) -X main.commit
 
 all: check build ## Run all checks and build
 
-check: fmt fmt-check tidy vet lint lint-ci vuln test-race coverage-check coverage-pkg-check docs-check ## Run all pre-commit checks
+check: fmt fmt-check tidy vet lint lint-ci vuln texts-check test-race coverage-check coverage-pkg-check docs-check ## Run all pre-commit checks
 
 test: ## Run unit tests
 	@echo "Running unit tests"
@@ -136,7 +136,9 @@ vuln: ## Run govulncheck
 
 fuzz: ## Run all fuzz targets for FUZZTIME each (default 15s)
 	@echo "Fuzzing nsd.Parse"
-	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./nsd
+	@go test -run='^$$' -fuzz='^FuzzParse$$' -fuzztime=$(FUZZTIME) ./nsd
+	@echo "Fuzzing nsd.ReadDocSets"
+	@go test -run='^$$' -fuzz=FuzzReadDocSets -fuzztime=$(FUZZTIME) ./nsd
 	@echo "Fuzzing reference.Parse"
 	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./reference
 
@@ -204,6 +206,7 @@ nsd-publish: ## Regenerate the committed output (names, official, docs/reference
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --force
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate catalog --all-releases -o "$(OFFICIAL_DIR)" --package official $(PUBLISH) --force
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p extended generate docs --all-releases -o "$(REFERENCE_DIR)" $(PUBLISH) --force
+	@go run ./internal/tools/textgen
 
 nsd-publish-check: ## Fail if the committed output differs from what NSD_CACHE generates
 	@$(NSDCTL_PINNED) -s "$(NSD_CACHE)" -p default generate go -o "$(NAMES_DIR)" --package names $(PUBLISH) --check
@@ -222,6 +225,34 @@ official: ## Test against the official packages in NSD_DIR (default NSD_CACHE), 
 	@test -d "$(or $(NSD_DIR),$(NSD_CACHE))" || { echo "No packages in $(or $(NSD_DIR),$(NSD_CACHE)); run make nsd-fetch"; exit 1; }
 	@echo "Testing against official packages in $(or $(NSD_DIR),$(NSD_CACHE))"
 	@NSD_DIR="$(abspath $(or $(NSD_DIR),$(NSD_CACHE)))" go -C $(CLI_DIR) test -count=1 -v -run TestOfficialPackages .
+
+# Documentation texts (maintainer only). The doc set is extracted from
+# locally licensed IEC PDFs into DOCS_OUT, which is git-ignored and must
+# never be committed (docs/licensing.md). Needs python3 with PyMuPDF and
+# poppler's pdftotext.
+SPECS_DIR ?=
+DOCS_OUT  ?= official/docs_gen.json.gz
+DOCS_WORK ?= .docs-work
+
+texts: ## Regenerate official/texts_gen.json.gz (public OT Fabric texts) from texts/en and the catalog
+	@go run ./internal/tools/textgen
+
+texts-check: ## Fail if official/texts_gen.json.gz is stale or a catalog element has no public text
+	@go run ./internal/tools/textgen -check
+
+docs-extract: ## Extract the local doc set from the IEC PDFs in SPECS_DIR into DOCS_OUT (git-ignored; local only)
+	@test -n "$(SPECS_DIR)" || { echo "Set SPECS_DIR to the directory with the IEC 61850 PDFs"; exit 1; }
+	@python3 -I internal/tools/docextract/extract_docs.py --specs "$(SPECS_DIR)" --catalog official/catalog_gen.json --out "$(DOCS_OUT)" --work "$(DOCS_WORK)"
+
+build-docs: ## Build the packages and bin/nsdctl-docs with the local doc set embedded (-tags iecdocs)
+	@test -f official/docs_gen.json.gz || { echo "No official/docs_gen.json.gz; run make docs-extract SPECS_DIR=..."; exit 1; }
+	@go build -tags iecdocs $(PKGS)
+	@mkdir -p bin
+	@cd $(CLI_DIR) && go build -tags iecdocs -ldflags '$(LDFLAGS)' -o $(CURDIR)/bin/nsdctl-docs .
+
+test-docs: ## Run the tests against the local doc set (-tags iecdocs, REQUIRE_IEC_DOCS=1)
+	@test -f official/docs_gen.json.gz || { echo "No official/docs_gen.json.gz; run make docs-extract SPECS_DIR=..."; exit 1; }
+	@REQUIRE_IEC_DOCS=1 go test -count=1 -race -tags iecdocs $(PKGS)
 
 golden: ## Regenerate testdata/golden after an intentional generator output change
 	@echo "Regenerating golden generator output"

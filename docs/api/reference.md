@@ -22,10 +22,40 @@ This package checks syntax only. Three levels of validity apply to a reference, 
 ## Constants
 
 ```go
+const (
+	// MaxLNPrefixInstance bounds the LN-Prefix plus LN-Instance-ID
+	// (m+n ≤ 12).
+	MaxLNPrefixInstance = 12
+	// MaxDataObjectName bounds a DataObjectName (≤ 12 characters).
+	MaxDataObjectName = 12
+	// MaxFCDALength bounds an FCD or FCDA without FC and LD name,
+	// including the "." separators (≤ 61 characters).
+	MaxFCDALength = 61
+)
+```
+
+Name limits of IEC 61850-7-2:2010 §22.2, checked by [Ref.ValidateNames](#func-ref-validatenames).
+
+```go
+const (
+	MaxLDLength   = 64
+	MaxPathLength = 64
+)
+```
+
+MaxLDLength is the maximum length of a logical device name, and MaxPathLength the maximum length of the path below it (LN.DO.DA), IEC 61850-7-2:2010 Table 4: at most 64 characters each, joined by a single "/".
+
+```go
+const MaxMMSIdentifier = 64
+```
+
+MaxMMSIdentifier is the MMS maxIdentifier size that bounds MMS domain and object names, IEC 61850-8-1:2011 §8.1.3.2.2 (see F.3.2).
+
+```go
 const MaxStrictLength = 129
 ```
 
-MaxStrictLength is the conservative maximum reference length enforced by [ParseStrict](#func-parsestrict), inspired by the IEC 61850-7-2 VisibleString129 type of ObjectReference attributes.
+MaxStrictLength is the maximum length of an ObjectReference enforced by [ParseStrict](#func-parsestrict): IEC 61850-7-2:2010 Table 4 types ObjectReference as VISIBLE STRING129. The functional constraint suffix "\[FC]" is not part of the ObjectReference (7-2 §22.2 NOTE 1) and is not counted.
 
 ## Functions
 
@@ -42,6 +72,14 @@ Normalize parses a reference in any supported form and returns its canonical str
   - class references "MMXU.Hz.mag.f\[MX]"
 
 Input without "/" is read as a class reference. Normalization changes only the notation, never the content: an MMS reference becomes the bracketed FC form, and nothing is trimmed, case-folded or inferred.
+
+### func SplitIndex
+
+```go
+func SplitIndex(component string) (name string, index int, ok bool, err error)
+```
+
+SplitIndex splits a path component into its name and an optional array element index, IEC 61850-7-2:2010 §6.1.2.3 ("The "(…)" shall indicate an array element") and §12.3.3.2.3 ("FCDA(NumArrayElement)", e.g. "phsAHar(3)"). It returns ok false for a component without an index. A malformed index — empty "()", a non-decimal "(x)", more than one "(1)(2)", text after ")" or a "(" without ")" — is an error.
 
 ## Types
 
@@ -152,7 +190,7 @@ The format, the fields and the validation rules are those of the Ref type of git
 func FromMMS(domain, item string) (Ref, error)
 ```
 
-FromMMS builds a reference from an MMS domain and item ID of the form LN$FC$DO$DA.
+FromMMS builds a reference from an MMS domain and item ID of the form LN$FC$DO$DA. The domain and item ID are bounded by the MMS maxIdentifier size, as in [Ref.ToMMS](#func-ref-tomms).
 
 #### func Parse
 
@@ -177,7 +215,7 @@ It fails with a [\*model.ReferenceError](https://pkg.go.dev/github.com/otfabric/
 func ParseStrict(s string) (Ref, error)
 ```
 
-ParseStrict is like [Parse](#func-parse) but rejects references longer than MaxStrictLength characters.
+ParseStrict is like [Parse](#func-parse) and also enforces the length limits of IEC 61850-7-2:2010 Table 4 on the ObjectReference, the reference without its "\[FC]" suffix: at most MaxStrictLength characters, a logical device name of at most MaxLDLength and a path below it of at most MaxPathLength characters. The naming rules of 7-2 §22.2 (character set, start characters, name lengths) are checked separately by [Ref.ValidateNames](#func-ref-validatenames).
 
 #### func (Ref) Child
 
@@ -259,6 +297,8 @@ func (r Ref) ToMMS() (domain, item string, err error)
 
 ToMMS returns the MMS domain and item ID of the reference, following the IEC 61850-8-1 mapping LN$FC$DO$DA. A reference with a path needs a functional constraint.
 
+The domain and the item ID are MMS identifiers: each is at most MaxMMSIdentifier characters (IEC 61850-8-1:2011 §8.1.3.2.2 and §7.3.1); longer names fail with a [\*model.ReferenceError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ReferenceError) that wraps both [model.ErrInvalidReference](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidReference) and [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded). An array element "(n)" has no item ID form, because 8-1 addresses array elements with MMS alternate access, so a reference with an index fails too.
+
 #### func (Ref) Validate
 
 ```go
@@ -267,11 +307,29 @@ func (r Ref) Validate() error
 
 Validate checks the structural invariants of the reference:
 
-  - LD is non-empty
+  - LD is non-empty and at most MaxLDLength characters (IEC 61850-7-2:2010 §22.2 and Table 4)
   - Path and FC require LN
   - no empty path components
-  - FC, when set, has exactly two characters
+  - FC, when set, is two upper-case letters
   - no component contains a separator (/ . $ \[ ])
+  - an array index "(n)" is a decimal number closing a path component (7-2:2010 §6.1.2.3)
+
+#### func (Ref) ValidateNames
+
+```go
+func (r Ref) ValidateNames() error
+```
+
+ValidateNames checks the naming conventions of IEC 61850-7-2:2010 §22.2 that [Parse](#func-parse) leaves to the device, for references that must conform strictly (engineering tools, tests):
+
+  - names use the characters A-Z, a-z, 0-9 and "\_" only
+  - the LD name starts with an alpha character
+  - the LN-Prefix starts with an alpha character, and prefix plus instance number are at most MaxLNPrefixInstance characters
+  - the LN class is four upper-case letters
+  - the DataObjectName is at most MaxDataObjectName characters and starts with an upper-case letter
+  - LN.DO.DA, without LD name and FC, is at most MaxFCDALength characters
+
+The structural rules of [Ref.Validate](#func-ref-validate) are checked first. Errors are [\*model.ReferenceError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ReferenceError) values.
 
 #### func (Ref) WithFC
 

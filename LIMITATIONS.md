@@ -30,6 +30,21 @@ device or engineering tool.
   check` contacts no server, and the weekly `nsd.yml` run only detects packages
   that changed or disappeared at their pinned locations.
 
+## References and resolution
+
+- **Name rules are opt-in.** `reference.Parse` accepts names outside the
+  character set and start rules of IEC 61850-7-2 §22.2, as devices use them;
+  `Ref.ValidateNames` checks them.
+- **Array bounds.** An array index (`phsAHar(3)`) is accepted on array
+  elements only; its upper bound (`maxPts`) is device configuration and is not
+  checked.
+- **Control services follow 8-1.** `SBO`, `SBOw`, `Oper` and `Cancel` (FC CO)
+  are the IEC 61850-8-1 mapping. Which of them a device has depends on its
+  `ctlModel`, which the model does not know.
+- **Presence conditions are not evaluated.** Conditional forms (`MOcond`,
+  `AtLeastOne`, ...) are carried verbatim; equal instance-number widths
+  (7-2 §22.2) are not checked.
+
 ## Model gaps from upstream
 
 - Not every data object resolves to leaf types: paths through a type that no
@@ -47,8 +62,18 @@ device or engineering tool.
 ## IEC content
 
 - The repository ships no NSD packages and no text from the standards. The
-  committed output has no documentation texts; NSDoc text is available only
-  from packages the caller loads ([docs/licensing.md](docs/licensing.md)).
+  committed output has no documentation texts; texts are available only from
+  NSDocs the caller loads, a doc set the caller supplies, or a build with the
+  `iecdocs` tag over a locally generated doc set
+  ([docs/licensing.md](docs/licensing.md#doc-sets)).
+- The doc set extractor (`internal/tools/docextract`) reads the PDF tables
+  heuristically. Coverage differs per standard (it is reported in
+  `.docs-work/report.txt`): abstract classes, sub data attributes and
+  extension namespaces have fewer texts, and a text the PDF layout splits
+  oddly can be cut short. Texts are never invented: an element without a
+  confident match stays empty.
+- `catalog.Query.Text` is a case-insensitive substring match of all terms,
+  not a ranked full-text search.
 - Regular CI runs on independently authored synthetic fixtures. The official
   packages are exercised only by `nsd.yml` and locally (`make official`).
 

@@ -212,6 +212,14 @@ type Descriptor struct {
 	Source     string     `json:"source"`
 	// Notes are remarks, e.g. that an integer value needs scaling.
 	Notes []string `json:"notes,omitempty"`
+
+	// Title is the documentation text of the data object, and
+	// Description that of the deepest element of the path that has one
+	// (attribute, sub data object or the data object itself). Both are
+	// empty unless documentation texts were applied to the namespaces,
+	// e.g. with official.DefaultDocumented or an NSDoc file.
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 ```
 

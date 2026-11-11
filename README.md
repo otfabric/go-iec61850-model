@@ -39,6 +39,7 @@ round.
 - [Install nsdctl](#install-nsdctl)
 - [Command-line tool](#command-line-tool)
 - [Official packages](#official-packages)
+- [Titles and descriptions](#titles-and-descriptions)
 - [Errors](#errors)
 - [Input safety](#input-safety)
 - [Documentation](#documentation)
@@ -378,6 +379,46 @@ make generate-check                 # fetch, then fail if the committed output i
 
 The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
 in CI without caches or artifacts.
+
+## Titles and descriptions
+
+The library ships **public texts** written by OT Fabric (MIT,
+[texts/](texts/README.md)): a title or description for every element of every
+embedded namespace (10,042 keys; 14 abbreviation terms that no data object uses have none on purpose). Logical node, CDC, attribute, type and
+condition texts are written by hand; data object descriptions are composed
+from the expansions of the terms their names are built from (`TotW` →
+"Total active power"); enumeration texts are derived from the names.
+
+- **The documented profiles**: `official.DefaultDocumented("en")`,
+  `official.ExtendedDocumented("en")` and `official.OpenDocumented(name, "en")`
+  apply the texts to the embedded catalog and cache the result separately;
+  `official.Default()` and `official.Extended()` stay without texts.
+  `official.PublicDocs()` returns the public doc set alone.
+- **A local doc set** on top: texts you hold a license for (for example
+  generated from your copies of the standards with `make docs-extract
+  SPECS_DIR=...`, see [internal/tools/docextract](internal/tools/docextract/README.md))
+  take precedence where they have a text; the public texts fill the rest. Set
+  `IEC61850_MODEL_DOCS` to the file, or build with `-tags iecdocs`
+  (`make build-docs`). They stay on your machine
+  ([docs/licensing.md](docs/licensing.md#doc-sets)). Other languages than
+  English need a local doc set; `official.ErrNoDocs` reports a language without
+  texts.
+- **NSDoc files** loaded with the NSD packages (`nsd.WithLanguage`), and **doc
+  sets** keyed by path (`LN:MMXU`, `DO:MMXU.TotW`, `DA:MV.mag`, ...) read with
+  `nsd.LoadDocSets` and applied with `nsd.ApplyDocSet` or
+  `nsd.WithFallbackDocs`.
+
+```go
+p, err := official.DefaultDocumented("en")
+if err != nil {
+	return err
+}
+res, _ := resolver.New(p).ResolveString("MMXU.TotW.mag.f")
+fmt.Println(res.Doc().Text(), res.Description())
+```
+
+The texts also reach `semantic.Descriptor.Title`/`Description`, and
+`catalog.Query.Text` searches them.
 
 ## Development
 

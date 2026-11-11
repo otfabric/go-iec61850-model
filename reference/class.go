@@ -61,8 +61,8 @@ func (r ClassRef) Validate() error {
 	if err := validatePath(r.Path); err != nil {
 		return &model.ReferenceError{Input: r.String(), Reason: err.Error()}
 	}
-	if r.FC != "" && len(r.FC) != 2 {
-		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("functional constraint must be 2 characters, got %q", r.FC)}
+	if r.FC != "" && !validFC(string(r.FC)) {
+		return &model.ReferenceError{Input: r.String(), Reason: fmt.Sprintf("functional constraint must be 2 upper-case letters, got %q", r.FC)}
 	}
 	return nil
 }

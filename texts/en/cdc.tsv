@@ -1,0 +1,57 @@
+# Common data class titles.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+SPS	Single point status
+DPS	Double point status
+INS	Integer status
+ENS	Enumerated status
+ACT	Protection activation information
+ACD	Directional protection activation information
+SEC	Security violation counter
+BCR	Binary counter reading
+HST	Histogram
+VSS	Visible string status
+MV	Measured value
+CMV	Complex measured value
+SAV	Sampled value
+WYE	Three-phase values to ground
+DEL	Three-phase phase-to-phase values
+SEQ	Sequence components
+HMV	Harmonic values
+HWYE	Harmonic values to ground
+HDEL	Harmonic phase-to-phase values
+SPC	Controllable single point
+DPC	Controllable double point
+INC	Controllable integer status
+ENC	Controllable enumerated status
+BSC	Binary controlled step position
+ISC	Integer controlled step position
+APC	Controllable analogue process value
+BAC	Binary controlled analogue process value
+SPG	Single point setting
+ING	Integer setting
+ENG	Enumerated setting
+ORG	Object reference setting
+TSG	Time setting
+CUG	Currency setting
+VSG	Visible string setting
+ASG	Analogue setting
+CURVE	Setting curve
+CSG	Curve shape setting
+DPL	Device name plate
+LPL	Logical node name plate
+CSD	Curve shape description
+CST	Common service tracking
+BTS	Buffered report control block tracking
+UTS	Unbuffered report control block tracking
+LTS	Log control block tracking
+OTS	Log tracking
+GTS	GOOSE control block tracking
+MTS	Multicast sampled value control block tracking
+NTS	Unicast sampled value control block tracking
+STS	Setting group control block tracking
+CTS	Control service tracking
+ORS	Object reference status
+TCS	Time value status
+VSD	Visible string description
+RST	Operational restriction
+TAG	Controllable tag

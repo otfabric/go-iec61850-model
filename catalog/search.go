@@ -69,6 +69,13 @@ type Query struct {
 	// IncludeAbstract includes abstract logical node classes and their
 	// data objects.
 	IncludeAbstract bool
+	// Text matches elements whose name, title or description contains
+	// every whitespace-separated term of Text, case-insensitively, e.g.
+	// "frequency" or "circuit breaker". Titles and descriptions exist
+	// only when documentation texts were applied to the namespaces
+	// (official.DefaultDocumented, an NSDoc file or nsd.ApplyDocSet);
+	// without them only names match.
+	Text string
 }
 
 // Result is one search hit.
@@ -95,6 +102,10 @@ type Result struct {
 	Variant string `json:"variant,omitempty"`
 	// Extension marks extension classes and the data objects they add.
 	Extension bool `json:"extension,omitempty"`
+	// Title and Description are the documentation texts of the element,
+	// when texts were applied.
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // Search returns the elements matching q in a stable order: by kind,
@@ -110,6 +121,22 @@ func (v *view) Search(q Query) []Result {
 			return n == q.Name
 		}
 		return strings.Contains(strings.ToLower(n), strings.ToLower(q.Name))
+	}
+	terms := strings.Fields(strings.ToLower(q.Text))
+	match := func(n string, d model.Doc) bool {
+		if !nameOK(n) {
+			return false
+		}
+		if len(terms) == 0 {
+			return true
+		}
+		hay := strings.ToLower(n + "\n" + d.Title + "\n" + d.Description)
+		for _, t := range terms {
+			if !strings.Contains(hay, t) {
+				return false
+			}
+		}
+		return true
 	}
 	// Filters that do not apply to a kind exclude that kind.
 	lnFilters := q.Type == "" && q.FC == ""
@@ -135,33 +162,34 @@ func (v *view) Search(q Query) []Result {
 				if q.Group != 0 && ln.Group() != q.Group {
 					continue
 				}
-				if want(KindLogicalNode) && nameOK(ln.Name) && (q.CDC == "" || declaresCDC(ln, q.CDC)) {
-					out = append(out, Result{Kind: KindLogicalNode, Name: ln.Name, Path: ln.Name, Namespace: ns.ID, Abstract: ln.Abstract, Extension: ln.IsExtension})
+				if want(KindLogicalNode) && match(ln.Name, ln.Doc) && (q.CDC == "" || declaresCDC(ln, q.CDC)) {
+					out = append(out, Result{Kind: KindLogicalNode, Name: ln.Name, Path: ln.Name, Namespace: ns.ID, Abstract: ln.Abstract, Extension: ln.IsExtension, Title: ln.Doc.Title, Description: ln.Doc.Description})
 				}
 				if !want(KindDataObject) {
 					continue
 				}
 				for j := range ln.DataObjects {
 					do := &ln.DataObjects[j]
-					if nameOK(do.Name) && (q.CDC == "" || do.Type == q.CDC) {
+					if match(do.Name, do.Doc) && (q.CDC == "" || do.Type == q.CDC) {
 						out = append(out, Result{
 							Kind: KindDataObject, Name: do.Name, Path: model.Path(ln.Name, do.Name), Namespace: ns.ID,
 							Type: do.Type, Presence: do.Presence, Abstract: ln.Abstract, Extension: ln.IsExtension,
+							Title: do.Doc.Title, Description: do.Doc.Description,
 						})
 					}
 				}
 			}
 		}
 		attrOK := func(a *model.DataAttribute) bool {
-			return nameOK(a.Name) && (q.Type == "" || a.Type == q.Type) && (q.FC == "" || a.FC == q.FC)
+			return match(a.Name, a.Doc) && (q.Type == "" || a.Type == q.Type) && (q.FC == "" || a.FC == q.FC)
 		}
 		for i := range ns.CDCs {
 			c := &ns.CDCs[i]
 			if q.CDC != "" && c.Name != q.CDC {
 				continue
 			}
-			if want(KindCDC) && cdcFilters && nameOK(c.Name) {
-				out = append(out, Result{Kind: KindCDC, Name: c.Name, Path: c.Key(), Namespace: ns.ID, Variant: c.Variant})
+			if want(KindCDC) && cdcFilters && match(c.Name, c.Doc) {
+				out = append(out, Result{Kind: KindCDC, Name: c.Name, Path: c.Key(), Namespace: ns.ID, Variant: c.Variant, Title: c.Doc.Title, Description: c.Doc.Description})
 			}
 			if !want(KindDataAttribute) || !daFilters {
 				continue
@@ -169,14 +197,14 @@ func (v *view) Search(q Query) []Result {
 			for j := range c.DataAttributes {
 				a := &c.DataAttributes[j]
 				if attrOK(a) {
-					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Key(), a.Name), Namespace: ns.ID, Type: a.Type, FC: a.FC, Presence: a.Presence, Variant: c.Variant})
+					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Key(), a.Name), Namespace: ns.ID, Type: a.Type, FC: a.FC, Presence: a.Presence, Variant: c.Variant, Title: a.Doc.Title, Description: a.Doc.Description})
 				}
 			}
 		}
 		for i := range ns.ConstructedAttributes {
 			c := &ns.ConstructedAttributes[i]
-			if want(KindConstructedAttribute) && typeFilters && nameOK(c.Name) {
-				out = append(out, Result{Kind: KindConstructedAttribute, Name: c.Name, Path: c.Name, Namespace: ns.ID})
+			if want(KindConstructedAttribute) && typeFilters && match(c.Name, c.Doc) {
+				out = append(out, Result{Kind: KindConstructedAttribute, Name: c.Name, Path: c.Name, Namespace: ns.ID, Title: c.Doc.Title, Description: c.Doc.Description})
 			}
 			if !want(KindDataAttribute) || !memberFilters {
 				continue
@@ -184,7 +212,7 @@ func (v *view) Search(q Query) []Result {
 			for j := range c.SubDataAttributes {
 				a := &c.SubDataAttributes[j]
 				if attrOK(a) {
-					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Name, a.Name), Namespace: ns.ID, Type: a.Type, Presence: a.Presence})
+					out = append(out, Result{Kind: KindDataAttribute, Name: a.Name, Path: model.Path(c.Name, a.Name), Namespace: ns.ID, Type: a.Type, Presence: a.Presence, Title: a.Doc.Title, Description: a.Doc.Description})
 				}
 			}
 		}
@@ -193,14 +221,14 @@ func (v *view) Search(q Query) []Result {
 		}
 		for i := range ns.Enumerations {
 			e := &ns.Enumerations[i]
-			if want(KindEnumeration) && nameOK(e.Name) {
-				out = append(out, Result{Kind: KindEnumeration, Name: e.Name, Path: e.Name, Namespace: ns.ID})
+			if want(KindEnumeration) && match(e.Name, e.Doc) {
+				out = append(out, Result{Kind: KindEnumeration, Name: e.Name, Path: e.Name, Namespace: ns.ID, Title: e.Doc.Title, Description: e.Doc.Description})
 			}
 		}
 		for i := range ns.BasicTypes {
 			b := &ns.BasicTypes[i]
-			if want(KindBasicType) && nameOK(b.Name) {
-				out = append(out, Result{Kind: KindBasicType, Name: b.Name, Path: b.Name, Namespace: ns.ID})
+			if want(KindBasicType) && match(b.Name, b.Doc) {
+				out = append(out, Result{Kind: KindBasicType, Name: b.Name, Path: b.Name, Namespace: ns.ID, Title: b.Doc.Title, Description: b.Doc.Description})
 			}
 		}
 	}

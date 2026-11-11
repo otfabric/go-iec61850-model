@@ -1,0 +1,16 @@
+# Constructed attribute type titles.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+AnalogueValue	Analogue value
+AnalogueValueCtl	Analogue control value
+AnalogueValueCtlF	Floating-point analogue control value
+AnalogueValueCtlInt	Integer analogue control value
+CalendarTime	Calendar time
+Cell	Cell (two-dimensional area)
+Originator	Control originator
+Point	Curve point
+PulseConfig	Pulse configuration
+RangeConfig	Range configuration
+ScaledValueConfig	Scaled value configuration
+Unit	Unit of measure
+ValWithTrans	Value with transient indication
+Vector	Vector (magnitude and angle)

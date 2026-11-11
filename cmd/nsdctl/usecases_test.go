@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/otfabric/go-iec61850-model/official"
 )
 
 // TestUseCaseOutput re-runs the commands of docs/use-cases.md that have no
@@ -25,7 +27,13 @@ func TestUseCaseOutput(t *testing.T) {
 			continue
 		}
 		want := lines[1 : len(lines)-1]
-		out, errOut, _ := nsdctl(t, shellWords(t, strings.TrimPrefix(cmd, "nsdctl "))...)
+		args := shellWords(t, strings.TrimPrefix(cmd, "nsdctl "))
+		if official.DocsSource() != "" {
+			// docs/use-cases.md shows a build without IEC texts; a binary
+			// built with -tags iecdocs (or IEC61850_MODEL_DOCS) adds them.
+			args = append([]string{"--lang", ""}, args...)
+		}
+		out, errOut, _ := nsdctl(t, args...)
 		got := strings.Split(strings.TrimRight(out+errOut, "\n"), "\n")
 		switch {
 		case len(want) > 0 && want[len(want)-1] == "…":

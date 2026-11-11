@@ -218,7 +218,8 @@ func TestNormalize(t *testing.T) {
 }
 
 func FuzzParse(f *testing.F) {
-	for _, s := range []string{"LD1/MMXU1.TotW.mag.f[MX]", "LD1", "LD1/LLN0", "a[ST]", "LD/LN..x"} {
+	for _, s := range []string{"LD1/MMXU1.TotW.mag.f[MX]", "LD1", "LD1/LLN0", "a[ST]", "LD/LN..x",
+		"LD0/MHAI1.HA.phsAHar(3).cVal[MX]", "LD0/MMXU1.Hz(", "LD0/MMXU1.Hz)", "LD0/MMXU1.Hz(1)(2)", "LD0/MMXU1.Hz()", "LD0/MMXU1.Hz[mx]"} {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, s string) {
@@ -232,6 +233,10 @@ func FuzzParse(f *testing.F) {
 		}
 		if !reflect.DeepEqual(r, again) {
 			t.Fatalf("round trip changed %q: %+v vs %+v", s, r, again)
+		}
+		_ = r.ValidateNames()
+		if _, _, err := r.ToMMS(); err == nil {
+			_ = r.String()
 		}
 	})
 }

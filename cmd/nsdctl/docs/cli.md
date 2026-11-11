@@ -25,7 +25,8 @@ require cobra.
 | `-p, --profile NAME\|ID` | A named profile (`default`, `extended`) or a namespace to select, e.g. `IEC 61850-7-4:2007B5` or just `IEC 61850-7-4`; repeatable. Default: the `default` profile when the sources carry its parts, otherwise the only release of each standard |
 | `--json` | Machine-readable JSON instead of text |
 | `--strict` | Treat importer warnings (unsupported elements and attributes) as errors |
-| `--lang CODE` | NSDoc language to apply (default `en`; empty disables) |
+| `--lang CODE` | NSDoc and doc set language to apply (default `en`; empty disables both) |
+| `--docs FILE` | Doc set with titles and descriptions (`otfabric-docset/1` JSON, optionally gzip-compressed, or NSDoc XML). Without `--source` the official catalog is shown with these texts; with `--source` they fill elements that the loaded NSDocs leave empty. Without the flag, a binary built with `-tags iecdocs` (`make build-docs`) or the file named by `IEC61850_MODEL_DOCS` supplies the texts. Doc sets hold IEC text: they are local-only (docs/licensing.md) |
 
 The `model` commands also take `--ns NAMESPACE`: look names up in one
 namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
@@ -41,7 +42,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `diff OLD NEW [--exit-code]` | Added, removed and changed definitions between two sources |
 | `model show NAME\|PATH` | A class (with inherited data objects and semantics), CDC, type, enumeration or basic type; or a resolved path with every step |
 | `model list [--kind ln\|abstract\|cdc\|ca\|enum\|basic]` | Definitions of one kind |
-| `model search [--name --exact --cdc --type --fc --group --standard --abstract --kind]` | Search across the profile |
+| `model search [--name --text --exact --cdc --type --fc --group --standard --abstract --kind]` | Search across the profile; `--text` matches all terms in the name, title or description (needs texts) |
 | `model describe REF` | Semantic descriptor: quantity, phase, reference, component, unit hint, rule |
 | `model measurements LNCLASS` | Mapped measurements of a class, per phase |
 | `model leaves LNCLASS[.DO...] [--fc FC]` | All leaf attributes below a class or path |

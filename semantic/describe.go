@@ -63,6 +63,14 @@ type Descriptor struct {
 	Source     string     `json:"source"`
 	// Notes are remarks, e.g. that an integer value needs scaling.
 	Notes []string `json:"notes,omitempty"`
+
+	// Title is the documentation text of the data object, and
+	// Description that of the deepest element of the path that has one
+	// (attribute, sub data object or the data object itself). Both are
+	// empty unless documentation texts were applied to the namespaces,
+	// e.g. with official.DefaultDocumented or an NSDoc file.
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // Describe describes the element a reference designates, using the
@@ -116,6 +124,7 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 	}
 	doStep := res.Steps[1]
 	d := &Descriptor{
+		Title: res.DataObject.Doc.Text(), Description: deepestDescription(res.Steps[1:]),
 		Path: path, LNClass: res.LNClass.Name, DataObject: res.DataObject.Name, CDC: res.DataObject.Type,
 		Presence: res.DataObject.Presence, Namespace: doStep.Source,
 		Quantity: rule.Quantity, Phase: rule.Phase, Reference: rule.Reference, Direction: rule.Direction,
@@ -149,6 +158,17 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 	}
 	component(d, rest)
 	return d, nil
+}
+
+// deepestDescription returns the description (or title) of the last
+// step below the logical node that has one.
+func deepestDescription(steps []resolver.Step) string {
+	for i := len(steps) - 1; i >= 0; i-- {
+		if t := steps[i].Doc.Long(); t != "" {
+			return t
+		}
+	}
+	return ""
 }
 
 // component derives the component and unit hint from the attribute
