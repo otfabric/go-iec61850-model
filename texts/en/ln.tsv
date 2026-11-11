@@ -28,10 +28,10 @@ APOD	Power oscillation damping
 APSF	Power system stabilizer filter	?
 APSS	Power system stabilizer
 APST	Power system stabilizer input limits	?
-AQCL	Reactive power control
+AQCL	Generation reactive power control function
 AQMN	Reactive power minimum limit
 AQMX	Reactive power maximum limit
-ARCO	Reactive power control
+ARCO	Reactive power controller
 ARIS	Neutral resistor control
 AROP	Active power reserve offer	?
 ARPC	Reactive power compensation control
@@ -45,14 +45,14 @@ ASRC	Service restoration control
 ASWI	Automatic switching
 ATCC	Automatic tap changer controller
 AUEL	Underexcitation limiter
-AVCO	Voltage control
+AVCO	Voltage controller
 AVFL	Volts per hertz limiter
 AVMN	Voltage minimum limit
 AVMX	Voltage maximum limit
-AVOC	Voltage control
+AVOC	Generation voltage control function
 AWGC	Active power control
-AWMN	Active power minimum limit
-AWMX	Active power maximum limit
+AWMN	Generation active power minimum limit function
+AWMX	Generation active power maximum limit function
 ActivePowerLN	Active power function (abstract)
 ActivePowerLimitLN	Active power limit function (abstract)
 ActivePowerOpFunLN	Active power operating function (abstract)
@@ -148,8 +148,8 @@ DVVR	Volt-var function
 DVWC	Volt-watt function
 DWFL	Active power following	?
 DWGC	Active power set-point control	?
-DWMN	Active power minimum limit
-DWMX	Active power maximum limit
+DWMN	DER active power minimum limit
+DWMX	DER active power maximum limit
 DWVR	Watt-var function
 DecelerationLN	Deceleration device (abstract)
 DomainLN	Domain logical node (abstract)
@@ -271,7 +271,7 @@ HSEQ	Start and stop sequencer
 HSMF	Hydro unit synchronous machine field
 HSPD	Hydro unit speed monitoring
 HSSL	Hydro unit shaft seal
-HSST	Surge tank
+HSST	Hydro surge tank
 HTGV	Guide vanes
 HTRB	Runner blades
 HTRK	Trash rack
@@ -299,9 +299,9 @@ ITMI	Telemonitoring interface
 ITPC	Teleprotection communication interface
 InstrumentTransformerLN	Instrument transformer (abstract)
 JointControlMgmtFunLN	Joint control management function (abstract)
-KBRP	Mechanical brake	?
+KBRP	Mechanical brake (non-controlled equipment)	?
 KCTH	Cathodic protection	?
-KDFL	Jet deflector	?
+KDFL	Jet deflector (non-controlled equipment)	?
 KFAN	Fan
 KFIL	Filter
 KFIM	Fire fighting system interface	?
@@ -309,7 +309,7 @@ KFLV	Fuel delivery system	?
 KFSL	Shaft seal	?
 KFUL	Fuel consumption and characteristics
 KFVL	Fluid control valve	?
-KGTE	Gate
+KGTE	Gate (non-controlled equipment)
 KHCY	Hydraulic cylinder	?
 KHTR	Heater
 KILL	Illumination
@@ -584,7 +584,7 @@ ZSCR	Semiconductor controlled rectifier
 ZSMA	Synchronous machine armature	?
 ZSMC	Synchronous machine
 ZSMF	Synchronous machine field	?
-ZSUR	Surge tank	?
+ZSUR	Surge tank equipment	?
 ZTCF	Thyristor controlled frequency converter
 ZTCR	Thyristor controlled reactive component
 ZTCRExt	Thyristor controlled reactive component (extended)
