@@ -191,6 +191,8 @@ func (k StepKind) isAttribute() bool {
 	switch k {
 	case StepDataAttribute, StepSubDataAttribute, StepControlService, StepServiceParameter:
 		return true
+	case StepLogicalNode, StepDataObject, StepSubDataObject:
+		return false
 	}
 	return false
 }
