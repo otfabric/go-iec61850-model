@@ -206,6 +206,15 @@ func TestWords(t *testing.T) {
 	if emptyLiteral("MultiplierKind.") != "No multiplier (factor 1)" || emptyLiteral("SIUnitKind.") != "No unit (dimensionless)" || emptyLiteral("X.") != "Empty literal" {
 		t.Error("emptyLiteral")
 	}
+	gz, _, _ := build("testdata/texts", "testdata/catalog.json")
+	var other bytes.Buffer
+	zw, _ := gzip.NewWriterLevel(&other, gzip.NoCompression)
+	raw, _ := gunzip(gz)
+	_, _ = zw.Write(raw)
+	_ = zw.Close()
+	if !sameContent(gz, other.Bytes()) || sameContent(gz, []byte("x")) || sameContent([]byte("x"), gz) {
+		t.Error("sameContent")
+	}
 	if isDigits("") || !isDigits("12") || isDigits("1a") {
 		t.Error("isDigits")
 	}

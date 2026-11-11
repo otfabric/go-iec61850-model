@@ -59,7 +59,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	if *check {
 		old, err := os.ReadFile(*out)
-		if err != nil || !bytes.Equal(old, data) {
+		if err != nil || !sameContent(old, data) {
 			_, _ = fmt.Fprintf(stderr, "textgen: %s is stale; run make texts\n", *out)
 			return 1
 		}
@@ -71,6 +71,22 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	_, _ = fmt.Fprint(stdout, report)
 	return 0
+}
+
+// sameContent compares two gzip files by their decompressed content:
+// the compressed bytes can differ between Go releases.
+func sameContent(a, b []byte) bool {
+	ua, errA := gunzip(a)
+	ub, errB := gunzip(b)
+	return errA == nil && errB == nil && bytes.Equal(ua, ub)
+}
+
+func gunzip(b []byte) ([]byte, error) {
+	zr, err := gzip.NewReader(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	return io.ReadAll(zr)
 }
 
 // tables holds the hand-written texts, by table name and entry name.
