@@ -1,0 +1,23 @@
+# MMTN (IEC 61850-7-4:2007B6), profile default
+
+coverage: 7 measured or mapped, 7 mapped, 0 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MMTN.TotVAh | apparent-energy | phase total | unit VAh | mmtn.totvah
+MMTN.TotWh | active-energy | phase total | unit Wh | mmtn.totwh
+MMTN.TotVArh | reactive-energy | phase total | unit VArh | mmtn.totvarh
+MMTN.SupWh | active-energy | phase total | direction supply | unit Wh | mmtn.supwh
+MMTN.SupVArh | reactive-energy | phase total | direction supply | unit VArh | mmtn.supvarh
+MMTN.DmdWh | active-energy | phase total | direction demand | unit Wh | mmtn.dmdwh
+MMTN.DmdVArh | reactive-energy | phase total | direction demand | unit VArh | mmtn.dmdvarh
+
+## Data objects
+
+TotVAh BCR (EnergyLN): mapped mmtn.totvah
+TotWh BCR (EnergyLN): mapped mmtn.totwh
+TotVArh BCR (EnergyLN): mapped mmtn.totvarh
+SupWh BCR (EnergyLN): mapped mmtn.supwh
+SupVArh BCR (EnergyLN): mapped mmtn.supvarh
+DmdWh BCR (EnergyLN): mapped mmtn.dmdwh
+DmdVArh BCR (EnergyLN): mapped mmtn.dmdvarh

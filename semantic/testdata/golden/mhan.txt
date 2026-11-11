@@ -1,0 +1,56 @@
+# MHAN (IEC 61850-7-4:2007B6), profile default
+
+coverage: 25 measured or mapped, 22 mapped, 3 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+MHAN.Hz | frequency | unit Hz | harmonics.hz
+MHAN.HaAmp.har | current | unit A | mhan.haamp
+MHAN.HaVol.har | voltage | unit V | mhan.havol
+MHAN.HaWatt.har | active-power | unit W | mhan.hawatt
+MHAN.HaVolAmpr.har | reactive-power | unit VAr | mhan.havolampr
+MHAN.HaVolAmp.har | apparent-power | unit VA | mhan.havolamp
+MHAN.HaRmsAmp | current | unit A | mhan.harmsamp
+MHAN.HaRmsVol | voltage | unit V | mhan.harmsvol
+MHAN.HaTuWatt | active-power | unit W | mhan.hatuwatt
+MHAN.HaTsWatt | active-power | unit W | mhan.hatswatt
+MHAN.HaKFact | k-factor | of current | unit 1 | mhan.hakfact
+MHAN.ThdAmp | total-harmonic-distortion | of current | unit % | mhan.thdamp
+MHAN.ThdOddAmp | total-harmonic-distortion | of current | unit % | mhan.thdoddamp
+MHAN.ThdEvnAmp | total-harmonic-distortion | of current | unit % | mhan.thdevnamp
+MHAN.TddAmp | total-demand-distortion | of current | unit % | mhan.tddamp
+MHAN.TddOddAmp | total-demand-distortion | of current | unit % | mhan.tddoddamp
+MHAN.TddEvnAmp | total-demand-distortion | of current | unit % | mhan.tddevnamp
+MHAN.ThdVol | total-harmonic-distortion | of voltage | unit % | mhan.thdvol
+MHAN.ThdOddVol | total-harmonic-distortion | of voltage | unit % | mhan.thdoddvol
+MHAN.ThdEvnVol | total-harmonic-distortion | of voltage | unit % | mhan.thdevnvol
+MHAN.HaCfAmp | crest-factor | of current | unit 1 | mhan.hacfamp
+MHAN.HaCfVol | crest-factor | of voltage | unit 1 | mhan.hacfvol
+
+## Data objects
+
+Hz MV (HarmonicsLN): mapped harmonics.hz
+HaAmp HMV (MHAN): mapped mhan.haamp
+HaVol HMV (MHAN): mapped mhan.havol
+HaWatt HMV (MHAN): mapped mhan.hawatt
+HaVolAmpr HMV (MHAN): mapped mhan.havolampr
+HaVolAmp HMV (MHAN): mapped mhan.havolamp
+HaRmsAmp MV (MHAN): mapped mhan.harmsamp
+HaRmsVol MV (MHAN): mapped mhan.harmsvol
+HaTuWatt MV (MHAN): mapped mhan.hatuwatt
+HaTsWatt MV (MHAN): mapped mhan.hatswatt
+HaAmpTm MV (MHAN): excluded — product of harmonic current and time; the vocabulary has no such quantity
+HaKFact MV (MHAN): mapped mhan.hakfact
+HaTdFact MV (MHAN): excluded — total distortion factor whose relation to the THD values of the class the model does not state
+ThdAmp MV (MHAN): mapped mhan.thdamp
+ThdOddAmp MV (MHAN): mapped mhan.thdoddamp
+ThdEvnAmp MV (MHAN): mapped mhan.thdevnamp
+TddAmp MV (MHAN): mapped mhan.tddamp
+TddOddAmp MV (MHAN): mapped mhan.tddoddamp
+TddEvnAmp MV (MHAN): mapped mhan.tddevnamp
+ThdVol MV (MHAN): mapped mhan.thdvol
+ThdOddVol MV (MHAN): mapped mhan.thdoddvol
+ThdEvnVol MV (MHAN): mapped mhan.thdevnvol
+HaCfAmp MV (MHAN): mapped mhan.hacfamp
+HaCfVol MV (MHAN): mapped mhan.hacfvol
+HaTiFact MV (MHAN): excluded — telephone influence factor; the vocabulary has no such quantity

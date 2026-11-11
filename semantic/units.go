@@ -63,10 +63,18 @@ var baseUnits = map[string]string{
 	"deg": "deg", "°": "deg", "rad": "rad",
 	"ohm": "ohm", "Ohm": "ohm", "Ω": "ohm",
 	"%": "%", "1": "1", "Hz/s": "Hz/s", "V/Hz": "V/Hz",
+	// SIUnitKind spells watt "Watts" as well as "W".
+	"Watts": "W",
+	"Pa":    "Pa", "Pa/s": "Pa/s", "K/s": "K/s",
+	"m/s": "m/s", "m/s²": "m/s²", "m/s2": "m/s²",
+	"m³": "m³", "m3": "m³", "m³/s": "m³/s", "m3/s": "m³/s", "l/s": "l/s",
+	"W/m²": "W/m²", "W/m2": "W/m²", "kg/m³": "kg/m³", "kg/m3": "kg/m³",
+	"S/m": "S/m", "dB": "dB", "ppm": "ppm", "1/s": "1/s", "rad/s": "rad/s",
+	"min": "min", "h": "h", "Ah": "Ah", "As": "As", "C": "C",
 }
 
 // unprefixable symbols are never combined with an SI prefix.
-var unprefixable = map[string]bool{"%": true, "1": true, "deg": true, "degC": true}
+var unprefixable = map[string]bool{"%": true, "1": true, "deg": true, "degC": true, "ppm": true, "dB": true, "min": true, "h": true, "kg/m³": true}
 
 var prefixes = []struct {
 	symbol string

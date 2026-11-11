@@ -30,9 +30,9 @@ Messages start with `iec61850-model:`.
 | `ErrAmbiguousReference` | A name is defined by more than one namespace, or a partial namespace ID matches several releases. `ErrAmbiguousSymbol` is the same sentinel; look the name up with its namespace (`LogicalNodeIn`, ...) |
 | `ErrCycle` | Cyclic class inheritance or a type that contains itself |
 | `ErrSourceUnavailable` | A file, directory or reader cannot be opened or read; a nil source |
-| `ErrNoMapping` | No semantic rule applies to an element, or the rule does not fit the model (CDC, sub data object); a class is not a measured value |
+| `ErrNoMapping` | No semantic rule applies to an element, the data object is excluded (the message gives the reason), or the rule does not fit the model (CDC, sub data object); a class is not a measured value |
 | `ErrUnknownUnit` | A unit string, SIUnit value or multiplier value cannot be interpreted |
-| `ErrInvalidRule` | A semantic rule or override is incomplete, names an unknown quantity or an unfitting unit, or conflicts with another |
+| `ErrInvalidRule` | A semantic rule, override or exclusion is incomplete, names an unknown quantity or an unfitting unit, or conflicts with another (an exclusion of a mapped data object) |
 | `ErrUnknownConcept` | An ontology concept ID is not in the graph |
 | `official.ErrNoDocs` | No texts in the requested language (the public texts are English; other languages need a local doc set through `IEC61850_MODEL_DOCS` or `-tags iecdocs`), or a nil set was passed |
 

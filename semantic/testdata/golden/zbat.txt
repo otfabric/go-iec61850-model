@@ -1,0 +1,14 @@
+# ZBAT (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 2 mapped, 1 excluded, 0 unmapped, 29 not measured
+
+## Measurements
+
+ZBAT.Vol | voltage | unit V | battery.vol
+ZBAT.Amp | current | unit A | battery.amp
+
+## Data objects
+
+VolChgRte MV (BatteryLN): excluded — rate of change of voltage, for which SIUnitKind has no unit
+Vol MV (BatteryLN): mapped battery.vol
+Amp MV (BatteryLN): mapped battery.amp

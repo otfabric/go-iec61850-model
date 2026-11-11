@@ -59,7 +59,7 @@ Pre-release (milestones M0–M4 of [REQUIREMENTS.md](REQUIREMENTS.md); see
 | Catalog, profiles, search, diff (`catalog`) | Implemented |
 | Reference parsing (`reference`) | Implemented; compatible with `go-iec61850` `ParseRef` |
 | Type resolution (`resolver`) | Implemented |
-| Semantic mapping (`semantic`) | Implemented: MMXU, MMXN, MMTR rules, overrides, unit handling |
+| Semantic mapping (`semantic`) | Implemented: rules for the measurement and status classes of 7-4 and 7-420, exclusions with reasons, coverage report, overrides, unit handling |
 | Ontology helpers (`ontology`) | Implemented: concept graph, traversal, JSON export |
 | Embedded catalog (`official`) | Committed: every published NSD release (28 namespaces: 7-2, 7-3 and 7-4 from 2007A2 to 2007B6, 90-6 2018A and 2018B, one release of each other part) with the profiles `default`, `extended` and `edition2`, with IEC attribution; gzip-compressed, about 0.3 MB in a binary |
 | Generated names (`names`) | Committed: typed constants for every class, data object, CDC and enumeration of the default profile, with IEC attribution |
@@ -186,7 +186,7 @@ files of [catalog](catalog/example_test.go), [resolver](resolver/example_test.go
 | [`catalog`](catalog) | Immutable multi-release index, explicit profiles, namespace-qualified lookups, overlap reports, search, diff | `New`, `Catalog.Profile`, `LogicalNode`, `LogicalNodeIn`, `DataObjects`, `Overlaps`, `Search`, `Diff` |
 | [`reference`](reference) | Instance and class references, LN name parts, MMS form | `Parse`, `ParseClass`, `ParseLNName`, `Normalize`, `FromMMS` |
 | [`resolver`](resolver) | Path and type resolution with provenance | `New`, `Resolve`, `ResolveString`, `ResolvePath`, `Leaves` |
-| [`semantic`](semantic) | Quantity, phase, reference, component and unit hints from explicit rules | `Describe`, `FindMeasurements`, `Match`, `NormalizeUnit`, `DeviceUnit`, `Mapper` |
+| [`semantic`](semantic) | Quantity, phase, reference, component and unit hints from explicit rules | `Describe`, `FindMeasurements`, `Match`, `Coverage`, `NormalizeUnit`, `DeviceUnit`, `Mapper` |
 | [`official`](official) | Generated: the official namespaces, embedded, with the named profiles | `Default`, `Extended`, `Open`, `Catalog`, `Profiles` |
 | [`names`](names) | Generated from the default profile: `LN_*`, `CDC_*`, `<Class>_<DataObject>` constants and one type per enumeration | `names.MMXU_Hz`, `names.BehaviourModeKind_on` |
 | [`ontology`](ontology) | Typed concept graph with deterministic traversal and JSON export | `BuildGraph`, `Relations`, `Incoming`, `FindConcepts`, `Walk`, `ExportJSON` |

@@ -1,0 +1,13 @@
+# YLTC (IEC 61850-7-4:2007B6), profile default
+
+coverage: 2 measured or mapped, 2 mapped, 0 excluded, 0 unmapped, 34 not measured
+
+## Measurements
+
+YLTC.OpCnt | operation-count | yltc.opcnt
+YLTC.TapPos | tap-position | yltc.tappos
+
+## Data objects
+
+OpCnt INS (YLTC): mapped yltc.opcnt
+TapPos ISC (YLTC): mapped yltc.tappos

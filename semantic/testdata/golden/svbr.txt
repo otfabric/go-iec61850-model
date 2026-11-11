@@ -1,0 +1,17 @@
+# SVBR (IEC 61850-7-4:2007B6), profile default
+
+coverage: 4 measured or mapped, 4 mapped, 0 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+SVBR.OpCntRs | operation-count | supervision.opcntrs
+SVBR.Vbr | vibration | svbr.vbr
+SVBR.VbrPer | duration | unit s | svbr.vbrper
+SVBR.AxDsp | displacement | unit m | svbr.axdsp
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+Vbr MV (SVBR): mapped svbr.vbr
+VbrPer MV (SVBR): mapped svbr.vbrper
+AxDsp MV (SVBR): mapped svbr.axdsp

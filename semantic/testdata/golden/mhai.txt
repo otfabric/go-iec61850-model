@@ -1,0 +1,185 @@
+# MHAI (IEC 61850-7-4:2007B6), profile default
+
+coverage: 31 measured or mapped, 28 mapped, 3 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+MHAI.Hz | frequency | unit Hz | harmonics.hz
+MHAI.HA.phsAHar | current | phase A | unit A | mhai.ha
+MHAI.HA.phsBHar | current | phase B | unit A | mhai.ha
+MHAI.HA.phsCHar | current | phase C | unit A | mhai.ha
+MHAI.HA.neutHar | current | phase N | unit A | mhai.ha
+MHAI.HA.netHar | current | phase net | unit A | mhai.ha
+MHAI.HA.resHar | current | phase residual | unit A | mhai.ha
+MHAI.HPhV.phsAHar | voltage | phase A | reference line-ground | unit V | mhai.hphv
+MHAI.HPhV.phsBHar | voltage | phase B | reference line-ground | unit V | mhai.hphv
+MHAI.HPhV.phsCHar | voltage | phase C | reference line-ground | unit V | mhai.hphv
+MHAI.HPhV.neutHar | voltage | phase N | reference line-ground | unit V | mhai.hphv
+MHAI.HPhV.netHar | voltage | phase net | reference line-ground | unit V | mhai.hphv
+MHAI.HPhV.resHar | voltage | phase residual | reference line-ground | unit V | mhai.hphv
+MHAI.HPPV.phsABHar | voltage | phase AB | reference line-line | unit V | mhai.hppv
+MHAI.HPPV.phsBCHar | voltage | phase BC | reference line-line | unit V | mhai.hppv
+MHAI.HPPV.phsCAHar | voltage | phase CA | reference line-line | unit V | mhai.hppv
+MHAI.HW.phsAHar | active-power | phase A | unit W | mhai.hw
+MHAI.HW.phsBHar | active-power | phase B | unit W | mhai.hw
+MHAI.HW.phsCHar | active-power | phase C | unit W | mhai.hw
+MHAI.HW.neutHar | active-power | phase N | unit W | mhai.hw
+MHAI.HW.netHar | active-power | phase net | unit W | mhai.hw
+MHAI.HW.resHar | active-power | phase residual | unit W | mhai.hw
+MHAI.HVAr.phsAHar | reactive-power | phase A | unit VAr | mhai.hvar
+MHAI.HVAr.phsBHar | reactive-power | phase B | unit VAr | mhai.hvar
+MHAI.HVAr.phsCHar | reactive-power | phase C | unit VAr | mhai.hvar
+MHAI.HVAr.neutHar | reactive-power | phase N | unit VAr | mhai.hvar
+MHAI.HVAr.netHar | reactive-power | phase net | unit VAr | mhai.hvar
+MHAI.HVAr.resHar | reactive-power | phase residual | unit VAr | mhai.hvar
+MHAI.HVA.phsAHar | apparent-power | phase A | unit VA | mhai.hva
+MHAI.HVA.phsBHar | apparent-power | phase B | unit VA | mhai.hva
+MHAI.HVA.phsCHar | apparent-power | phase C | unit VA | mhai.hva
+MHAI.HVA.neutHar | apparent-power | phase N | unit VA | mhai.hva
+MHAI.HVA.netHar | apparent-power | phase net | unit VA | mhai.hva
+MHAI.HVA.resHar | apparent-power | phase residual | unit VA | mhai.hva
+MHAI.HRmsA.phsA | current | phase A | unit A | mhai.hrmsa
+MHAI.HRmsA.phsB | current | phase B | unit A | mhai.hrmsa
+MHAI.HRmsA.phsC | current | phase C | unit A | mhai.hrmsa
+MHAI.HRmsA.neut | current | phase N | unit A | mhai.hrmsa
+MHAI.HRmsA.net | current | phase net | unit A | mhai.hrmsa
+MHAI.HRmsA.res | current | phase residual | unit A | mhai.hrmsa
+MHAI.HRmsPhV.phsA | voltage | phase A | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPhV.phsB | voltage | phase B | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPhV.phsC | voltage | phase C | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPhV.neut | voltage | phase N | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPhV.net | voltage | phase net | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPhV.res | voltage | phase residual | reference line-ground | unit V | mhai.hrmsphv
+MHAI.HRmsPPV.phsAB | voltage | phase AB | reference line-line | unit V | mhai.hrmsppv
+MHAI.HRmsPPV.phsBC | voltage | phase BC | reference line-line | unit V | mhai.hrmsppv
+MHAI.HRmsPPV.phsCA | voltage | phase CA | reference line-line | unit V | mhai.hrmsppv
+MHAI.HTuW.phsA | active-power | phase A | unit W | mhai.htuw
+MHAI.HTuW.phsB | active-power | phase B | unit W | mhai.htuw
+MHAI.HTuW.phsC | active-power | phase C | unit W | mhai.htuw
+MHAI.HTuW.neut | active-power | phase N | unit W | mhai.htuw
+MHAI.HTuW.net | active-power | phase net | unit W | mhai.htuw
+MHAI.HTuW.res | active-power | phase residual | unit W | mhai.htuw
+MHAI.HTsW.phsA | active-power | phase A | unit W | mhai.htsw
+MHAI.HTsW.phsB | active-power | phase B | unit W | mhai.htsw
+MHAI.HTsW.phsC | active-power | phase C | unit W | mhai.htsw
+MHAI.HTsW.neut | active-power | phase N | unit W | mhai.htsw
+MHAI.HTsW.net | active-power | phase net | unit W | mhai.htsw
+MHAI.HTsW.res | active-power | phase residual | unit W | mhai.htsw
+MHAI.HKFact.phsA | k-factor | phase A | of current | unit 1 | mhai.hkfact
+MHAI.HKFact.phsB | k-factor | phase B | of current | unit 1 | mhai.hkfact
+MHAI.HKFact.phsC | k-factor | phase C | of current | unit 1 | mhai.hkfact
+MHAI.HKFact.neut | k-factor | phase N | of current | unit 1 | mhai.hkfact
+MHAI.HKFact.net | k-factor | phase net | of current | unit 1 | mhai.hkfact
+MHAI.HKFact.res | k-factor | phase residual | of current | unit 1 | mhai.hkfact
+MHAI.ThdA.phsA | total-harmonic-distortion | phase A | of current | unit % | mhai.thda
+MHAI.ThdA.phsB | total-harmonic-distortion | phase B | of current | unit % | mhai.thda
+MHAI.ThdA.phsC | total-harmonic-distortion | phase C | of current | unit % | mhai.thda
+MHAI.ThdA.neut | total-harmonic-distortion | phase N | of current | unit % | mhai.thda
+MHAI.ThdA.net | total-harmonic-distortion | phase net | of current | unit % | mhai.thda
+MHAI.ThdA.res | total-harmonic-distortion | phase residual | of current | unit % | mhai.thda
+MHAI.ThdOddA.phsA | total-harmonic-distortion | phase A | of current | unit % | mhai.thdodda
+MHAI.ThdOddA.phsB | total-harmonic-distortion | phase B | of current | unit % | mhai.thdodda
+MHAI.ThdOddA.phsC | total-harmonic-distortion | phase C | of current | unit % | mhai.thdodda
+MHAI.ThdOddA.neut | total-harmonic-distortion | phase N | of current | unit % | mhai.thdodda
+MHAI.ThdOddA.net | total-harmonic-distortion | phase net | of current | unit % | mhai.thdodda
+MHAI.ThdOddA.res | total-harmonic-distortion | phase residual | of current | unit % | mhai.thdodda
+MHAI.ThdEvnA.phsA | total-harmonic-distortion | phase A | of current | unit % | mhai.thdevna
+MHAI.ThdEvnA.phsB | total-harmonic-distortion | phase B | of current | unit % | mhai.thdevna
+MHAI.ThdEvnA.phsC | total-harmonic-distortion | phase C | of current | unit % | mhai.thdevna
+MHAI.ThdEvnA.neut | total-harmonic-distortion | phase N | of current | unit % | mhai.thdevna
+MHAI.ThdEvnA.net | total-harmonic-distortion | phase net | of current | unit % | mhai.thdevna
+MHAI.ThdEvnA.res | total-harmonic-distortion | phase residual | of current | unit % | mhai.thdevna
+MHAI.TddA.phsA | total-demand-distortion | phase A | of current | unit % | mhai.tdda
+MHAI.TddA.phsB | total-demand-distortion | phase B | of current | unit % | mhai.tdda
+MHAI.TddA.phsC | total-demand-distortion | phase C | of current | unit % | mhai.tdda
+MHAI.TddA.neut | total-demand-distortion | phase N | of current | unit % | mhai.tdda
+MHAI.TddA.net | total-demand-distortion | phase net | of current | unit % | mhai.tdda
+MHAI.TddA.res | total-demand-distortion | phase residual | of current | unit % | mhai.tdda
+MHAI.TddOddA.phsA | total-demand-distortion | phase A | of current | unit % | mhai.tddodda
+MHAI.TddOddA.phsB | total-demand-distortion | phase B | of current | unit % | mhai.tddodda
+MHAI.TddOddA.phsC | total-demand-distortion | phase C | of current | unit % | mhai.tddodda
+MHAI.TddOddA.neut | total-demand-distortion | phase N | of current | unit % | mhai.tddodda
+MHAI.TddOddA.net | total-demand-distortion | phase net | of current | unit % | mhai.tddodda
+MHAI.TddOddA.res | total-demand-distortion | phase residual | of current | unit % | mhai.tddodda
+MHAI.TddEvnA.phsA | total-demand-distortion | phase A | of current | unit % | mhai.tddevna
+MHAI.TddEvnA.phsB | total-demand-distortion | phase B | of current | unit % | mhai.tddevna
+MHAI.TddEvnA.phsC | total-demand-distortion | phase C | of current | unit % | mhai.tddevna
+MHAI.TddEvnA.neut | total-demand-distortion | phase N | of current | unit % | mhai.tddevna
+MHAI.TddEvnA.net | total-demand-distortion | phase net | of current | unit % | mhai.tddevna
+MHAI.TddEvnA.res | total-demand-distortion | phase residual | of current | unit % | mhai.tddevna
+MHAI.ThdPhV.phsA | total-harmonic-distortion | phase A | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdPhV.phsB | total-harmonic-distortion | phase B | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdPhV.phsC | total-harmonic-distortion | phase C | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdPhV.neut | total-harmonic-distortion | phase N | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdPhV.net | total-harmonic-distortion | phase net | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdPhV.res | total-harmonic-distortion | phase residual | reference line-ground | of voltage | unit % | mhai.thdphv
+MHAI.ThdOddPhV.phsA | total-harmonic-distortion | phase A | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdOddPhV.phsB | total-harmonic-distortion | phase B | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdOddPhV.phsC | total-harmonic-distortion | phase C | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdOddPhV.neut | total-harmonic-distortion | phase N | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdOddPhV.net | total-harmonic-distortion | phase net | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdOddPhV.res | total-harmonic-distortion | phase residual | reference line-ground | of voltage | unit % | mhai.thdoddphv
+MHAI.ThdEvnPhV.phsA | total-harmonic-distortion | phase A | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdEvnPhV.phsB | total-harmonic-distortion | phase B | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdEvnPhV.phsC | total-harmonic-distortion | phase C | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdEvnPhV.neut | total-harmonic-distortion | phase N | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdEvnPhV.net | total-harmonic-distortion | phase net | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdEvnPhV.res | total-harmonic-distortion | phase residual | reference line-ground | of voltage | unit % | mhai.thdevnphv
+MHAI.ThdPPV.phsAB | total-harmonic-distortion | phase AB | reference line-line | of voltage | unit % | mhai.thdppv
+MHAI.ThdPPV.phsBC | total-harmonic-distortion | phase BC | reference line-line | of voltage | unit % | mhai.thdppv
+MHAI.ThdPPV.phsCA | total-harmonic-distortion | phase CA | reference line-line | of voltage | unit % | mhai.thdppv
+MHAI.ThdOddPPV.phsAB | total-harmonic-distortion | phase AB | reference line-line | of voltage | unit % | mhai.thdoddppv
+MHAI.ThdOddPPV.phsBC | total-harmonic-distortion | phase BC | reference line-line | of voltage | unit % | mhai.thdoddppv
+MHAI.ThdOddPPV.phsCA | total-harmonic-distortion | phase CA | reference line-line | of voltage | unit % | mhai.thdoddppv
+MHAI.ThdEvnPPV.phsAB | total-harmonic-distortion | phase AB | reference line-line | of voltage | unit % | mhai.thdevnppv
+MHAI.ThdEvnPPV.phsBC | total-harmonic-distortion | phase BC | reference line-line | of voltage | unit % | mhai.thdevnppv
+MHAI.ThdEvnPPV.phsCA | total-harmonic-distortion | phase CA | reference line-line | of voltage | unit % | mhai.thdevnppv
+MHAI.HCfPhV.phsA | crest-factor | phase A | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPhV.phsB | crest-factor | phase B | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPhV.phsC | crest-factor | phase C | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPhV.neut | crest-factor | phase N | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPhV.net | crest-factor | phase net | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPhV.res | crest-factor | phase residual | reference line-ground | of voltage | unit 1 | mhai.hcfphv
+MHAI.HCfPPV.phsAB | crest-factor | phase AB | reference line-line | of voltage | unit 1 | mhai.hcfppv
+MHAI.HCfPPV.phsBC | crest-factor | phase BC | reference line-line | of voltage | unit 1 | mhai.hcfppv
+MHAI.HCfPPV.phsCA | crest-factor | phase CA | reference line-line | of voltage | unit 1 | mhai.hcfppv
+MHAI.HCfA.phsA | crest-factor | phase A | of current | unit 1 | mhai.hcfa
+MHAI.HCfA.phsB | crest-factor | phase B | of current | unit 1 | mhai.hcfa
+MHAI.HCfA.phsC | crest-factor | phase C | of current | unit 1 | mhai.hcfa
+MHAI.HCfA.neut | crest-factor | phase N | of current | unit 1 | mhai.hcfa
+MHAI.HCfA.net | crest-factor | phase net | of current | unit 1 | mhai.hcfa
+MHAI.HCfA.res | crest-factor | phase residual | of current | unit 1 | mhai.hcfa
+
+## Data objects
+
+Hz MV (HarmonicsLN): mapped harmonics.hz
+HA HWYE (MHAI): mapped mhai.ha
+HPhV HWYE (MHAI): mapped mhai.hphv
+HPPV HDEL (MHAI): mapped mhai.hppv
+HW HWYE (MHAI): mapped mhai.hw
+HVAr HWYE (MHAI): mapped mhai.hvar
+HVA HWYE (MHAI): mapped mhai.hva
+HRmsA WYE (MHAI): mapped mhai.hrmsa
+HRmsPhV WYE (MHAI): mapped mhai.hrmsphv
+HRmsPPV DEL (MHAI): mapped mhai.hrmsppv
+HTuW WYE (MHAI): mapped mhai.htuw
+HTsW WYE (MHAI): mapped mhai.htsw
+HATm WYE (MHAI): excluded — product of harmonic current and time; the vocabulary has no such quantity
+HKFact WYE (MHAI): mapped mhai.hkfact
+HTdf WYE (MHAI): excluded — transformer derating factor; the vocabulary has no such quantity
+ThdA WYE (MHAI): mapped mhai.thda
+ThdOddA WYE (MHAI): mapped mhai.thdodda
+ThdEvnA WYE (MHAI): mapped mhai.thdevna
+TddA WYE (MHAI): mapped mhai.tdda
+TddOddA WYE (MHAI): mapped mhai.tddodda
+TddEvnA WYE (MHAI): mapped mhai.tddevna
+ThdPhV WYE (MHAI): mapped mhai.thdphv
+ThdOddPhV WYE (MHAI): mapped mhai.thdoddphv
+ThdEvnPhV WYE (MHAI): mapped mhai.thdevnphv
+ThdPPV DEL (MHAI): mapped mhai.thdppv
+ThdOddPPV DEL (MHAI): mapped mhai.thdoddppv
+ThdEvnPPV DEL (MHAI): mapped mhai.thdevnppv
+HCfPhV WYE (MHAI): mapped mhai.hcfphv
+HCfPPV DEL (MHAI): mapped mhai.hcfppv
+HCfA WYE (MHAI): mapped mhai.hcfa
+HTiFact WYE (MHAI): excluded — telephone influence factor; the vocabulary has no such quantity

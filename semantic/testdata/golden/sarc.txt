@@ -1,0 +1,15 @@
+# SARC (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 22 not measured
+
+## Measurements
+
+SARC.OpCntRs | operation-count | supervision.opcntrs
+SARC.FACntRs | count | sarc.facntrs
+SARC.ArcCntRs | count | sarc.arccntrs
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+FACntRs INC (SARC): mapped sarc.facntrs
+ArcCntRs INC (SARC): mapped sarc.arccntrs

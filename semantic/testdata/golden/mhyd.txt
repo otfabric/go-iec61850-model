@@ -1,0 +1,25 @@
+# MHYD (IEC 61850-7-4:2007B6), profile default
+
+coverage: 8 measured or mapped, 8 mapped, 0 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MHYD.FishCnt | count | mhyd.fishcnt
+MHYD.Lev | level | unit m | mhyd.lev
+MHYD.Flw | flow-rate | unit m³/s | mhyd.flw
+MHYD.SpdSrfc | speed | unit m/s | mhyd.spdsrfc
+MHYD.Tmp | temperature | unit degC | mhyd.tmp
+MHYD.Cndct | conductivity | unit S/m | mhyd.cndct
+MHYD.HydPH | ph | unit 1 | mhyd.hydph
+MHYD.Slnt | salinity | unit kg/m³ | mhyd.slnt
+
+## Data objects
+
+FishCnt BCR (MHYD): mapped mhyd.fishcnt
+Lev MV (MHYD): mapped mhyd.lev
+Flw MV (MHYD): mapped mhyd.flw
+SpdSrfc MV (MHYD): mapped mhyd.spdsrfc
+Tmp MV (MHYD): mapped mhyd.tmp
+Cndct MV (MHYD): mapped mhyd.cndct
+HydPH MV (MHYD): mapped mhyd.hydph
+Slnt MV (MHYD): mapped mhyd.slnt

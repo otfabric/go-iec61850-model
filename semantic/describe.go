@@ -8,6 +8,7 @@ import (
 
 	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/model"
+	"github.com/otfabric/go-iec61850-model/reference"
 	"github.com/otfabric/go-iec61850-model/resolver"
 )
 
@@ -48,6 +49,17 @@ type Descriptor struct {
 	Phase     Phase     `json:"phase,omitempty"`
 	Reference Reference `json:"reference,omitempty"`
 	Direction Direction `json:"direction,omitempty"`
+	// Of is the quantity a ratio or distortion refers to, e.g. current
+	// for a current THD.
+	Of Quantity `json:"of,omitempty"`
+	// Sequence is the symmetrical component, when the data object names
+	// one.
+	Sequence Sequence `json:"sequence,omitempty"`
+	// Harmonic is the array index of a harmonic value (HMV, HWYE,
+	// HDEL), e.g. 3 for phsAHar(3): the harmonic order when the
+	// device's numCyc is 1, and 0 for the DC component. Nil when the
+	// path has no index.
+	Harmonic *int `json:"harmonic,omitempty"`
 	// Component is the part of the value the path designates; empty for
 	// a data object or sub data object as a whole.
 	Component Component `json:"component,omitempty"`
@@ -116,6 +128,11 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 		names[i] = c.Name
 	}
 	rule, basis, ok := m.find(names, res.DataObject.Name)
+	if !ok || basis == BasisRule {
+		if e, excl := m.excluded(names, res.DataObject.Name); excl {
+			return nil, noMapping(path, fmt.Sprintf("%s.%s is not mapped: %s", e.LNClass, e.DataObject, e.Reason))
+		}
+	}
 	if !ok {
 		return nil, noMapping(path, fmt.Sprintf("no rule for %s.%s", res.LNClass.Name, res.DataObject.Name))
 	}
@@ -128,6 +145,7 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 		Path: path, LNClass: res.LNClass.Name, DataObject: res.DataObject.Name, CDC: res.DataObject.Type,
 		Presence: res.DataObject.Presence, Namespace: doStep.Source,
 		Quantity: rule.Quantity, Phase: rule.Phase, Reference: rule.Reference, Direction: rule.Direction,
+		Of: rule.Of, Sequence: rule.Sequence,
 		UnitHint: rule.unitHint(), Confidence: rule.confidence(), Basis: basis, Rule: rule.ID, Source: rule.Source,
 	}
 	if rule.Note != "" {
@@ -136,29 +154,41 @@ func (m *Mapper) describe(l Lookup, res *resolver.Resolution) (*Descriptor, erro
 	if doStep.Instance != "" {
 		d.Notes = append(d.Notes, "instance "+doStep.Instance+" of multi-instance data object "+res.DataObject.Name)
 	}
+	if lineLine[d.CDC] {
+		d.Reference = ReferenceLineLine
+	}
 
 	rest := res.Steps[2:]
-	if phases := subDataObjectPhases[d.CDC]; phases != nil {
+	if sdos := subDataObjects[d.CDC]; sdos != nil {
 		if len(rest) == 0 || rest[0].Kind != resolver.StepSubDataObject {
-			// The data object as a whole: a set of phase values.
-			if d.CDC == "DEL" {
-				d.Reference = ReferenceLineLine
+			// The data object as a whole: a set of values.
+			if d.CDC == "HMV" || d.CDC == "HWYE" || d.CDC == "HDEL" {
+				d.Notes = append(d.Notes, harmonicNote)
 			}
 			return d, nil
 		}
-		ph, ok := phases[rest[0].Name]
-		if !ok {
-			return nil, noMapping(path, fmt.Sprintf("sub data object %s of %s has no phase mapping", rest[0].Name, d.CDC))
+		name, index, indexed, err := reference.SplitIndex(rest[0].Name)
+		sdo, ok := sdos[name]
+		if err != nil || !ok {
+			return nil, noMapping(path, fmt.Sprintf("sub data object %s of %s has no mapping", rest[0].Name, d.CDC))
 		}
-		d.SubDataObject, d.Phase = rest[0].Name, ph
-		if d.CDC == "DEL" {
-			d.Reference = ReferenceLineLine
+		d.SubDataObject, d.Phase = name, sdo.phase
+		if sdo.note != "" {
+			d.Notes = append(d.Notes, sdo.note)
+		}
+		if sdo.harmonic {
+			d.Notes = append(d.Notes, harmonicNote)
+			if indexed {
+				d.Harmonic = &index
+			}
 		}
 		rest = rest[1:]
 	}
 	component(d, rest)
 	return d, nil
 }
+
+const harmonicNote = "harmonic values: the array index is the harmonic order when numCyc is 1 (index 0 is the DC component); with numCyc n > 1 divide by 2^(n-1); hvRef says whether a magnitude is absolute or a ratio to the fundamental or the RMS value"
 
 // deepestDescription returns the description (or title) of the last
 // step below the logical node that has one.
@@ -199,6 +229,13 @@ func component(d *Descriptor, attrs []resolver.Step) {
 	case "actVal":
 		d.Component = ComponentCounter
 		d.Notes = append(d.Notes, "counter value; multiply by pulsQty for the quantity")
+	case "stVal":
+		d.Component = ComponentState
+	case "valWTr":
+		d.Component = ComponentState
+		if len(attrs) > 1 && attrs[1].Name != "posVal" {
+			d.Component = ComponentOther
+		}
 	case "q":
 		d.Component = ComponentQuality
 	case "t":
@@ -219,8 +256,9 @@ func component(d *Descriptor, attrs []resolver.Step) {
 
 // FindMeasurements returns the descriptors of every mapped data object
 // of a logical node class, including inherited ones and those of
-// extension classes, in model order. Data objects of WYE and DEL are
-// expanded into one descriptor per phase. Data objects without a rule
+// extension classes, in model order. Data objects of WYE, DEL, HWYE
+// and HDEL are expanded into one descriptor per phase, SEQ into one per
+// component and HMV into its harmonic array. Data objects without a rule
 // are skipped, also when the profile cannot resolve them; a mapped data
 // object that cannot be resolved is an error.
 func FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, error) {
@@ -289,7 +327,7 @@ func (m *Mapper) findMeasurements(l Lookup, ns *model.NamespaceID, lnClass strin
 		if err != nil {
 			return nil, err
 		}
-		if subDataObjectPhases[d.CDC] == nil {
+		if subDataObjects[d.CDC] == nil {
 			out = append(out, d)
 			continue
 		}
@@ -317,6 +355,10 @@ type Criteria struct {
 	Phase     Phase
 	Reference Reference
 	Direction Direction
+	// Of selects ratios and distortions of a quantity, e.g. the THD of
+	// a current.
+	Of       Quantity
+	Sequence Sequence
 	// LNClass restricts the search to one logical node class.
 	LNClass string
 	// MinConfidence excludes weaker mappings: with ConfidenceHigh only
@@ -333,6 +375,8 @@ func (c Criteria) Matches(d *Descriptor) bool {
 		c.Phase != "" && d.Phase != c.Phase,
 		c.Reference != "" && d.Reference != c.Reference,
 		c.Direction != "" && d.Direction != c.Direction,
+		c.Of != "" && d.Of != c.Of,
+		c.Sequence != "" && d.Sequence != c.Sequence,
 		c.LNClass != "" && d.LNClass != c.LNClass,
 		c.MinConfidence != "" && confidenceRank[d.Confidence] < confidenceRank[c.MinConfidence]:
 		return false

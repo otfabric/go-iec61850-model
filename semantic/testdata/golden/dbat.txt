@@ -1,0 +1,40 @@
+# DBAT (IEC 61850-7-420:2019A4), profile default
+
+coverage: 17 measured or mapped, 14 mapped, 3 excluded, 0 unmapped, 54 not measured
+
+## Measurements
+
+DBAT.Amp | current | unit A | dbat.amp
+DBAT.Watt | active-power | unit W | dbat.watt
+DBAT.ChaAmpLim | current | unit A | dbat.chaamplim
+DBAT.EffAhr | charge | unit Ah | dbat.effahr
+DBAT.ChaVolLim | voltage | unit V | dbat.chavollim
+DBAT.DschAmpLim | current | unit A | dbat.dschamplim
+DBAT.CelStrgCnt | count | dbat.celstrgcnt
+DBAT.AvlChaAhr | charge | unit Ah | dbat.avlchaahr
+DBAT.AvlDschAhr | charge | unit Ah | dbat.avldschahr
+DBAT.ChaAhrTot | charge | unit Ah | dbat.chaahrtot
+DBAT.DschAhrTot | charge | unit Ah | dbat.dschahrtot
+DBAT.SocEffAhrPct | state-of-charge | unit % | dbat.soceffahrpct
+DBAT.DschVolLim | voltage | unit V | dbat.dschvollim
+DBAT.CycAmpAv | current | unit A | dbat.cycampav
+
+## Data objects
+
+Amp MV (DBAT): mapped dbat.amp
+Watt MV (DBAT): mapped dbat.watt
+ChaAmpLim MV (DBAT): mapped dbat.chaamplim
+EffAhr MV (DBAT): mapped dbat.effahr
+ChaVolLim MV (DBAT): mapped dbat.chavollim
+DschAmpLim MV (DBAT): mapped dbat.dschamplim
+CelStrgCnt MV (DBAT): mapped dbat.celstrgcnt
+AvlChaAhr MV (DBAT): mapped dbat.avlchaahr
+AvlDschAhr MV (DBAT): mapped dbat.avldschahr
+ChaAhrTot MV (DBAT): mapped dbat.chaahrtot
+DschAhrTot MV (DBAT): mapped dbat.dschahrtot
+SocEffAhrPct MV (DBAT): mapped dbat.soceffahrpct
+SocDvPct MV (DBAT): excluded — deviation of the state of charge from a reference the model does not state
+VolChgRte MV (DBAT): excluded — rate of change of voltage, for which SIUnitKind has no unit
+DschVolLim MV (DBAT): mapped dbat.dschvollim
+CycSocRngPct MV (DBAT): excluded — range of the state of charge over a cycle, a statistic the vocabulary does not model
+CycAmpAv MV (DBAT): mapped dbat.cycampav

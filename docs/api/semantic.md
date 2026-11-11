@@ -6,7 +6,7 @@
 import "github.com/otfabric/go-iec61850-model/semantic"
 ```
 
-Package semantic describes IEC 61850 model elements in engineering terms: quantity (frequency, voltage, active power, ...), phase (A, AB, total, ...), voltage reference (line-neutral, line-ground, line-line), energy direction, the value component an attribute holds (magnitude, angle, counter, quality, ...) and a unit hint.
+Package semantic describes IEC 61850 model elements in engineering terms: quantity (frequency, voltage, active power, temperature, tap position, ...), phase (A, AB, total, ...), reference (line-neutral, line-ground, line-line, DC pole references), energy direction, the quantity a ratio refers to, symmetrical component, harmonic order, the value component an attribute holds (magnitude, angle, counter, state, quality, ...) and a unit hint.
 
 	d, err := semantic.Describe(profile, "MMXU.PNV.phsA.cVal.mag.f")
 	// d.Quantity == semantic.QuantityVoltage, d.Phase == semantic.PhaseA,
@@ -16,7 +16,9 @@ Package semantic describes IEC 61850 model elements in engineering terms: quanti
 
 The mapping is OTFabric interpretation layered on top of the normative model; it never changes what the model says. Every descriptor names the [Rule](#type-rule) that produced it, its source and a confidence. Rules are explicit: a data object without a rule is not described, and a rule applies only when the data object has the CDC the rule expects. Nothing is inferred from name fragments.
 
-Users and vendors can add overrides ([Mapper.WithOverrides](#func-mapper-withoverrides)), which take precedence over the default rules and are marked as such.
+Data objects whose unit or meaning the standard leaves open are excluded with a reason ([DefaultExclusions](#func-defaultexclusions)) rather than guessed; [Coverage](#func-coverage) reports, per class, which data objects are mapped, excluded or still unmapped.
+
+Users and vendors can add overrides ([Mapper.WithOverrides](#func-mapper-withoverrides)), which take precedence over the default rules and exclusions and are marked as such.
 
 #### Hints and device values {#hdr-Hints_and_device_values}
 
@@ -55,7 +57,17 @@ DefaultSource is the [Rule.Source](#func-rule-source) of the built-in rules.
 var Default = mustDefault()
 ```
 
-Default is the mapper with [DefaultRules](#func-defaultrules) and no overrides.
+Default is the mapper with [DefaultRules](#func-defaultrules), [DefaultExclusions](#func-defaultexclusions) and no overrides.
+
+## Functions
+
+### func IsMeasuredCDC
+
+```go
+func IsMeasuredCDC(cdc string) bool
+```
+
+IsMeasuredCDC reports whether a CDC is one of measured values: MV, CMV, WYE, DEL, SEQ, HMV, HWYE, HDEL, HST, SAV or BCR.
 
 ## Types
 
@@ -77,6 +89,38 @@ const (
 ```
 
 Bases.
+
+### type ClassCoverage
+
+```go
+type ClassCoverage struct {
+	LNClass     string               `json:"lnClass"`
+	Namespace   model.NamespaceID    `json:"namespace"`
+	DataObjects []DataObjectCoverage `json:"dataObjects"`
+	Mapped      int                  `json:"mapped"`
+	Excluded    int                  `json:"excluded"`
+	Unmapped    int                  `json:"unmapped"`
+	NotMeasured int                  `json:"notMeasured"`
+}
+```
+
+ClassCoverage counts how the rules cover the data objects of a logical node class, inherited ones included.
+
+#### func Coverage
+
+```go
+func Coverage(l Lookup) ([]ClassCoverage, error)
+```
+
+Coverage returns the coverage of every concrete logical node class of the model by the default rules, ordered as the model lists the classes. A class that several namespaces define is reported per definition.
+
+#### func (ClassCoverage) MeasuredValues
+
+```go
+func (c ClassCoverage) MeasuredValues() int
+```
+
+MeasuredValues returns the number of data objects that are measured values or mapped: mapped, excluded and unmapped together.
 
 ### type Component
 
@@ -101,6 +145,9 @@ const (
 	ComponentComplex Component = "complex"
 	// ComponentCounter: an accumulated counter value, e.g. BCR.actVal.
 	ComponentCounter Component = "counter"
+	// ComponentState: a status value, e.g. DPC.stVal, INS.stVal or
+	// ISC.valWTr.posVal.
+	ComponentState Component = "state"
 	// ComponentQuality: the quality of the value.
 	ComponentQuality Component = "quality"
 	// ComponentTimestamp: the time stamp of the value.
@@ -121,7 +168,7 @@ Components, from the attribute path below a data object.
 func (c Component) IsValue() bool
 ```
 
-IsValue reports whether the component carries the measured value itself (magnitude, instantaneous magnitude, angle, complex value or counter).
+IsValue reports whether the component carries the measured value itself (magnitude, instantaneous magnitude, angle, complex value, counter or status value).
 
 ### type Confidence
 
@@ -147,6 +194,34 @@ const (
 
 Confidence levels.
 
+### type CoverageStatus
+
+```go
+type CoverageStatus string
+```
+
+CoverageStatus says how the rules treat a data object.
+
+```go
+const (
+	// StatusMapped: a rule (or override) maps the data object and its
+	// CDC matches the model.
+	StatusMapped CoverageStatus = "mapped"
+	// StatusExcluded: the data object is deliberately not mapped; the
+	// reason is reported.
+	StatusExcluded CoverageStatus = "excluded"
+	// StatusUnmapped: a measured value (MV, CMV, WYE, DEL, SEQ, HMV,
+	// HWYE, HDEL, HST, SAV or BCR) without a rule, or with a rule
+	// whose CDC differs from the model. These are the gaps.
+	StatusUnmapped CoverageStatus = "unmapped"
+	// StatusNotMeasured: a status, control, setting or description
+	// data object without a rule, e.g. Beh, an alarm or a set point.
+	StatusNotMeasured CoverageStatus = "not-measured"
+)
+```
+
+Coverage statuses.
+
 ### type Criteria
 
 ```go
@@ -155,6 +230,10 @@ type Criteria struct {
 	Phase     Phase
 	Reference Reference
 	Direction Direction
+	// Of selects ratios and distortions of a quantity, e.g. the THD of
+	// a current.
+	Of       Quantity
+	Sequence Sequence
 	// LNClass restricts the search to one logical node class.
 	LNClass string
 	// MinConfidence excludes weaker mappings: with ConfidenceHigh only
@@ -172,6 +251,25 @@ func (c Criteria) Matches(d *Descriptor) bool
 ```
 
 Matches reports whether d satisfies c.
+
+### type DataObjectCoverage
+
+```go
+type DataObjectCoverage struct {
+	Name string `json:"name"`
+	CDC  string `json:"cdc"`
+	// DeclaredIn is the class that declares the data object.
+	DeclaredIn string         `json:"declaredIn"`
+	Status     CoverageStatus `json:"status"`
+	// Rule is the ID of the rule or override that maps it.
+	Rule string `json:"rule,omitempty"`
+	// Reason says why an excluded or unmapped data object is not
+	// mapped.
+	Reason string `json:"reason,omitempty"`
+}
+```
+
+DataObjectCoverage is the coverage of one data object of a class.
 
 ### type Descriptor
 
@@ -197,6 +295,17 @@ type Descriptor struct {
 	Phase     Phase     `json:"phase,omitempty"`
 	Reference Reference `json:"reference,omitempty"`
 	Direction Direction `json:"direction,omitempty"`
+	// Of is the quantity a ratio or distortion refers to, e.g. current
+	// for a current THD.
+	Of Quantity `json:"of,omitempty"`
+	// Sequence is the symmetrical component, when the data object names
+	// one.
+	Sequence Sequence `json:"sequence,omitempty"`
+	// Harmonic is the array index of a harmonic value (HMV, HWYE,
+	// HDEL), e.g. 3 for phsAHar(3): the harmonic order when the
+	// device's numCyc is 1, and 0 for the DC component. Nil when the
+	// path has no index.
+	Harmonic *int `json:"harmonic,omitempty"`
 	// Component is the part of the value the path designates; empty for
 	// a data object or sub data object as a whole.
 	Component Component `json:"component,omitempty"`
@@ -243,7 +352,7 @@ It fails with the resolver's errors when the path is not valid in the model, and
 func FindMeasurements(l Lookup, lnClass string) ([]*Descriptor, error)
 ```
 
-FindMeasurements returns the descriptors of every mapped data object of a logical node class, including inherited ones and those of extension classes, in model order. Data objects of WYE and DEL are expanded into one descriptor per phase. Data objects without a rule are skipped, also when the profile cannot resolve them; a mapped data object that cannot be resolved is an error.
+FindMeasurements returns the descriptors of every mapped data object of a logical node class, including inherited ones and those of extension classes, in model order. Data objects of WYE, DEL, HWYE and HDEL are expanded into one descriptor per phase, SEQ into one per component and HMV into its harmonic array. Data objects without a rule are skipped, also when the profile cannot resolve them; a mapped data object that cannot be resolved is an error.
 
 #### func FindMeasurementsIn
 
@@ -289,6 +398,30 @@ type EnumerationLookup interface {
 
 EnumerationLookup finds enumerations by name. \*catalog.Profile and \*catalog.Catalog implement it.
 
+### type Exclusion
+
+```go
+type Exclusion struct {
+	// LNClass is the logical node class; the exclusion also applies to
+	// classes that inherit from it.
+	LNClass string `json:"lnClass"`
+	// DataObject is the data object name, without instance number.
+	DataObject string `json:"dataObject"`
+	// Reason says why the data object is not mapped. Required.
+	Reason string `json:"reason"`
+}
+```
+
+Exclusion records that a data object is deliberately not mapped, and why: its unit or meaning is not stated, or it is a statistic or a derived value the vocabulary does not model. An excluded data object fails [Mapper.Describe](#func-mapper-describe) with [model.ErrNoMapping](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrNoMapping) and the reason, and [Mapper.Coverage](#func-mapper-coverage) reports it as excluded rather than as a gap. An override for the same class and data object takes precedence.
+
+#### func DefaultExclusions
+
+```go
+func DefaultExclusions() []Exclusion
+```
+
+DefaultExclusions returns the data objects of the classes the default rules cover that are deliberately left unmapped, with the reason. The slice is a copy.
+
 ### type Lookup
 
 ```go
@@ -319,6 +452,22 @@ func NewMapper(rules []Rule, overrides []Rule) (*Mapper, error)
 
 NewMapper builds a mapper from rules and overrides. Overrides take precedence over rules for the same class and data object; they must name their Source. Two rules (or two overrides) for the same class and data object are rejected, as are incomplete rules, all with [model.ErrInvalidRule](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidRule).
 
+#### func (Mapper) Coverage
+
+```go
+func (m *Mapper) Coverage(l Lookup) ([]ClassCoverage, error)
+```
+
+Coverage is like the package-level [Coverage](#func-coverage), with the rules, overrides and exclusions of m.
+
+#### func (Mapper) CoverageOf
+
+```go
+func (m *Mapper) CoverageOf(l Lookup, ns model.NamespaceID, lnClass string) (ClassCoverage, error)
+```
+
+CoverageOf returns the coverage of the class lnClass as namespace ns defines it. It fails with the catalog's errors when the class is not defined there.
+
 #### func (Mapper) Describe
 
 ```go
@@ -334,6 +483,14 @@ func (m *Mapper) DescribeResolution(l Lookup, res *resolver.Resolution) (*Descri
 ```
 
 DescribeResolution describes an already resolved path.
+
+#### func (Mapper) Exclusions
+
+```go
+func (m *Mapper) Exclusions() []Exclusion
+```
+
+Exclusions returns the exclusions of the mapper, ordered by class and data object.
 
 #### func (Mapper) FindMeasurements
 
@@ -375,13 +532,21 @@ func (m *Mapper) Rules() []Rule
 
 Rules returns the rules of the mapper, ordered by ID.
 
+#### func (Mapper) WithExclusions
+
+```go
+func (m *Mapper) WithExclusions(exclusions ...Exclusion) (*Mapper, error)
+```
+
+WithExclusions returns a mapper with the rules and overrides of m and the given exclusions added to those of m. An exclusion needs a class, a data object and a reason, and may not exclude what a rule of m maps or what another exclusion already excludes; otherwise it fails with [model.ErrInvalidRule](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidRule).
+
 #### func (Mapper) WithOverrides
 
 ```go
 func (m *Mapper) WithOverrides(overrides ...Rule) (*Mapper, error)
 ```
 
-WithOverrides returns a mapper with the rules of m and the given overrides added to those of m.
+WithOverrides returns a mapper with the rules and exclusions of m and the given overrides added to those of m.
 
 ### type Phase
 
@@ -427,7 +592,9 @@ Quantity is an engineering quantity.
 
 ```go
 const (
+	// Electrical quantities.
 	QuantityFrequency      Quantity = "frequency"
+	QuantityFrequencyRate  Quantity = "frequency-rate"
 	QuantityVoltage        Quantity = "voltage"
 	QuantityCurrent        Quantity = "current"
 	QuantityActivePower    Quantity = "active-power"
@@ -438,6 +605,49 @@ const (
 	QuantityReactiveEnergy Quantity = "reactive-energy"
 	QuantityApparentEnergy Quantity = "apparent-energy"
 	QuantityImpedance      Quantity = "impedance"
+	QuantityResistance     Quantity = "resistance"
+	QuantityPhaseAngle     Quantity = "phase-angle"
+	QuantityCharge         Quantity = "charge"
+	QuantityStateOfCharge  Quantity = "state-of-charge"
+
+	// Power quality: ratios of a current or voltage, see [Descriptor.Of].
+	QuantityHarmonicDistortion Quantity = "total-harmonic-distortion"
+	QuantityDemandDistortion   Quantity = "total-demand-distortion"
+	QuantityKFactor            Quantity = "k-factor"
+	QuantityCrestFactor        Quantity = "crest-factor"
+	QuantityImbalance          Quantity = "imbalance"
+
+	// Process and environment.
+	QuantityTemperature     Quantity = "temperature"
+	QuantityTemperatureRate Quantity = "temperature-rate"
+	QuantityPressure        Quantity = "pressure"
+	QuantityPressureRate    Quantity = "pressure-rate"
+	QuantityFlowRate        Quantity = "flow-rate"
+	QuantityVolume          Quantity = "volume"
+	QuantityLevel           Quantity = "level"
+	QuantityDisplacement    Quantity = "displacement"
+	QuantitySpeed           Quantity = "speed"
+	QuantityRotationalSpeed Quantity = "rotational-speed"
+	QuantityDirection       Quantity = "direction"
+	QuantityHumidity        Quantity = "humidity"
+	QuantityMoisture        Quantity = "moisture"
+	QuantityIrradiance      Quantity = "irradiance"
+	QuantityDensity         Quantity = "density"
+	QuantitySalinity        Quantity = "salinity"
+	QuantityConductivity    Quantity = "conductivity"
+	QuantityPH              Quantity = "ph"
+	QuantityConcentration   Quantity = "concentration"
+	QuantitySoundLevel      Quantity = "sound-level"
+	QuantityVibration       Quantity = "vibration"
+	QuantityValvePosition   Quantity = "valve-position"
+	QuantityDuration        Quantity = "duration"
+
+	// States and counts: no unit hint.
+	QuantitySwitchPosition Quantity = "switch-position"
+	QuantityTapPosition    Quantity = "tap-position"
+	QuantityOperatingState Quantity = "operating-state"
+	QuantityOperationCount Quantity = "operation-count"
+	QuantityCount          Quantity = "count"
 )
 ```
 
@@ -465,7 +675,7 @@ Accepts reports whether u measures q: its symbol is one of the quantity's units,
 func (q Quantity) DefaultUnit() Unit
 ```
 
-DefaultUnit returns the base unit of the quantity, e.g. W for active power, or the zero Unit for an unknown quantity.
+DefaultUnit returns the base unit of the quantity, e.g. W for active power. It is the zero Unit for an unknown quantity, for states and counts, and where the standard leaves the unit to the device (rotational speed, vibration, imbalance).
 
 #### func (Quantity) IsKnown
 
@@ -474,6 +684,14 @@ func (q Quantity) IsKnown() bool
 ```
 
 IsKnown reports whether q is one of the quantities of this package.
+
+#### func (Quantity) IsState
+
+```go
+func (q Quantity) IsState() bool
+```
+
+IsState reports whether the quantity is a state or a count (switch position, tap position, operating state, counts), which has no unit.
 
 #### func (Quantity) Label
 
@@ -489,18 +707,21 @@ Label returns a short English label, e.g. "Active power".
 type Reference string
 ```
 
-Reference is the reference a voltage is measured against.
+Reference is the reference a voltage (or a DC resistance to earth) is measured against.
 
 ```go
 const (
-	ReferenceNone        Reference = ""
-	ReferenceLineNeutral Reference = "line-neutral"
-	ReferenceLineGround  Reference = "line-ground"
-	ReferenceLineLine    Reference = "line-line"
+	ReferenceNone           Reference = ""
+	ReferenceLineNeutral    Reference = "line-neutral"
+	ReferenceLineGround     Reference = "line-ground"
+	ReferenceLineLine       Reference = "line-line"
+	ReferencePolePole       Reference = "pole-pole"
+	ReferencePositiveGround Reference = "positive-ground"
+	ReferenceNegativeGround Reference = "negative-ground"
 )
 ```
 
-Voltage references.
+References. The pole references are those of DC circuits (MMDC).
 
 ### type Rule
 
@@ -524,6 +745,12 @@ type Rule struct {
 	Reference Reference `json:"reference,omitempty"`
 	// Direction is the energy direction, if the model distinguishes it.
 	Direction Direction `json:"direction,omitempty"`
+	// Of is the quantity a ratio or distortion refers to, e.g. current
+	// for the total harmonic distortion of a current.
+	Of Quantity `json:"of,omitempty"`
+	// Sequence is the symmetrical component the value holds, if the
+	// data object names one.
+	Sequence Sequence `json:"sequence,omitempty"`
 	// Unit is the unit hint symbol; empty means the quantity's default
 	// unit.
 	Unit string `json:"unit,omitempty"`
@@ -540,7 +767,7 @@ type Rule struct {
 
 Rule maps a data object of a logical node class to engineering semantics. Rules are explicit and auditable: a descriptor names the rule that produced it.
 
-A rule applies only when the data object has the CDC the rule expects, so a name reused with a different meaning does not match. For WYE and DEL data objects the phase comes from the sub data object (phsA, phsAB, ...), and DEL implies a line-to-line reference.
+A rule applies only when the data object has the CDC the rule expects, so a name reused with a different meaning does not match. For WYE, DEL, HWYE and HDEL data objects the phase comes from the sub data object (phsA, phsAB, phsAHar, ...), and DEL and HDEL imply a line-to-line reference.
 
 #### func DefaultRules
 
@@ -548,7 +775,26 @@ A rule applies only when the data object has the CDC the rule expects, so a name
 func DefaultRules() []Rule
 ```
 
-DefaultRules returns the built-in OTFabric rules for the measurement classes MMXU (three-phase measurement), MMXN (non-phase-related measurement) and MMTR (metering), plus a frequency rule that applies to Hz of CDC MV in any class. The slice is a copy.
+DefaultRules returns the built-in OTFabric rules: the measurement classes of IEC 61850-7-4 (MMXU, MMXN, MMTR and MMTN, MSQI, MHAI and MHAN, MMDC, MMET, MFLW, MENV, MHYD), the supervision classes (SIML, SARC, SPRS, STMP, SVBR, ZBAT, ZAXN), switching and tap-changer positions and counters (XCBR, XSWI, YLTC, ATCC), pumps and fans (KPMP, KFAN), the DER and storage classes of IEC 61850-7-420 (DGEN, DSTO, DBAT, DINV, SBAT, SINV) and the battery charger of IEC TR 61850-90-3 (ZBTC), plus a frequency rule that applies to Hz of CDC MV in any class. Most rules name the abstract class that declares the data object, so they apply to every class that inherits it. The slice is a copy; [DefaultExclusions](#func-defaultexclusions) lists what is deliberately left unmapped.
+
+### type Sequence
+
+```go
+type Sequence string
+```
+
+Sequence is a symmetrical component.
+
+```go
+const (
+	SequenceNone     Sequence = ""
+	SequencePositive Sequence = "positive"
+	SequenceNegative Sequence = "negative"
+	SequenceZero     Sequence = "zero"
+)
+```
+
+Sequences, for values that name the component they hold (e.g. the negative-sequence imbalance of MSQI). The sub data objects c1, c2 and c3 of SEQ carry no sequence: which component they hold is the device's seqT attribute.
 
 ### type Unit
 

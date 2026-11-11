@@ -1,0 +1,46 @@
+# SIML (IEC 61850-7-4:2007B6), profile default
+
+coverage: 19 measured or mapped, 18 mapped, 1 excluded, 0 unmapped, 33 not measured
+
+## Measurements
+
+SIML.OpCntRs | operation-count | supervision.opcntrs
+SIML.Pres | pressure | unit Pa | linesupervision.pres
+SIML.Tmp | temperature | unit degC | linesupervision.tmp
+SIML.Lev | level | unit m | siml.lev
+SIML.H2O | moisture | unit % | siml.h2o
+SIML.H2OPap | moisture | unit % | siml.h2opap
+SIML.H2OAir | moisture | unit % | siml.h2oair
+SIML.H2OTmp | temperature | unit degC | siml.h2otmp
+SIML.H2ppm | concentration | unit ppm | siml.h2ppm
+SIML.N2ppm | concentration | unit ppm | siml.n2ppm
+SIML.COppm | concentration | unit ppm | siml.coppm
+SIML.CO2ppm | concentration | unit ppm | siml.co2ppm
+SIML.CH4ppm | concentration | unit ppm | siml.ch4ppm
+SIML.C2H2ppm | concentration | unit ppm | siml.c2h2ppm
+SIML.C2H4ppm | concentration | unit ppm | siml.c2h4ppm
+SIML.C2H6ppm | concentration | unit ppm | siml.c2h6ppm
+SIML.O2ppm | concentration | unit ppm | siml.o2ppm
+SIML.FltGas | volume | unit m³ | siml.fltgas
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+Pres MV (LineSupervisionLN): mapped linesupervision.pres
+Tmp MV (LineSupervisionLN): mapped linesupervision.tmp
+Lev MV (SIML): mapped siml.lev
+H2O MV (SIML): mapped siml.h2o
+H2OPap MV (SIML): mapped siml.h2opap
+H2OAir MV (SIML): mapped siml.h2oair
+H2OTmp MV (SIML): mapped siml.h2otmp
+H2ppm MV (SIML): mapped siml.h2ppm
+N2ppm MV (SIML): mapped siml.n2ppm
+COppm MV (SIML): mapped siml.coppm
+CO2ppm MV (SIML): mapped siml.co2ppm
+CH4ppm MV (SIML): mapped siml.ch4ppm
+C2H2ppm MV (SIML): mapped siml.c2h2ppm
+C2H4ppm MV (SIML): mapped siml.c2h4ppm
+C2H6ppm MV (SIML): mapped siml.c2h6ppm
+O2ppm MV (SIML): mapped siml.o2ppm
+CmbuGas MV (SIML): excluded — total dissolved combustible gas whose unit the model does not state
+FltGas MV (SIML): mapped siml.fltgas

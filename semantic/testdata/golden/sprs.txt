@@ -1,0 +1,15 @@
+# SPRS (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+SPRS.OpCntRs | operation-count | supervision.opcntrs
+SPRS.Pres | pressure | unit Pa | sprs.pres
+SPRS.PresRte | pressure-rate | unit Pa/s | sprs.presrte
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+Pres MV (SPRS): mapped sprs.pres
+PresRte MV (SPRS): mapped sprs.presrte

@@ -1,0 +1,13 @@
+# XSWI (IEC 61850-7-4:2007B6), profile default
+
+coverage: 2 measured or mapped, 2 mapped, 0 excluded, 0 unmapped, 33 not measured
+
+## Measurements
+
+XSWI.OpCnt | operation-count | switching.opcnt
+XSWI.Pos | switch-position | switching.pos
+
+## Data objects
+
+OpCnt INS (SwitchingEquipmentLN): mapped switching.opcnt
+Pos DPC (SwitchingEquipmentLN): mapped switching.pos

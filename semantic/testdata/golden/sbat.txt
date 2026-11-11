@@ -1,0 +1,33 @@
+# SBAT (IEC 61850-7-420:2019A4), profile default
+
+coverage: 12 measured or mapped, 12 mapped, 0 excluded, 0 unmapped, 64 not measured
+
+## Measurements
+
+SBAT.OpCntRs | operation-count | supervision.opcntrs
+SBAT.IntnA | current | unit A | sbat.intna
+SBAT.IntnV | voltage | unit V | sbat.intnv
+SBAT.CelVolLo | voltage | unit V | sbat.celvollo
+SBAT.CelVolHi | voltage | unit V | sbat.celvolhi
+SBAT.CelTmpMax | temperature | unit degC | sbat.celtmpmax
+SBAT.CelTmpMin | temperature | unit degC | sbat.celtmpmin
+SBAT.IntnAmp | current | unit A | sbat.intnamp
+SBAT.IntnTmp | temperature | unit degC | sbat.intntmp
+SBAT.ExtTmp | temperature | unit degC | sbat.exttmp
+SBAT.ExtVol | voltage | unit V | sbat.extvol
+SBAT.IntnVol | voltage | unit V | sbat.intnvol
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+IntnA MV (SBAT): mapped sbat.intna
+IntnV MV (SBAT): mapped sbat.intnv
+CelVolLo MV (SBAT): mapped sbat.celvollo
+CelVolHi MV (SBAT): mapped sbat.celvolhi
+CelTmpMax MV (SBAT): mapped sbat.celtmpmax
+CelTmpMin MV (SBAT): mapped sbat.celtmpmin
+IntnAmp MV (SBAT): mapped sbat.intnamp
+IntnTmp MV (SBAT): mapped sbat.intntmp
+ExtTmp MV (SBAT): mapped sbat.exttmp
+ExtVol MV (SBAT): mapped sbat.extvol
+IntnVol MV (SBAT): mapped sbat.intnvol

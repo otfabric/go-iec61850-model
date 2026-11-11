@@ -31,7 +31,10 @@ nsdctl -s ./nsd -p "IEC 61850-7-4:2007B5" generate json -o ./generated-json   # 
 
 The report lists per namespace: classes (abstract), data objects of concrete
 classes that resolve down to leaf types, CDCs, constructed types,
-enumerations, mapped measurements, and the profile's errors and warnings. It
+enumerations, mapped measurements, and the profile's errors and warnings. Its
+semantic coverage section lists per class how many measured values the
+default rules map, exclude with a reason, or leave unmapped
+(`semantic.Coverage`, [semantic.md](semantic.md#coverage)). It
 is derived from IEC files and therefore local-only; record the result as the
 lock entry's status and notes instead of committing the report.
 

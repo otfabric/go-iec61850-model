@@ -22,10 +22,22 @@ device or engineering tool.
 - **One NSD XML namespace by default.** Another one fails with
   `model.ErrUnsupportedSchema` unless the caller accepts it with
   `nsd.WithSchemaNamespaces`.
-- **Semantic mapping is partial.** The default rules cover MMXU, MMXN and MMTR
-  plus a frequency rule; a data object with no rule returns `ErrNoMapping`
-  ([docs/semantic.md](docs/semantic.md)). There are no default rules for the
-  7-420 or 7-410 classes.
+- **Semantic mapping covers the measurement and status classes.** The default
+  rules cover the M classes of IEC 61850-7-4, the supervision classes SIML,
+  SARC, STMP, SPRS, SVBR, ZBAT and ZAXN, switch and tap positions and
+  counters, KPMP and KFAN, the DER, battery and inverter classes of 7-420,
+  and ZBTC of IEC TR 61850-90-3 ([docs/semantic.md](docs/semantic.md)).
+  Other classes (protection, control, the remaining S and Z classes, 7-410)
+  have no rules beyond those they inherit; `semantic.Coverage` lists their
+  measured values as unmapped. Data objects whose unit or meaning the
+  standard leaves open are excluded with a reason
+  (`semantic.DefaultExclusions`), and alarms, trips, set points and settings
+  are not mapped. ZINV, ZRCT, MPRS, MCCF and MSTA (7-420 Edition 1) have no
+  NSD and cannot be mapped.
+- **Semantic hints are not device values.** Harmonic orders assume
+  `numCyc` 1 and harmonic magnitudes may be ratios (`hvRef`); SEQ components
+  depend on `seqT`; unit hints are base units without multiplier. Each is
+  device configuration, stated in the descriptor notes.
 - **No update monitor.** Nothing discovers new IEC releases: `nsdctl sources
   check` contacts no server, and the weekly `nsd.yml` run only detects packages
   that changed or disappeared at their pinned locations.

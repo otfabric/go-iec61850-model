@@ -1,0 +1,25 @@
+# MMDC (IEC 61850-7-4:2007B6), profile default
+
+coverage: 8 measured or mapped, 8 mapped, 0 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MMDC.Watt | active-power | unit W | mmdc.watt
+MMDC.Amp | current | unit A | mmdc.amp
+MMDC.Vol | voltage | reference pole-pole | unit V | mmdc.vol
+MMDC.VolPsGnd | voltage | reference positive-ground | unit V | mmdc.volpsgnd
+MMDC.VolNgGnd | voltage | reference negative-ground | unit V | mmdc.volnggnd
+MMDC.Ris | resistance | unit ohm | mmdc.ris
+MMDC.RisPsGnd | resistance | reference positive-ground | unit ohm | mmdc.rispsgnd
+MMDC.RisNgGnd | resistance | reference negative-ground | unit ohm | mmdc.risnggnd
+
+## Data objects
+
+Watt MV (MMDC): mapped mmdc.watt
+Amp MV (MMDC): mapped mmdc.amp
+Vol MV (MMDC): mapped mmdc.vol
+VolPsGnd MV (MMDC): mapped mmdc.volpsgnd
+VolNgGnd MV (MMDC): mapped mmdc.volnggnd
+Ris MV (MMDC): mapped mmdc.ris
+RisPsGnd MV (MMDC): mapped mmdc.rispsgnd
+RisNgGnd MV (MMDC): mapped mmdc.risnggnd

@@ -1,0 +1,47 @@
+# MSQI (IEC 61850-7-4:2007B6), profile default
+
+coverage: 13 measured or mapped, 9 mapped, 4 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MSQI.SeqA.c1 | current | unit A | msqi.seqa
+MSQI.SeqA.c2 | current | unit A | msqi.seqa
+MSQI.SeqA.c3 | current | unit A | msqi.seqa
+MSQI.SeqV.c1 | voltage | unit V | msqi.seqv
+MSQI.SeqV.c2 | voltage | unit V | msqi.seqv
+MSQI.SeqV.c3 | voltage | unit V | msqi.seqv
+MSQI.ImbA.phsA | imbalance | phase A | of current | msqi.imba
+MSQI.ImbA.phsB | imbalance | phase B | of current | msqi.imba
+MSQI.ImbA.phsC | imbalance | phase C | of current | msqi.imba
+MSQI.ImbA.neut | imbalance | phase N | of current | msqi.imba
+MSQI.ImbA.net | imbalance | phase net | of current | msqi.imba
+MSQI.ImbA.res | imbalance | phase residual | of current | msqi.imba
+MSQI.ImbNgA | imbalance | of current | sequence negative | msqi.imbnga
+MSQI.ImbNgV | imbalance | of voltage | sequence negative | msqi.imbngv
+MSQI.ImbPPV.phsAB | imbalance | phase AB | reference line-line | of voltage | msqi.imbppv
+MSQI.ImbPPV.phsBC | imbalance | phase BC | reference line-line | of voltage | msqi.imbppv
+MSQI.ImbPPV.phsCA | imbalance | phase CA | reference line-line | of voltage | msqi.imbppv
+MSQI.ImbV.phsA | imbalance | phase A | of voltage | msqi.imbv
+MSQI.ImbV.phsB | imbalance | phase B | of voltage | msqi.imbv
+MSQI.ImbV.phsC | imbalance | phase C | of voltage | msqi.imbv
+MSQI.ImbV.neut | imbalance | phase N | of voltage | msqi.imbv
+MSQI.ImbV.net | imbalance | phase net | of voltage | msqi.imbv
+MSQI.ImbV.res | imbalance | phase residual | of voltage | msqi.imbv
+MSQI.ImbZroA | imbalance | of current | sequence zero | msqi.imbzroa
+MSQI.ImbZroV | imbalance | of voltage | sequence zero | msqi.imbzrov
+
+## Data objects
+
+SeqA SEQ (MSQI): mapped msqi.seqa
+SeqV SEQ (MSQI): mapped msqi.seqv
+DQ0Seq SEQ (MSQI): excluded — direct-quadrature-zero components of a quantity (current or voltage) that the model does not state
+ImbA WYE (MSQI): mapped msqi.imba
+ImbNgA MV (MSQI): mapped msqi.imbnga
+ImbNgV MV (MSQI): mapped msqi.imbngv
+ImbPPV DEL (MSQI): mapped msqi.imbppv
+ImbV WYE (MSQI): mapped msqi.imbv
+ImbZroA MV (MSQI): mapped msqi.imbzroa
+ImbZroV MV (MSQI): mapped msqi.imbzrov
+MaxImbA MV (MSQI): excluded — maximum over the phases, a statistic the vocabulary does not model
+MaxImbPPV MV (MSQI): excluded — maximum over the phases, a statistic the vocabulary does not model
+MaxImbV MV (MSQI): excluded — maximum over the phases, a statistic the vocabulary does not model

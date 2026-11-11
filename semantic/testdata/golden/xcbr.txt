@@ -1,0 +1,14 @@
+# XCBR (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 2 mapped, 1 excluded, 0 unmapped, 37 not measured
+
+## Measurements
+
+XCBR.OpCnt | operation-count | switching.opcnt
+XCBR.Pos | switch-position | switching.pos
+
+## Data objects
+
+OpCnt INS (SwitchingEquipmentLN): mapped switching.opcnt
+Pos DPC (SwitchingEquipmentLN): mapped switching.pos
+SumSwARs BCR (XCBR): excluded — accumulated switched current, whose unit (A or A²t) is device configuration

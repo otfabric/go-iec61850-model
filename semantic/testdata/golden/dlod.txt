@@ -1,0 +1,24 @@
+# DLOD (IEC 61850-7-420:2019A4), profile default
+
+coverage: 11 measured or mapped, 4 mapped, 7 excluded, 0 unmapped, 106 not measured
+
+## Measurements
+
+DLOD.SelfSvcWh | active-energy | unit Wh | deractualpower.selfsvcwh
+DLOD.AvlUpW | active-power | unit W | deractualpower.avlupw
+DLOD.AvlDnW | active-power | unit W | deractualpower.avldnw
+DLOD.DEROpSt | operating-state | derstate.deropst
+
+## Data objects
+
+SelfSvcWh MV (DER_ActualPowerInformationLN): mapped deractualpower.selfsvcwh
+VAPct MV (DER_ActualPowerInformationLN): excluded — apparent power as a percentage of a rating; the vocabulary has no such quantity
+AvlUpW MV (DER_ActualPowerInformationLN): mapped deractualpower.avlupw
+AvlDnW MV (DER_ActualPowerInformationLN): mapped deractualpower.avldnw
+DEROpSt ENS (DER_StateAbstractLN): mapped derstate.deropst
+VArTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+AvarTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+IvarTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+VArAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+AvarAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+IvarAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement

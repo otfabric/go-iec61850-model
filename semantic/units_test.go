@@ -24,6 +24,10 @@ func TestNormalizeUnit(t *testing.T) {
 		{"kWh", "Wh", 3, "kWh"}, {"kvarh", "VArh", 3, "kVArh"}, {"GWh", "Wh", 9, "GWh"}, {"%", "%", 0, "%"},
 		{"Ω", "ohm", 0, "ohm"}, {"kOhm", "ohm", 3, "kohm"}, {"°", "deg", 0, "deg"}, {"°C", "degC", 0, "degC"},
 		{"m", "m", 0, "m"}, {"µA", "A", -6, "µA"}, {"uA", "A", -6, "µA"}, {"daV", "V", 1, "daV"}, {"1", "1", 0, "1"},
+		{"Watts", "W", 0, "W"}, {"kPa", "Pa", 3, "kPa"}, {"hPa", "Pa", 2, "hPa"}, {"mm/s", "m/s", -3, "mm/s"},
+		{"m3/s", "m³/s", 0, "m³/s"}, {"W/m2", "W/m²", 0, "W/m²"}, {"kg/m3", "kg/m³", 0, "kg/m³"}, {"ppm", "ppm", 0, "ppm"},
+		{"kAh", "Ah", 3, "kAh"}, {"mS/m", "S/m", -3, "mS/m"}, {"dB", "dB", 0, "dB"}, {"min", "min", 0, "min"}, {"h", "h", 0, "h"},
+		{"K/s", "K/s", 0, "K/s"}, {"rad/s", "rad/s", 0, "rad/s"}, {"l/s", "l/s", 0, "l/s"},
 	}
 	for _, tc := range tests {
 		u, err := semantic.NormalizeUnit(tc.in)
@@ -31,7 +35,7 @@ func TestNormalizeUnit(t *testing.T) {
 			t.Errorf("NormalizeUnit(%q) = %+v (%s), %v", tc.in, u, u.String(), err)
 		}
 	}
-	for _, bad := range []string{"", "furlong", "min", "k%", "kdeg", "Kv"} {
+	for _, bad := range []string{"", "furlong", "fortnight", "k%", "kdeg", "Kv", "kppm", "kmin", "Mh", "kdB"} {
 		if _, err := semantic.NormalizeUnit(bad); !errors.Is(err, model.ErrUnknownUnit) {
 			t.Errorf("NormalizeUnit(%q) error = %v", bad, err)
 		}
@@ -43,16 +47,30 @@ func TestNormalizeUnit(t *testing.T) {
 }
 
 func TestQuantities(t *testing.T) {
+	// Quantities without a default unit: states and counts, and those
+	// whose unit the standard leaves to the device.
+	noUnit := map[semantic.Quantity]bool{semantic.QuantityImbalance: true, semantic.QuantityRotationalSpeed: true, semantic.QuantityVibration: true}
 	for _, q := range semantic.Quantities() {
-		if !q.IsKnown() || q.Label() == "" || q.DefaultUnit().IsZero() || !q.Accepts(q.DefaultUnit()) {
+		if !q.IsKnown() || q.Label() == "" {
 			t.Errorf("quantity %s incomplete", q)
 		}
+		switch u := q.DefaultUnit(); {
+		case q.IsState() || noUnit[q]:
+			if !u.IsZero() {
+				t.Errorf("quantity %s has default unit %s", q, u)
+			}
+		case u.IsZero() || !q.Accepts(u):
+			t.Errorf("quantity %s: default unit %q", q, u)
+		}
+	}
+	if semantic.QuantityVoltage.IsState() || !semantic.QuantityTapPosition.IsState() {
+		t.Error("IsState")
 	}
 	kv, _ := semantic.NormalizeUnit("kV")
 	if !semantic.QuantityVoltage.Accepts(kv) || semantic.QuantityCurrent.Accepts(kv) {
 		t.Error("Accepts")
 	}
-	if semantic.Quantity("speed").IsKnown() || !semantic.Quantity("speed").DefaultUnit().IsZero() {
+	if semantic.Quantity("furlongs-per-fortnight").IsKnown() || !semantic.Quantity("furlongs-per-fortnight").DefaultUnit().IsZero() {
 		t.Error("unknown quantity")
 	}
 	if !semantic.PhaseAB.IsPair() || semantic.PhaseA.IsPair() {

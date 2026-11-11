@@ -206,7 +206,7 @@ func TestOverridesAndRules(t *testing.T) {
 	}{
 		{rules: []semantic.Rule{{}}},
 		{rules: []semantic.Rule{{ID: "a", LNClass: "X"}}},
-		{rules: []semantic.Rule{{ID: "a", LNClass: "X", DataObject: "D", CDC: "MV", Quantity: "speed"}}},
+		{rules: []semantic.Rule{{ID: "a", LNClass: "X", DataObject: "D", CDC: "MV", Quantity: "furlongs-per-fortnight"}}},
 		{rules: []semantic.Rule{{ID: "a", LNClass: "X", DataObject: "D", CDC: "WYE", Quantity: semantic.QuantityCurrent, Phase: semantic.PhaseA}}},
 		{rules: []semantic.Rule{{ID: "a", LNClass: "X", DataObject: "D", CDC: "MV", Quantity: semantic.QuantityCurrent, Unit: "furlong"}}},
 		{rules: []semantic.Rule{{ID: "a", LNClass: "X", DataObject: "D", CDC: "MV", Quantity: semantic.QuantityCurrent, Unit: "V"}}},

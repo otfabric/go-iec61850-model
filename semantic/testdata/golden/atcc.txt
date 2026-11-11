@@ -1,0 +1,29 @@
+# ATCC (IEC 61850-7-4:2007B6), profile default
+
+coverage: 10 measured or mapped, 10 mapped, 0 excluded, 0 unmapped, 61 not measured
+
+## Measurements
+
+ATCC.HiTapPos | tap-position | atcc.hitappos
+ATCC.LoTapPos | tap-position | atcc.lotappos
+ATCC.CtlV | voltage | unit V | atcc.ctlv
+ATCC.LodA | current | unit A | atcc.loda
+ATCC.CircA | current | unit A | atcc.circa
+ATCC.PhAng | phase-angle | unit deg | atcc.phang
+ATCC.HiCtlV | voltage | unit V | atcc.hictlv
+ATCC.LoCtlV | voltage | unit V | atcc.loctlv
+ATCC.HiDmdA | current | unit A | atcc.hidmda
+ATCC.TapPos | tap-position | atcc.tappos
+
+## Data objects
+
+HiTapPos INS (ATCC): mapped atcc.hitappos
+LoTapPos INS (ATCC): mapped atcc.lotappos
+CtlV MV (ATCC): mapped atcc.ctlv
+LodA MV (ATCC): mapped atcc.loda
+CircA MV (ATCC): mapped atcc.circa
+PhAng MV (ATCC): mapped atcc.phang
+HiCtlV MV (ATCC): mapped atcc.hictlv
+LoCtlV MV (ATCC): mapped atcc.loctlv
+HiDmdA MV (ATCC): mapped atcc.hidmda
+TapPos ISC (ATCC): mapped atcc.tappos
