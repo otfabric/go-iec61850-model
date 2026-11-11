@@ -174,6 +174,11 @@ type app struct {
 	strict   bool
 	language string
 	ns       string
+	// docs is the --docs file; docSet the doc set loaded from it, or
+	// the one embedded in or configured for the binary.
+	docs      string
+	docSet    *nsd.DocSet
+	docLoaded bool
 }
 
 func newRootCmd() *cobra.Command {
@@ -207,7 +212,8 @@ Exit codes: 0 ok, 1 findings (differences, validation errors), 2 usage,
 	pf.StringArrayVarP(&a.profile, "profile", "p", nil, "Profile name (default, extended) or namespace to select, e.g. \"IEC 61850-7-4:2007B5\" (repeatable; default: the default profile)")
 	completeValues(root, "profile", profileValues)
 	pf.BoolVar(&a.strict, "strict", false, "Treat importer warnings as errors")
-	pf.StringVar(&a.language, "lang", "en", "NSDoc language to apply (empty: none)")
+	pf.StringVar(&a.language, "lang", "en", "NSDoc and doc set language to apply (empty: none)")
+	pf.StringVar(&a.docs, "docs", "", "Doc set file with titles and descriptions (JSON or NSDoc-compatible XML; default: the one built in with -tags iecdocs or named by "+official.DocsEnv+")")
 
 	root.AddCommand(a.inspectCmd(), a.validateCmd(), a.dependenciesCmd(), a.modelCmd(), a.diffCmd(),
 		a.catalogCmd(), a.generateCmd(), a.sourcesCmd(), a.schemaCmd(), a.versionCmd(), noticeCmd(), completionCmd())
@@ -242,8 +248,39 @@ func helpWithoutSubcommand(c *cobra.Command) {
 	c.RunE = func(cmd *cobra.Command, _ []string) error { return cmd.Help() }
 }
 
+// docSetFor returns the doc set of --lang: from --docs, or the one the
+// binary embeds or IEC61850_MODEL_DOCS names; nil when there is none
+// or --lang is empty.
+func (a *app) docSetFor() (*nsd.DocSet, error) {
+	if a.docLoaded {
+		return a.docSet, nil
+	}
+	a.docLoaded = true
+	if a.language == "" {
+		return nil, nil
+	}
+	if a.docs != "" {
+		sets, err := nsd.LoadDocSets(a.docs)
+		if err != nil {
+			return nil, err
+		}
+		a.docSet = nsd.SelectDocSet(sets, a.language)
+		if a.docSet == nil {
+			return nil, withCode(exitUsage, "--docs %s has no %q texts", a.docs, a.language)
+		}
+		return a.docSet, nil
+	}
+	if s, err := official.Docs(a.language); err == nil {
+		a.docSet = s
+	}
+	return a.docSet, nil
+}
+
 func (a *app) options(source string) []nsd.Option {
 	opts := []nsd.Option{nsd.WithLanguage(a.language)}
+	if set, err := a.docSetFor(); err == nil && set != nil {
+		opts = append(opts, nsd.WithFallbackDocs(set))
+	}
 	if source != "" {
 		opts = append(opts, nsd.WithSource(source))
 	}
@@ -311,11 +348,26 @@ func (a *app) loadProfile() (*catalog.Profile, error) {
 // source is given.
 func (a *app) modelCatalog() (*catalog.Catalog, error) {
 	if len(a.sources) == 0 {
-		c, err := official.Catalog()
+		set, err := a.docSetFor()
+		if err != nil {
+			return nil, err
+		}
+		var c *catalog.Catalog
+		switch {
+		case set != nil && a.docs != "":
+			c, err = official.CatalogWithDocs(set)
+		case set != nil:
+			c, err = official.DocumentedCatalog(a.language)
+		default:
+			c, err = official.Catalog()
+		}
 		if err != nil {
 			return nil, &exitError{code: exitInternal, err: err}
 		}
 		return c, nil
+	}
+	if _, err := a.docSetFor(); err != nil {
+		return nil, err
 	}
 	c, _, err := a.loadCatalog(a.sources)
 	return c, err

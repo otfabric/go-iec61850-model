@@ -54,6 +54,7 @@ type classView struct {
 	Abstract    bool            `json:"abstract,omitempty"`
 	Inheritance []string        `json:"inheritance"`
 	Title       string          `json:"title,omitempty"`
+	Description string          `json:"description,omitempty"`
 	DataObjects []dataObjectRow `json:"dataObjects"`
 }
 
@@ -219,7 +220,7 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 	if err != nil {
 		return err
 	}
-	v := classView{Kind: "logical node class", Name: ln.Name, Namespace: ln.Source.String(), Abstract: ln.Abstract, Title: ln.Doc.Title}
+	v := classView{Kind: "logical node class", Name: ln.Name, Namespace: ln.Source.String(), Abstract: ln.Abstract, Title: ln.Doc.Text(), Description: ln.Doc.Description}
 	if g := ln.Group(); g != 0 {
 		v.Group = strings.TrimSpace(g.String() + " " + g.Label())
 	}
@@ -236,7 +237,7 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 	}
 	for _, do := range dos {
 		v.DataObjects = append(v.DataObjects, dataObjectRow{Name: do.Name, CDC: do.Type, Presence: do.Presence.String(),
-			DeclaredIn: do.DeclaredIn.Name, Namespace: do.DeclaredIn.Source.String(), Semantics: sem[do.Name], Text: do.Doc.Title})
+			DeclaredIn: do.DeclaredIn.Name, Namespace: do.DeclaredIn.Source.String(), Semantics: sem[do.Name], Text: do.Doc.Text()})
 	}
 	return a.output(w, v, func() error {
 		_, _ = fmt.Fprintf(w, "%s %s (%s)\n", v.Kind, v.Name, v.Namespace)
@@ -246,12 +247,27 @@ func (a *app) showClass(w io.Writer, p *catalog.Profile, ln *model.LogicalNodeCl
 		if v.Title != "" {
 			_, _ = fmt.Fprintf(w, "title        %s\n", v.Title)
 		}
+		if v.Description != "" && v.Description != v.Title {
+			_, _ = fmt.Fprintf(w, "description  %s\n", v.Description)
+		}
 		_, _ = fmt.Fprintf(w, "inheritance  %s\n\n", strings.Join(v.Inheritance, " → "))
 		var rows [][]string
+		texts := false
 		for _, d := range v.DataObjects {
-			rows = append(rows, []string{d.Name, d.CDC, orDash(d.Presence), d.DeclaredIn, d.Namespace, orDash(d.Semantics)})
+			texts = texts || d.Text != ""
 		}
-		return table(w, "DATA OBJECT\tCDC\tPRESENCE\tDECLARED IN\tNAMESPACE\tSEMANTICS", rows)
+		for _, d := range v.DataObjects {
+			row := []string{d.Name, d.CDC, orDash(d.Presence), d.DeclaredIn, d.Namespace, orDash(d.Semantics)}
+			if texts {
+				row = append(row, orDash(d.Text))
+			}
+			rows = append(rows, row)
+		}
+		header := "DATA OBJECT\tCDC\tPRESENCE\tDECLARED IN\tNAMESPACE\tSEMANTICS"
+		if texts {
+			header += "\tTEXT"
+		}
+		return table(w, header, rows)
 	})
 }
 
@@ -304,12 +320,14 @@ func showMembers(w io.Writer, kind, name string, src model.NamespaceID, attrs []
 }
 
 type pathView struct {
-	Path      string               `json:"path"`
-	Type      string               `json:"type"`
-	TypeKind  string               `json:"typeKind,omitempty"`
-	FC        string               `json:"fc,omitempty"`
-	Steps     []resolver.Step      `json:"steps"`
-	Semantics *semantic.Descriptor `json:"semantics,omitempty"`
+	Path     string          `json:"path"`
+	Type     string          `json:"type"`
+	TypeKind string          `json:"typeKind,omitempty"`
+	FC       string          `json:"fc,omitempty"`
+	Steps    []resolver.Step `json:"steps"`
+	// Description is the text of the leaf, when texts are applied.
+	Description string               `json:"description,omitempty"`
+	Semantics   *semantic.Descriptor `json:"semantics,omitempty"`
 }
 
 func (a *app) showPath(w io.Writer, p *catalog.Profile, ns *model.NamespaceID, ref string) error {
@@ -317,7 +335,7 @@ func (a *app) showPath(w io.Writer, p *catalog.Profile, ns *model.NamespaceID, r
 	if err != nil {
 		return usage(err)
 	}
-	v := pathView{Path: res.Path(), Type: res.Type(), TypeKind: string(res.TypeKind()), FC: string(res.FC()), Steps: res.Steps}
+	v := pathView{Path: res.Path(), Type: res.Type(), TypeKind: string(res.TypeKind()), FC: string(res.FC()), Steps: res.Steps, Description: res.Description()}
 	if d, err := semantic.Default.DescribeResolution(p, res); err == nil {
 		v.Semantics = d
 	}
@@ -330,6 +348,9 @@ func (a *app) showPath(w io.Writer, p *catalog.Profile, ns *model.NamespaceID, r
 			_, _ = fmt.Fprintf(w, " [%s]", v.FC)
 		}
 		_, _ = fmt.Fprintln(w)
+		if v.Description != "" {
+			_, _ = fmt.Fprintln(w, v.Description)
+		}
 		_, _ = fmt.Fprintln(w)
 		var rows [][]string
 		for _, s := range v.Steps {
@@ -472,15 +493,31 @@ func (a *app) modelSearchCmd() *cobra.Command {
 			}
 			return a.output(w, res, func() error {
 				rows := make([][]string, len(res))
+				texts := false
+				for _, r := range res {
+					texts = texts || r.Title != "" || r.Description != ""
+				}
 				for i, r := range res {
 					rows[i] = []string{string(r.Kind), r.Path, orDash(r.Type), orDash(string(r.FC)), orDash(r.Presence.String()), r.Namespace.String()}
+					if texts {
+						t := r.Title
+						if t == "" {
+							t = r.Description
+						}
+						rows[i] = append(rows[i], orDash(t))
+					}
 				}
-				return table(w, "KIND\tPATH\tTYPE\tFC\tPRESENCE\tNAMESPACE", rows)
+				header := "KIND\tPATH\tTYPE\tFC\tPRESENCE\tNAMESPACE"
+				if texts {
+					header += "\tTEXT"
+				}
+				return table(w, header, rows)
 			})
 		},
 	}
 	f := cmd.Flags()
 	f.StringVar(&q.Name, "name", "", "Name substring (case-insensitive)")
+	f.StringVar(&q.Text, "text", "", "Terms that the name, title or description must all contain (texts need --docs or an iecdocs build)")
 	f.BoolVar(&q.Exact, "exact", false, "Match --name exactly")
 	f.StringVar(&q.CDC, "cdc", "", "Only data objects of this CDC and classes declaring one")
 	f.StringVar(&q.Type, "type", "", "Only attributes of this type")

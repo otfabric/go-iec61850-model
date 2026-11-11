@@ -1,5 +1,41 @@
 # go-iec61850-model Releases
 
+## v0.9.0
+
+**Date:** 2026-11-11
+**Previous release:** v0.8.2
+
+Spec review against IEC 61850-7-2:2010, 7-3:2010, 7-4:2010 and 8-1:2011. The importer and the embedded catalog match the NSD files element for element; the fixes are in the reference parser and the resolver. Titles and descriptions can now be loaded from a local doc set and surface in the API; the repository still ships no IEC text.
+
+### Fixed
+
+- **Control references resolve** (8-1 §20.3, Tables 80/83/85/88/90): `SBO`, `SBOw`, `Oper` and `Cancel` with FC CO are built from the CDC service parameters (`ctlVal`, `operTm`, `origin`, `ctlNum`, `T`, `Test`, `Check`; Cancel has no Check), so `XCBR.Pos.Oper.ctlVal[CO]` and `Pos[CO]` resolve and `Leaves` lists the control leaves (MDL-01).
+- **Array elements** `name(n)` (7-2 §6.1.2.3) are parsed per component and resolved; a malformed index or an index on a non-array is rejected; `ToMMS` rejects indexed references (MDL-02).
+- **Length limits** (7-2 Table 4, 8-1 §8.1.3.2.2): `ParseStrict` measures without the `[FC]` suffix and enforces LD ≤ 64 and path ≤ 64; `Validate` enforces LD ≤ 64; `ToMMS`/`FromMMS` enforce the 64-character MMS identifier (MDL-03, MDL-04, MDL-05).
+- **FC syntax** (7-2 Table 20, 8-1 Figure 4): an FC is two upper-case letters; the constants are split into ACSI and SCSM sets with `IsACSI`/`IsSCSM`, plus `FCGS` and `FCXX` (MDL-06).
+- **Multi-instance ranges**: instance numbers outside `OmultiRange`/`MmultiRange` are rejected (MDL-07).
+- **NSDoc**: presCondArgs texts are applied to the new `PresenceCondition.ArgsText` (MDL-08); the NSDoc of the exact release wins, and a matching NSDoc that applies nothing raises the warning `doc-ids-unmatched` (MDL-09).
+- `ResolveString("MMXU1.Hz")` without an LD fails with a hint to add `LD/` (MDL-10).
+
+### Added
+
+- **Doc sets** (`nsd.DocSet`): texts keyed by model path (`LN:MMXU`, `DO:MMXU.TotW`, `CDC:MV`, `DA:MV.mag`, `FC:ST`, …), so one set covers every release; JSON `otfabric-docset/1` (optionally gzip) or NSDoc-style XML; `ApplyDocSet` fills empty fields only, and `nsd.WithFallbackDocs` lets your own NSDoc win.
+- **Documented profiles** in `official`: `DefaultDocumented`, `ExtendedDocumented`, `OpenDocumented`, `OpenWithDocs`, `DocumentedCatalog`, `CatalogWithDocs`, `DocLanguages`, `Docs`, `DocsSource`, `ErrNoDocs`. The texts come from a locally generated `official/docs_gen.json.gz` (gitignored, embedded with `-tags iecdocs`) or from the file named by `IEC61850_MODEL_DOCS`. `Default()` and `Extended()` are unchanged.
+- **Descriptions in results**: `model.Doc.Text/Long/HasText/Clear`, `resolver.Resolution.Doc/Description`, `Step.Doc`, `semantic.Descriptor.Title/Description`, and text search with `catalog.Query.Text`.
+- `internal/tools/docextract`: a maintainer tool that builds a doc set from licensed spec PDFs (`make docs-extract SPECS_DIR=…`); `make build-docs`, `make test-docs`.
+
+### Changed
+
+- Rejected now: lower-case FCs, malformed `(…)` components, LD names over 64 in `Validate`, identifiers over 64 and indexed references in `ToMMS`/`FromMMS`.
+- `resolver.Step` gains `Index` and `Doc`, `catalog.Result` gains `Title` and `Description`: positional struct literals and `==` comparisons need updating.
+- docs/model.md documents the doc keys, the presence-condition name mapping and the Edition 2 → 2.1 deltas (MDL-11, MDL-12).
+
+### Tests
+
+- Spec tests named after their clause in reference, resolver and model (`TestSpec_8_1_20_3_ControlServiceParameters`, `TestSpec_7_2_Table4_ObjectReferenceLength`, …), doc-set tests with OTFabric-worded fixtures, `FuzzReadDocSets`, and real-doc-set checks that run only when a doc set is present (`REQUIRE_IEC_DOCS=1` makes the skip a failure).
+
+---
+
 ## v0.8.2
 
 **Date:** 2026-11-09
