@@ -11,12 +11,12 @@ AEPC	Emergency power control
 AESC	Electrical machine operating mode control
 AFCR	Field current regulator
 AFFL	Field flashing control
-AFLK	Flicker control	?
+AFLK	Flicker control
 AFSI	Automatic fault isolation
 AFSL	Automatic fault location
 AFVR	Field voltage regulator
 AJCL	Joint control of units
-AMSR	Converter set-point regulation	?
+AMSR	Converter set-point regulation
 ANCR	Neutral current regulator
 AOEL	Overexcitation limiter
 AOMN	Opening minimum limit
@@ -73,8 +73,8 @@ CCAP	Series capacitor bank control
 CCGR	Cooling group control
 CFAN	Fan control
 CFPC	Converter power flow control
-CFVL	Fluid valve position controller	?
-CHCY	Direct hydraulic cylinder controller	?
+CFVL	Fluid valve position controller
+CHCY	Direct hydraulic cylinder controller
 CHTR	Heater control
 CILO	Interlocking
 CJCL	Joint control interface
@@ -153,7 +153,7 @@ DWMX	DER active power maximum limit
 DWVR	Watt-var function
 DecelerationLN	Deceleration device (abstract)
 DomainLN	Domain logical node (abstract)
-EBCF	Block coordination function	?
+EBCF	Block coordination function
 EBRG	Thermal unit bearing
 ECTH	Thermal unit clutch
 EEXT	Thermal unit excitation
@@ -222,9 +222,9 @@ FunctionOutputLN	Function with output (abstract)
 GAPC	Generic automatic process control
 GGIO	Generic process input/output
 GLOG	Generic log
-GRST	Operational restriction tagging	?
+GRST	Operational restriction tagging
 GSAL	Security violation supervision
-GTMO	Maintenance lockout and tag management	?
+GTMO	Maintenance lockout and tag management
 GTSK	Operational task management	?
 GUNT	Generic generating unit
 GeneratingUnitMgmtFunLN	Generating unit management function (abstract)
@@ -263,7 +263,7 @@ HMMC	Mechanical machine management control
 HNDL	Needle valve
 HNDM	Needle management
 HNHD	Net head
-HOTP	Operating threshold	?
+HOTP	Protection against dam overtopping
 HPSK	Penstock
 HPYM	Auxiliary starting motor
 HRES	Reservoir
@@ -301,21 +301,21 @@ InstrumentTransformerLN	Instrument transformer (abstract)
 JointControlMgmtFunLN	Joint control management function (abstract)
 KBRP	Mechanical brake pad
 KCTH	Mechanical clutch
-KDFL	Flow deflector	?
+KDFL	Flow deflector
 KFAN	Fan
 KFIL	Filter
 KFIM	Fire fighting system interface
 KFLV	Fuel delivery system	?
 KFSL	Fluid sealing device
 KFUL	Fuel consumption and characteristics
-KFVL	Controllable fluid valve	?
+KFVL	Controllable fluid valve
 KGTE	Gate (non-controlled equipment)
 KHCY	Hydraulic cylinder
 KHTR	Heater
 KILL	Illumination
 KPBP	Penstock burst protection
 KPMP	Pump
-KSPP	Rotational overspeed and underspeed protection	?
+KSPP	Rotational overspeed and underspeed protection
 KTGR	Turning gear
 KTGV	Turbine guide vanes
 KTNK	Tank
@@ -389,12 +389,12 @@ PDIR	Direction comparison protection
 PDIS	Distance protection
 PDOP	Directional overpower protection
 PDUP	Directional underpower protection
-PFPE	Fast protective device protection	?
+PFPE	Fast protective device protection
 PFRC	Rate of change of frequency protection
 PHAR	Harmonic restraint
 PHIZ	High impedance ground fault protection
 PIOC	Instantaneous overcurrent protection
-PLFR	Line fault recovery	?
+PLFR	Line fault recovery
 PMHE	Varistor energy protection
 PMHT	Varistor thermal protection
 PMOV	Varistor overcurrent protection
@@ -406,7 +406,7 @@ PRTR	Rotor ground fault protection
 PSCH	Protection scheme
 PSDE	Sensitive directional ground fault protection
 PSOF	Switch onto fault protection
-PTDV	Voltage rate of change protection	?
+PTDV	Voltage rate of change protection
 PTEF	Transient ground fault protection
 PTHF	Thyristor protection
 PTOC	Time overcurrent protection
@@ -441,7 +441,7 @@ QVUB	Voltage unbalance variation event
 QVVR	Voltage variation event
 RADR	Disturbance recorder analog channel
 RBDR	Disturbance recorder binary channel
-RBPF	Bypass protection failure	?
+RBPF	Bypass protection failure
 RBRF	Breaker failure
 RDIR	Directional element
 RDRE	Disturbance recorder function
@@ -455,7 +455,7 @@ RRFV	Reclosing with fault verification
 RRIN	Series capacitor reinsertion
 RSYN	Synchronism check
 RTWD	Traveling wave fault detection
-RTWI	Traveling wave signal injection	?
+RTWI	Traveling wave signal injection
 RTWL	Traveling wave fault location
 RampRatesLN	Ramp rates (abstract)
 ReactiveComponentInterfaceLN	Reactive component interface (abstract)
@@ -468,7 +468,7 @@ SARC	Arc monitoring and diagnostics
 SBAT	Battery supervision
 SBRP	Brake pad wear monitoring
 SCBR	Circuit breaker supervision
-SCGR	Cooling and oil system supervision	?
+SCGR	Cooling and oil system supervision
 SCND	Conductivity supervision
 SCPI	Current presence indicator
 SEAM	Equipment aging monitoring
@@ -495,7 +495,7 @@ SPRS	Pressure supervision
 SPSE	Site presence monitoring
 SPTR	Power transformer supervision
 SSMK	Smoke detection
-SSTP	Transformer solid insulation supervision	?
+SSTP	Transformer solid insulation supervision
 SSWI	Switch supervision
 STMP	Temperature supervision
 SVBR	Vibration supervision
@@ -521,7 +521,7 @@ TCND	Conductivity sensor
 TCTR	Current transformer
 TDEN	Density sensor
 TDST	Distance sensor
-TECW	Water conductivity sensor	?
+TECW	Water conductivity sensor
 TFLW	Flow sensor
 TFRQ	Frequency sensor
 TGSN	Generic sensor

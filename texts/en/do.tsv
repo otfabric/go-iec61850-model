@@ -2,17 +2,17 @@
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
 CO2Ems	Carbon dioxide emissions
 COEms	Carbon monoxide emissions
-CTrd	Carbon trading	?
+CTrd	Participation in carbon emissions trading
 ClcNxTmms	Time until the next calculation in milliseconds
-DisplA	Displacement current	?
+DisplA	Apparent displacement current at the bushing tap	?
 Droop	Droop
-FldAmpRtgO	Field current rating	?
+FldAmpRtgO	No-load field current at rated stator voltage
 GrnTag	Green tag (environmental label)	?
 HKf	Harmonic K factor
 HTif	Telephone influence factor
 LeakA	Leakage current
 NOxEms	Nitrogen oxide emissions
-PartSens	Particulate matter sensor setting	?
+PartSens	Sensitivity setting for particulate detection
 RegClas	Regulatory class
 SOxEms	Sulfur oxide emissions
 StatLeakX	Stator leakage reactance

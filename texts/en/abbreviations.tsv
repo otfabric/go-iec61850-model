@@ -1,7 +1,7 @@
 # Expansions of the terms data object names are built from; data object texts are composed from them.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
 A	current
-ABC	phases A, B and C	?
+ABC	phases A, B and C
 AC	alternating current
 AGC	automatic generation control
 ASG	analog setting
@@ -19,7 +19,7 @@ Acs	access
 Act	active
 Actr	actuator
 Actual	actual
-Acu	acoustic	?
+Acu	acoustic
 Add	additional
 Addr	address
 Adj	adjustment
@@ -33,14 +33,14 @@ Alg	algorithm
 Alm	alarm
 Alr	already	?
 Als	alarm setting
-Alt	altitude	?
+Alt	altitude
 Altn	alternate
 Alwd	allowed
 Amnt	amount
 Amp	current
 An	analog
 Anc	ancillary
-Ane	anemometer	?
+Ane	anemometer
 Ang	angle
 Ani	animal
 Ann	announcement
@@ -56,20 +56,20 @@ Assn	association
 Ast	asset
 Asym	asymmetry
 Asyn	asynchronous
-At	at	?
+At	at
 Ats	automatic transfer switch
 Auth	authorization
 Auto	automatic
 Aux	auxiliary
 Av	average
-Ava	absorbed apparent power	?
+Ava	absorbed apparent power
 Avar	reactive power
 Avi	available	?
 Avl	available
 Ax	axial
 Azi	azimuth
 B	phase B
-BG	band gain	?
+BG	before gain
 Bac	binary-controlled analog step
 Bar	barrier
 Base	base
@@ -77,11 +77,11 @@ Bat	battery
 Bb	busbar	?
 Bck	back
 Bdl	bundle	?
-Bec	beacon	?
+Bec	beacon
 Beh	behavior
 Ber	bit error rate
 Bias	bias
-Bl	blade	?
+Bl	blade
 Blb	bulb
 Blk	blocked
 Blow	blow-by
@@ -118,7 +118,7 @@ Can	cancel
 Cap	capability
 Capac	capacitive
 Car	carrier
-Cbn	carbon	?
+Cbn	carbon
 Cbr	calibration
 Ccw	counterclockwise
 Ccy	currency
@@ -176,7 +176,7 @@ Con	contact	?
 Conf	configuration
 ConfRev	configuration revision
 Conn	connection
-Cons	constant	?
+Cons	constant
 Cor	correction
 Core	core
 Cost	cost
@@ -185,7 +185,7 @@ Crd	coordination
 Crit	critical
 Crl	correlation	?
 Crp	creep
-Crtl	control	?
+Crtl	control
 Crv	curve
 Csmp	consumption
 Ctb	contribution
@@ -198,9 +198,9 @@ Cur	current
 Cush	cushion
 Cut	cut
 Cvr	cover
-Cvt	converter	?
+Cvt	converter
 Cw	clockwise
-Cwb	cold water bath	?
+Cwb	crowbar
 Cyc	cycle
 Cyl	cylinder
 D	derivative
@@ -216,12 +216,12 @@ Damp	damping
 Date	date
 Day	day
 Db	deadband
-Dcl	declination	?
+Dcl	DC link
 Dct	direct
 De	de-
 Dea	dead
-Deb	debounce	?
-Dec	decrease	?
+Deb	debounce
+Dec	decrease
 Deg	degrees
 Dehum	dehumidifier
 Del	delta
@@ -232,7 +232,7 @@ Det	detection
 Detun	detuning
 Dev	device
 Dew	dew
-Df	difference	?
+Df	difference
 Dff	diffuse
 Dfl	deflector
 Dft	default
@@ -245,17 +245,17 @@ Dir	direction
 Dis	distance
 Dist	distributed
 Dith	dither
-Div	division	?
+Div	division
 Dl	delay
 Dlt	delete
 Dlv	delivery
 Dmd	demand
 Dn	down
-Dom	domain	?
+Dom	domain
 Domain	domain
 Door	door
 Dpc	double-point control
-Dpt	department	?
+Dpt	departure
 Drag	drag
 Drn	drone
 Dropout	dropout
@@ -277,20 +277,20 @@ Dust	dust
 Dv	deviation
 Dw	down
 Dyn	dynamic
-E	earth	?
+E	earth
 EE	external equipment
 EF	earth fault
 EFN	earth fault neutralizer
-EMA	exponential moving average	?
+EMA	electric mobility account
 ENG	enumerated setting
 ENS	enumerated status
 EPC	emergency power control
 EV	electric vehicle
 EVSE	electric vehicle supply equipment
 Echo	echo
-Ecnm	economic	?
+Ecnm	economic
 Ecp	electrical connection point
-Edt	edit	?
+Edt	edit
 Efc	efficiency
 Eff	effective
 Egr	egress
@@ -306,9 +306,9 @@ Ena	enabled
 Enc	enumerated control
 Encl	enclosure
 End	end
-Enf	enforced	?
+Enf	enforced
 Eng	engine
-Engz	energized	?
+Engz	energized
 Ent	entity
 Entr	entry
 Enum	enumeration
@@ -317,9 +317,9 @@ Eps	electric power system
 Eq	equipment
 Eqmt	equipment
 Err	error
-Esp	estimated setpoint	?
+Esp	estimated setpoint
 Est	estimated
-Etg	earthing	?
+Etg	earthing
 Eth	Ethernet
 Ev	evaluation
 Evn	even
@@ -327,7 +327,7 @@ Evo	evolving
 Evp	evaporation
 Evt	event
 Ex	external
-ExIm	export and import	?
+ExIm	export and import
 Exc	exceeded
 Excl	exclusion
 Exp	expired
@@ -343,12 +343,12 @@ Fact	factor
 Fail	failure
 Fan	fan
 Fast	fast
-Fbc	field breaker configuration	?
+Fbc	field breaker configuration
 Fct	forecast
 Fer	frame error rate
 Fght	fighting
 Fil	filter
-Fin	final	?
+Fin	final
 Fir	fire
 Fire	fire
 Fish	fish
@@ -366,7 +366,7 @@ Fol	follow
 Forc	forcing
 Free	free
 Frm	frame
-Frt	front	?
+Frt	front
 Frz	freezing
 Fu	fuse
 Fuel	fuel
@@ -391,7 +391,7 @@ Gra	gradient
 Grd	guard
 Gri	grid
 Gross	gross
-Gs	gas	?
+Gs	grease
 Gte	gate
 Gust	gust
 H	harmonic
@@ -400,12 +400,12 @@ H2O	water
 HP	hot point
 HPh	harmonic phase
 Ha	harmonic
-Har	harmonic	?
-Hb	heartbeat	?
+Har	harmonic
+Hb	harmonic bin
 Hd	head
 Health	health
 Heat	heat
-Heli	helical	?
+Heli	helical
 Hello	hello
 Hi	high
 Hihi	high-high
@@ -430,22 +430,22 @@ I	integral
 ING	integer setting
 INS	integer status
 ISCSO	integer controllable status output
-Ia	term Ia, not yet expanded	?
-Iafm	term Iafm, not yet expanded	?
-Iano	term Iano, not yet expanded	?
-Ianofo	term Ianofo, not yet expanded	?
-Ianopca	term Ianopca, not yet expanded	?
-Ianos	term Ianos, not yet expanded	?
-Ianosm	term Ianosm, not yet expanded	?
-Iao	term Iao, not yet expanded	?
-Iaog	term Iaog, not yet expanded	?
-Iaogfp	term Iaogfp, not yet expanded	?
-Iaogpp	term Iaogpp, not yet expanded	?
-Iaong	term Iaong, not yet expanded	?
-Iaongel	term Iaongel, not yet expanded	?
-Iaongen	term Iaongen, not yet expanded	?
-Iaongrs	term Iaongrs, not yet expanded	?
-Iaongts	term Iaongts, not yet expanded	?
+Ia	available information
+Iafm	force majeure interruption
+Iano	available, not operating
+Ianofo	forced-outage non-operation
+Ianopca	planned-correction non-operation
+Ianos	suspended operation
+Ianosm	scheduled-maintenance non-operation
+Iao	available for operation
+Iaog	available and generating
+Iaogfp	full-performance generation
+Iaogpp	reduced-performance generation
+Iaong	available, not generating
+Iaongel	electrical-limit non-generation
+Iaongen	environmental-limit non-generation
+Iaongrs	requested-shutdown non-generation
+Iaongts	technical-standby non-generation
 Ice	ice
 Icp	intercept
 Id	identifier
@@ -533,7 +533,7 @@ IeeeVstMax	IEEE stabilizer output maximum
 IeeeVstMin	IEEE stabilizer output minimum
 Ign	ignition
 Illum	illumination
-Ilo	inlet	?
+Ilo	inlet
 Imb	imbalance
 Imd	immediate
 Imp	impedance
@@ -553,11 +553,11 @@ Inf	information
 Ingr	ingress
 Inh	inhibit
 Inj	injection
-Inl	inlet	?
+Inl	inline
 Inlet	inlet
 Inn	inner
 Input	input
-Inr	inner	?
+Inr	inner
 Ins	insulation
 Insol	insolation
 Inst	instantaneous
@@ -573,9 +573,9 @@ Isl	island
 Isld	islanded
 Iso	isolation
 Itm	intermittent
-Iu	term Iu, not yet expanded	?
-Iva	injected apparent power	?
-Ivar	injected reactive power	?
+Iu	information unavailable
+Iva	injected apparent power
+Ivar	injected reactive power
 Ix	index
 Jmp	jump
 Jnt	joint
@@ -584,7 +584,7 @@ K0Fact	residual compensation factor
 KFact	K-factor
 Kck	kick
 Key	key
-Kpp	proportional gain	?
+Kpp	proportional gain
 Ks	stabilizer gain
 L	lower
 LDC	line drop compensation
@@ -595,16 +595,16 @@ LED	LED
 LTC	load tap changer
 Last	last
 Lbl	label
-Lch	latch	?
+Lch	latch
 Ld	lead
 Ldp	LLDP
-Le	leading edge	?
+Le	leading edge
 Leap	leap
 Len	length
 Lev	level
 Lft	lift
 Lg	lag
-Lif	life	?
+Lif	life
 Life	life
 Lim	limit
 Lin	line
@@ -623,9 +623,9 @@ Loop	loop
 Los	loss
 Ls	previous short interval	?
 Lst	list
-Ltg	lightning	?
+Ltg	lightning
 Lub	lubrication
-Lum	luminance	?
+Lum	luminance
 M	meter	?
 MV	measured value
 Mac	MAC
@@ -633,7 +633,7 @@ Made	made
 Mag	magnitude
 Main	main
 Maint	maintenance
-Mak	make	?
+Mak	make
 Man	manual
 Mass	mass
 Master	master
@@ -643,7 +643,7 @@ Max	maximum
 Mbr	membrane
 Mchn	machine
 Md	motor drive
-Mdm	modem	?
+Mdm	modem
 Mdul	module
 Me	mean
 Meas	measured
@@ -661,12 +661,12 @@ Mns	mains
 Mnt	maintenance
 Mod	mode
 Modl	modulation
-Mon	monitoring	?
+Mon	monitoring
 Mot	motor
 Mov	metal oxide varistor
 Mrg	margin
-Mrk	mark	?
-Ms	measurement	?
+Mrk	market
+Ms	measurement
 Msk	mask
 Mst	moisture
 Msv	multicast sampled value
@@ -683,7 +683,7 @@ NQS	normalized quantity number
 Nac	nacelle
 Nam	name
 Name	name
-Nav	navigation	?
+Nav	navigation
 Ndl	needle
 Nds	needs	?
 NdsCom	needs commissioning
@@ -701,7 +701,7 @@ Num	number
 Nxt	next
 O2	oxygen
 O3	ozone
-Obl	obstruction light	?
+Obl	obstruction light
 Oc	open circuit
 Odd	odd
 Of	offset
@@ -731,15 +731,15 @@ PP	phase-to-phase
 PPV	phase-to-phase voltage
 PT1	first-order lag
 Pa	partial
-Pad	pad	?
+Pad	pad
 Pair	pair
 Pap	paper
 Par	parallel
-Pas	passive	?
+Pas	passive
 Path	path
 Pcb	probability
 Pct	percent
-Pdm	demodulated	?
+Pdm	demodulated
 Pe	electrical power
 Per	period
 Ph	phase
@@ -750,10 +750,10 @@ Pi	instantaneous flicker
 Pin	pin
 Pipe	pipe
 Pk	peak
-Pl	plate	?
-Plc	programmable logic controller	?
+Pl	plant
+Plc	programmable logic controller
 Ple	pole
-Plg	plug	?
+Plg	plug
 Pls	pulse
 Plt	plate
 Pm	permanent
@@ -781,7 +781,7 @@ Proc	process
 Profile	profile
 Proxy	proxy
 Prs	presence
-Prt	part	?
+Prt	part
 Ps	positive
 Psk	penstock
 Pss	power system stabilizer
@@ -833,7 +833,7 @@ Reuse	reuse
 Rev	revision
 Rf	refresh
 Rh	reheat
-Ri	internal resistance	?
+Ri	internal resistance
 Rign	reignition
 Rin	reinsertion
 Rin1	single-pole reinsertion
@@ -872,7 +872,7 @@ Rtn	return
 Rub	rub
 Run	running
 Rv	reverse
-Rvc	reverse current	?
+Rvc	rapid voltage change
 Rvrt	revert
 Rwy	runaway
 Rx	receive
@@ -895,7 +895,7 @@ Scale	scale
 Schd	schedule
 Scnd	secondary
 Sco	start-up control
-Sct	section	?
+Sct	section
 Sec	security
 Seg	segment
 Seism	seismic
@@ -910,7 +910,7 @@ Sfx	self-extinguishing
 Sgcb	setting group control block
 Sh	shunt
 Shar	share
-Shd	shed	?
+Shd	shed
 Shft	shaft
 Shld	shield
 Sht	shutter
@@ -942,7 +942,7 @@ Spd	speed
 Spec	spectrum
 Spir	spiral case
 Spm	semi-permanent
-Spn	span	?
+Spn	span
 Spt	setpoint
 Sq	square
 Src	source
@@ -956,7 +956,7 @@ Std	standard
 Stdby	standby
 Step	step
 Stepsr	steps removed
-Stg	stage	?
+Stg	stage
 Stk	stroke
 Stl	stall
 Stm	steam
@@ -985,7 +985,7 @@ Sys	system
 T	time constant	?
 TOTO	term TOTO, not yet expanded	?
 TP	three-pole
-Ta	armature time constant	?
+Ta	armature time constant
 Tag	tag
 Tap	tap
 Task	task
@@ -1001,7 +1001,7 @@ Tdp	d-axis transient time constant
 Tds	d-axis subtransient time constant
 Tech	technology
 Term	term
-Tes	test	?
+Tes	test
 Test	test
 Tfr	transfer
 Tgt	target
@@ -1023,12 +1023,12 @@ Tmp	temperature
 Tms	time in seconds
 Tnk	tank
 Tns	tension
-Top	top	?
+Top	top
 Topo	topology
 Torq	torque
 Tot	total
 Tow	tower
-Tp	type	?
+Tp	type
 Tpc	teleprotection
 Tpy	temporary
 Tq0p	q-axis open-circuit transient time constant
@@ -1041,12 +1041,12 @@ Trf	transformer
 Trg	trigger
 Trip	trip
 Trk	tracking
-Trn	turn	?
-Trp	transient performance	?
+Trn	turn
+Trp	transient performance
 Trs	transient
 Truck	truck
 Trunk	trunk
-Trv	travel	?
+Trv	travel
 Ts	total signed
 Tu	total unsigned
 Tun	tuning
@@ -1060,7 +1060,7 @@ UPS	UPS
 UTC	UTC
 Udp	UDP
 Uhf	UHF
-Un	under-excited	?
+Un	under-excited
 Unav	unavailable
 Unb	unbalance
 Unit	unit
@@ -1090,7 +1090,7 @@ Vbr	vibration
 Ver	vertical
 Viol	violation
 Virt	virtual
-Vis	visibility	?
+Vis	visibility
 Visc	viscosity
 Vlan	VLAN
 Vld	valid
@@ -1100,16 +1100,16 @@ Vol	voltage
 VolAmpr	volt-amperes
 Volts	volts
 Vsi	stabilizer input voltage
-Vss	visible string	?
+Vss	visible string
 Vst	stabilizer output voltage
 W	active power
-W200	at 200 W/m2	?
+W200	at 200 W/m2
 Wac	watchdog
 Wash	washout
 Watt	watts
 Wav	waveform
 Wd	wind
-Wdv	wind direction variation	?
+Wdv	wind direction variation
 Wear	wear
 Week	week
 Wei	weak infeed
@@ -1120,15 +1120,15 @@ Wid	width
 Win	window
 Wire	wire
 Wkup	wake-up
-Wld	weld	?
+Wld	weld
 Wnd	winding
 Wrm	warm
 Wrn	warning
 Wrs	warning setpoint
-Ws	wind speed	?
+Ws	wind speed
 Wst	waste
 Wtr	water
-Wup	warm-up	?
+Wup	warm-up
 X	reactance
 X0	zero-sequence reactance
 X1	positive-sequence reactance

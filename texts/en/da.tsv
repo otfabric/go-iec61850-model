@@ -34,8 +34,8 @@ datSet	Reference to the data set whose members the control block sends or logs
 dataNs	Namespace that defines the data object when it differs from that of the logical node
 db	Deadband that defines how far the value must change before the reported value is updated
 dbAng	Deadband that defines how far the angle must change before the reported angle is updated
-dbAngRef	Reference to a data object that provides the deadband for the angle	?
-dbRef	Reference to a data object that provides the deadband for the value	?
+dbAngRef	Reference to a data object that provides the deadband for the angle
+dbRef	Reference to a data object that provides the deadband for the value
 dirGeneral	Direction of the detected fault, combined across all phases
 dirNeut	Direction of the detected fault in the neutral
 dirPhsA	Direction of the detected fault in phase A
@@ -63,7 +63,7 @@ hstRangeC	Range configuration that defines the bins of the histogram
 hstVal	Values of the histogram bins, one count or value per bin
 hvRef	Reference used to express the harmonic values, such as the fundamental or the total rms value
 hwRev	Hardware revision of the device as declared by the vendor
-id	Identifier that distinguishes this instance, such as a tag or reference entry	?
+id	Identifier that distinguishes this instance, such as a tag or reference entry
 instCVal	Instantaneous complex value given as magnitude and angle, without deadband applied
 instMag	Instantaneous magnitude of the value, without deadband applied
 intAddr	Internal address of the input signal that the setting refers to
@@ -213,4 +213,4 @@ zD	Text description of the quantity shown on the z axis
 zDU	Description of the z axis in Unicode characters
 zUnits	Unit of measure and multiplier of the z axis values
 zeroDb	Zero deadband: values closer to zero than this limit are reported as zero
-zeroDbRef	Reference to a data object that provides the zero deadband	?
+zeroDbRef	Reference to a data object that provides the zero deadband
