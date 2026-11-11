@@ -62,9 +62,8 @@ func TestSpec_7_2_6_1_2_3_ArrayElementSyntax(t *testing.T) {
 	}
 }
 
-// IEC 61850-7-2:2010 Table 4: ObjectReference is VISIBLE STRING129, "up
-// to 64 characters for the LD name followed by one separator "/"
-// followed by up to 64 characters for the path below the LD name"; the
+// IEC 61850-7-2:2010 Table 4: ObjectReference is VISIBLE STRING129, an
+// LD name and a path of at most 64 characters each joined by "/"; the
 // FC is not part of it (§22.2 NOTE 1). MDL-03.
 func TestSpec_7_2_Table4_ObjectReferenceLength(t *testing.T) {
 	ld64 := strings.Repeat("L", 64)
@@ -154,9 +153,9 @@ func TestSpec_7_2_22_2_NamingConventions(t *testing.T) {
 	}
 }
 
-// IEC 61850-8-1:2011 §8.1.3.2.2: "The maximum MMS Object Name and
-// Domain Name size shall be constrained by the MMS maxidentifier size
-// of 64"; §7.3.1 bounds the flattened "$" names the same way. MDL-05.
+// IEC 61850-8-1:2011 §8.1.3.2.2: MMS object and domain names are
+// limited by the 64-character MMS identifier; §7.3.1 bounds the
+// flattened "$" names the same way. MDL-05.
 func TestSpec_8_1_8_1_3_2_2_MMSIdentifierLength(t *testing.T) {
 	item := func(n int) string { return "MMXU1$MX$Hz" + strings.Repeat("x", n-len("MMXU1$MX$Hz")) }
 	for _, tc := range []struct {

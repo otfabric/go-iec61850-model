@@ -43,7 +43,7 @@ const (
 )
 ```
 
-MaxLDLength is the maximum length of a logical device name, and MaxPathLength the maximum length of the path below it (LN.DO.DA), IEC 61850-7-2:2010 Table 4: "up to 64 characters for the LD name followed by one separator "/" followed by up to 64 characters for the path below the LD name".
+MaxLDLength is the maximum length of a logical device name, and MaxPathLength the maximum length of the path below it (LN.DO.DA), IEC 61850-7-2:2010 Table 4: at most 64 characters each, joined by a single "/".
 
 ```go
 const MaxMMSIdentifier = 64
