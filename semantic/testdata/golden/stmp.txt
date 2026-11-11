@@ -1,0 +1,15 @@
+# STMP (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+STMP.OpCntRs | operation-count | supervision.opcntrs
+STMP.Tmp | temperature | unit degC | stmp.tmp
+STMP.TmpRte | temperature-rate | unit K/s | stmp.tmprte
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+Tmp MV (STMP): mapped stmp.tmp
+TmpRte MV (STMP): mapped stmp.tmprte

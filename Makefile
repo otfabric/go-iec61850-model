@@ -256,9 +256,9 @@ test-docs: ## Run the tests against the local doc set (-tags iecdocs, REQUIRE_IE
 	@test -f official/docs_gen.json.gz || { echo "No official/docs_gen.json.gz; run make docs-extract SPECS_DIR=..."; exit 1; }
 	@REQUIRE_IEC_DOCS=1 go test -count=1 -race -tags iecdocs $(PKGS)
 
-golden: ## Regenerate testdata/golden after an intentional generator output change
+golden: ## Regenerate testdata/golden and semantic/testdata/golden after an intentional output or rule change
 	@echo "Regenerating golden generator output"
-	@UPDATE_GOLDEN=1 go test -count=1 -run TestGolden ./internal/generator
+	@UPDATE_GOLDEN=1 go test -count=1 -run TestGolden ./internal/generator ./semantic
 
 # The documents against the code (DOC-008): docsync, as docs.yml runs it.
 docs-check: ## Check that the documents agree with the code (docsync)

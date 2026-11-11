@@ -1,0 +1,15 @@
+# KPMP (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 31 not measured
+
+## Measurements
+
+KPMP.Spd | rotational-speed | kpmp.spd
+KPMP.OpCtl | operating-state | kpmp.opctl
+KPMP.SpdSv | rotational-speed | kpmp.spdsv
+
+## Data objects
+
+Spd MV (KPMP): mapped kpmp.spd
+OpCtl SPC (KPMP): mapped kpmp.opctl
+SpdSv SAV (KPMP): mapped kpmp.spdsv

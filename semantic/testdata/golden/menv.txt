@@ -1,0 +1,18 @@
+# MENV (IEC 61850-7-4:2007B6), profile default
+
+coverage: 8 measured or mapped, 1 mapped, 7 excluded, 0 unmapped, 24 not measured
+
+## Measurements
+
+MENV.Snd | sound-level | unit dB | menv.snd
+
+## Data objects
+
+CO2Em MV (MENV): excluded — carbon dioxide as a concentration or an emission rate; the model states neither the unit nor the basis
+COEm MV (MENV): excluded — carbon monoxide as a concentration or an emission rate; the model states neither the unit nor the basis
+NOxEm MV (MENV): excluded — nitrogen oxides as a concentration or an emission rate; the model states neither the unit nor the basis
+SOxEm MV (MENV): excluded — sulphur oxides as a concentration or an emission rate; the model states neither the unit nor the basis
+Dust MV (MENV): excluded — dust as a concentration or an emission rate; the model states neither the unit nor the basis
+Snd MV (MENV): mapped menv.snd
+O2CmbuGas MV (MENV): excluded — oxygen in combustion gas as a concentration or an emission rate; the model states neither the unit nor the basis
+O3Air MV (MENV): excluded — ozone as a concentration or an emission rate; the model states neither the unit nor the basis

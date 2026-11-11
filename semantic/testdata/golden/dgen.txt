@@ -1,0 +1,49 @@
+# DGEN (IEC 61850-7-420:2019A4), profile default
+
+coverage: 26 measured or mapped, 14 mapped, 12 excluded, 0 unmapped, 130 not measured
+
+## Measurements
+
+DGEN.SelfSvcWh | active-energy | unit Wh | deractualpower.selfsvcwh
+DGEN.AvlUpW | active-power | unit W | deractualpower.avlupw
+DGEN.AvlDnW | active-power | unit W | deractualpower.avldnw
+DGEN.DEROpSt | operating-state | derstate.deropst
+DGEN.TotStrCnt | count | dergenerator.totstrcnt
+DGEN.GnOpTm | duration | unit s | dergenerator.gnoptm
+DGEN.GnStabTm | duration | unit s | dergenerator.gnstabtm
+DGEN.GnClDnTm | duration | unit s | dergenerator.gncldntm
+DGEN.GnEnTot | active-energy | unit Wh | dergenerator.gnentot
+DGEN.GnEnPer | active-energy | unit Wh | dergenerator.gnenper
+DGEN.GnOnCnt | count | dergenerator.gnoncnt
+DGEN.PerStrCnt | count | dergenerator.perstrcnt
+DGEN.OpTms | duration | unit s | dergenerator.optms
+DGEN.GnOpSt | operating-state | dgen.gnopst
+
+## Data objects
+
+SelfSvcWh MV (DER_ActualPowerInformationLN): mapped deractualpower.selfsvcwh
+VAPct MV (DER_ActualPowerInformationLN): excluded — apparent power as a percentage of a rating; the vocabulary has no such quantity
+AvlUpW MV (DER_ActualPowerInformationLN): mapped deractualpower.avlupw
+AvlDnW MV (DER_ActualPowerInformationLN): mapped deractualpower.avldnw
+DEROpSt ENS (DER_StateAbstractLN): mapped derstate.deropst
+VArTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+AvarTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+IvarTot MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+VArAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+AvarAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+IvarAvl MV (NonStorageOperationalSettingsLN): excluded — operational setting of the DER published as a measured value, not a measurement
+TotStrCnt INS (DER_GeneratorLN): mapped dergenerator.totstrcnt
+CnstWMax MV (DER_GeneratorLN): excluded — rating (constant maximum active power), not a measurement
+GnOpTm MV (DER_GeneratorLN): mapped dergenerator.gnoptm
+GnStabTm MV (DER_GeneratorLN): mapped dergenerator.gnstabtm
+GnClDnTm MV (DER_GeneratorLN): mapped dergenerator.gncldntm
+AutoVRegPct MV (DER_GeneratorLN): excluded — voltage regulation as a percentage; the vocabulary has no such quantity
+GnEnTot MV (DER_GeneratorLN): mapped dergenerator.gnentot
+GnEnPer MV (DER_GeneratorLN): mapped dergenerator.gnenper
+RenWPct MV (DER_GeneratorLN): excluded — renewable share of active power; the vocabulary has no such quantity
+RenVArPct MV (DER_GeneratorLN): excluded — renewable share of reactive power; the vocabulary has no such quantity
+GnOnCnt INC (DER_GeneratorLN): mapped dergenerator.gnoncnt
+PerStrCnt INC (DER_GeneratorLN): mapped dergenerator.perstrcnt
+OpTms INC (DER_GeneratorLN): mapped dergenerator.optms
+GnOpSt ENS (DGEN): mapped dgen.gnopst
+GnH HMV (DGEN): excluded — harmonics of a quantity (current or voltage) that the model does not state

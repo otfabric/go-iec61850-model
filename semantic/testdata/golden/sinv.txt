@@ -1,0 +1,19 @@
+# SINV (IEC 61850-7-420:2019A4), profile default
+
+coverage: 5 measured or mapped, 5 mapped, 0 excluded, 0 unmapped, 21 not measured
+
+## Measurements
+
+SINV.OpCntRs | operation-count | supervision.opcntrs
+SINV.EnclTmp | temperature | unit degC | sinv.encltmp
+SINV.HeatSinkTmp | temperature | unit degC | sinv.heatsinktmp
+SINV.TrfTmp | temperature | unit degC | sinv.trftmp
+SINV.FanSpd | rotational-speed | sinv.fanspd
+
+## Data objects
+
+OpCntRs INC (SupervisionLN): mapped supervision.opcntrs
+EnclTmp MV (SINV): mapped sinv.encltmp
+HeatSinkTmp MV (SINV): mapped sinv.heatsinktmp
+TrfTmp MV (SINV): mapped sinv.trftmp
+FanSpd MV (SINV): mapped sinv.fanspd

@@ -1,0 +1,25 @@
+# MMXN (IEC 61850-7-4:2007B6), profile default
+
+coverage: 8 measured or mapped, 8 mapped, 0 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MMXN.Amp | current | unit A | mmxn.amp
+MMXN.Vol | voltage | unit V | mmxn.vol
+MMXN.Watt | active-power | unit W | mmxn.watt
+MMXN.VolAmpr | reactive-power | unit VAr | mmxn.volampr
+MMXN.VolAmp | apparent-power | unit VA | mmxn.volamp
+MMXN.PwrFact | power-factor | unit 1 | mmxn.pwrfact
+MMXN.Imp | impedance | unit ohm | mmxn.imp
+MMXN.Hz | frequency | unit Hz | mmxn.hz
+
+## Data objects
+
+Amp MV (MMXN): mapped mmxn.amp
+Vol MV (MMXN): mapped mmxn.vol
+Watt MV (MMXN): mapped mmxn.watt
+VolAmpr MV (MMXN): mapped mmxn.volampr
+VolAmp MV (MMXN): mapped mmxn.volamp
+PwrFact MV (MMXN): mapped mmxn.pwrfact
+Imp CMV (MMXN): mapped mmxn.imp
+Hz MV (MMXN): mapped mmxn.hz

@@ -1,0 +1,105 @@
+# MMXU (IEC 61850-7-4:2007B6), profile default
+
+coverage: 39 measured or mapped, 15 mapped, 24 excluded, 0 unmapped, 24 not measured
+
+## Measurements
+
+MMXU.TotW | active-power | phase total | unit W | mmxu.totw
+MMXU.TotVAr | reactive-power | phase total | unit VAr | mmxu.totvar
+MMXU.TotVA | apparent-power | phase total | unit VA | mmxu.totva
+MMXU.TotPF | power-factor | phase total | unit 1 | mmxu.totpf
+MMXU.Hz | frequency | unit Hz | mmxu.hz
+MMXU.PPV.phsAB | voltage | phase AB | reference line-line | unit V | mmxu.ppv
+MMXU.PPV.phsBC | voltage | phase BC | reference line-line | unit V | mmxu.ppv
+MMXU.PPV.phsCA | voltage | phase CA | reference line-line | unit V | mmxu.ppv
+MMXU.PNV.phsA | voltage | phase A | reference line-neutral | unit V | mmxu.pnv
+MMXU.PNV.phsB | voltage | phase B | reference line-neutral | unit V | mmxu.pnv
+MMXU.PNV.phsC | voltage | phase C | reference line-neutral | unit V | mmxu.pnv
+MMXU.PNV.neut | voltage | phase N | reference line-neutral | unit V | mmxu.pnv
+MMXU.PNV.net | voltage | phase net | reference line-neutral | unit V | mmxu.pnv
+MMXU.PNV.res | voltage | phase residual | reference line-neutral | unit V | mmxu.pnv
+MMXU.PhV.phsA | voltage | phase A | reference line-ground | unit V | mmxu.phv
+MMXU.PhV.phsB | voltage | phase B | reference line-ground | unit V | mmxu.phv
+MMXU.PhV.phsC | voltage | phase C | reference line-ground | unit V | mmxu.phv
+MMXU.PhV.neut | voltage | phase N | reference line-ground | unit V | mmxu.phv
+MMXU.PhV.net | voltage | phase net | reference line-ground | unit V | mmxu.phv
+MMXU.PhV.res | voltage | phase residual | reference line-ground | unit V | mmxu.phv
+MMXU.A.phsA | current | phase A | unit A | mmxu.a
+MMXU.A.phsB | current | phase B | unit A | mmxu.a
+MMXU.A.phsC | current | phase C | unit A | mmxu.a
+MMXU.A.neut | current | phase N | unit A | mmxu.a
+MMXU.A.net | current | phase net | unit A | mmxu.a
+MMXU.A.res | current | phase residual | unit A | mmxu.a
+MMXU.W.phsA | active-power | phase A | unit W | mmxu.w
+MMXU.W.phsB | active-power | phase B | unit W | mmxu.w
+MMXU.W.phsC | active-power | phase C | unit W | mmxu.w
+MMXU.W.neut | active-power | phase N | unit W | mmxu.w
+MMXU.W.net | active-power | phase net | unit W | mmxu.w
+MMXU.W.res | active-power | phase residual | unit W | mmxu.w
+MMXU.VAr.phsA | reactive-power | phase A | unit VAr | mmxu.var
+MMXU.VAr.phsB | reactive-power | phase B | unit VAr | mmxu.var
+MMXU.VAr.phsC | reactive-power | phase C | unit VAr | mmxu.var
+MMXU.VAr.neut | reactive-power | phase N | unit VAr | mmxu.var
+MMXU.VAr.net | reactive-power | phase net | unit VAr | mmxu.var
+MMXU.VAr.res | reactive-power | phase residual | unit VAr | mmxu.var
+MMXU.VA.phsA | apparent-power | phase A | unit VA | mmxu.va
+MMXU.VA.phsB | apparent-power | phase B | unit VA | mmxu.va
+MMXU.VA.phsC | apparent-power | phase C | unit VA | mmxu.va
+MMXU.VA.neut | apparent-power | phase N | unit VA | mmxu.va
+MMXU.VA.net | apparent-power | phase net | unit VA | mmxu.va
+MMXU.VA.res | apparent-power | phase residual | unit VA | mmxu.va
+MMXU.PF.phsA | power-factor | phase A | unit 1 | mmxu.pf
+MMXU.PF.phsB | power-factor | phase B | unit 1 | mmxu.pf
+MMXU.PF.phsC | power-factor | phase C | unit 1 | mmxu.pf
+MMXU.PF.neut | power-factor | phase N | unit 1 | mmxu.pf
+MMXU.PF.net | power-factor | phase net | unit 1 | mmxu.pf
+MMXU.PF.res | power-factor | phase residual | unit 1 | mmxu.pf
+MMXU.Z.phsA | impedance | phase A | unit ohm | mmxu.z
+MMXU.Z.phsB | impedance | phase B | unit ohm | mmxu.z
+MMXU.Z.phsC | impedance | phase C | unit ohm | mmxu.z
+MMXU.Z.neut | impedance | phase N | unit ohm | mmxu.z
+MMXU.Z.net | impedance | phase net | unit ohm | mmxu.z
+MMXU.Z.res | impedance | phase residual | unit ohm | mmxu.z
+MMXU.HzRte | frequency-rate | unit Hz/s | mmxu.hzrte
+
+## Data objects
+
+TotW MV (MMXU): mapped mmxu.totw
+TotVAr MV (MMXU): mapped mmxu.totvar
+TotVA MV (MMXU): mapped mmxu.totva
+TotPF MV (MMXU): mapped mmxu.totpf
+Hz MV (MMXU): mapped mmxu.hz
+PPV DEL (MMXU): mapped mmxu.ppv
+PNV WYE (MMXU): mapped mmxu.pnv
+PhV WYE (MMXU): mapped mmxu.phv
+A WYE (MMXU): mapped mmxu.a
+W WYE (MMXU): mapped mmxu.w
+VAr WYE (MMXU): mapped mmxu.var
+VA WYE (MMXU): mapped mmxu.va
+PF WYE (MMXU): mapped mmxu.pf
+Z WYE (MMXU): mapped mmxu.z
+AvAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvPPVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvPhVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvWPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvVAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvVArPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvPFPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+AvZPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxPPVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxPhVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxWPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxVAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxVArPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxPFPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MaxZPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinPPVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinPhVPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinWPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinVAPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinVArPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinPFPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+MinZPhs MV (MMXU): excluded — statistic over the phases (average, maximum or minimum phase value), which the vocabulary does not model
+HzRte MV (MMXU): mapped mmxu.hzrte

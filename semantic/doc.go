@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 // Package semantic describes IEC 61850 model elements in engineering
-// terms: quantity (frequency, voltage, active power, ...), phase (A,
-// AB, total, ...), voltage reference (line-neutral, line-ground,
-// line-line), energy direction, the value component an attribute holds
-// (magnitude, angle, counter, quality, ...) and a unit hint.
+// terms: quantity (frequency, voltage, active power, temperature, tap
+// position, ...), phase (A, AB, total, ...), reference (line-neutral,
+// line-ground, line-line, DC pole references), energy direction, the
+// quantity a ratio refers to, symmetrical component, harmonic order,
+// the value component an attribute holds (magnitude, angle, counter,
+// state, quality, ...) and a unit hint.
 //
 //	d, err := semantic.Describe(profile, "MMXU.PNV.phsA.cVal.mag.f")
 //	// d.Quantity == semantic.QuantityVoltage, d.Phase == semantic.PhaseA,
@@ -19,8 +21,14 @@
 // described, and a rule applies only when the data object has the CDC
 // the rule expects. Nothing is inferred from name fragments.
 //
+// Data objects whose unit or meaning the standard leaves open are
+// excluded with a reason ([DefaultExclusions]) rather than guessed;
+// [Coverage] reports, per class, which data objects are mapped,
+// excluded or still unmapped.
+//
 // Users and vendors can add overrides ([Mapper.WithOverrides]), which
-// take precedence over the default rules and are marked as such.
+// take precedence over the default rules and exclusions and are marked
+// as such.
 //
 // # Hints and device values
 //

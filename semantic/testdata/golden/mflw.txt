@@ -1,0 +1,28 @@
+# MFLW (IEC 61850-7-4:2007B6), profile default
+
+coverage: 10 measured or mapped, 9 mapped, 1 excluded, 0 unmapped, 26 not measured
+
+## Measurements
+
+MFLW.VlmCnt | volume | unit m³ | mflw.vlmcnt
+MFLW.FlwRte | flow-rate | unit m³/s | mflw.flwrte
+MFLW.FanSpd | rotational-speed | mflw.fanspd
+MFLW.FlwHorDir | direction | unit deg | mflw.flwhordir
+MFLW.FlwVerDir | direction | unit deg | mflw.flwverdir
+MFLW.MatDen | density | unit kg/m³ | mflw.matden
+MFLW.MatCndct | conductivity | unit S/m | mflw.matcndct
+MFLW.MatLev | level | unit m | mflw.matlev
+MFLW.FlwVlvPct | valve-position | unit % | mflw.flwvlvpct
+
+## Data objects
+
+VlmCnt BCR (MFLW): mapped mflw.vlmcnt
+FlwRte MV (MFLW): mapped mflw.flwrte
+FanSpd MV (MFLW): mapped mflw.fanspd
+FlwHorDir MV (MFLW): mapped mflw.flwhordir
+FlwVerDir MV (MFLW): mapped mflw.flwverdir
+MatDen MV (MFLW): mapped mflw.matden
+MatCndct MV (MFLW): mapped mflw.matcndct
+MatLev MV (MFLW): mapped mflw.matlev
+FlwVlvPct MV (MFLW): mapped mflw.flwvlvpct
+Flw MV (MFLW): excluded — flow whose relation to FlwRte (volume flow rate) the model does not state

@@ -1,0 +1,15 @@
+# KFAN (IEC 61850-7-4:2007B6), profile default
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 31 not measured
+
+## Measurements
+
+KFAN.Spd | rotational-speed | kfan.spd
+KFAN.OpCtl | operating-state | kfan.opctl
+KFAN.SpdSv | rotational-speed | kfan.spdsv
+
+## Data objects
+
+Spd MV (KFAN): mapped kfan.spd
+OpCtl SPC (KFAN): mapped kfan.opctl
+SpdSv SAV (KFAN): mapped kfan.spdsv

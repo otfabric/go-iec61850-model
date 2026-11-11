@@ -399,7 +399,69 @@ func (g *docGen) coverage() ([]byte, error) {
 		fmt.Fprintf(&b, "| %s | %d (%d) | %d / %d | %d | %d | %d | %d | %d | %d |\n", c.Namespace, c.LNClasses, c.AbstractLNClasses,
 			c.DataObjectsOK, c.DataObjects, c.CDCs, c.Constructed, c.Enumerations, c.Measurements, c.ProfileErrors, c.ProfileWarnings)
 	}
+	sem, err := ComputeSemanticCoverage(g.in)
+	if err != nil {
+		return nil, err
+	}
+	if len(sem) == 0 {
+		return b.Bytes(), nil
+	}
+	b.WriteString("\n## Semantic coverage\n\n")
+	b.WriteString("Data objects per concrete class that are measured values (MV, CMV, WYE, DEL, SEQ, HMV, HWYE, HDEL, HST, SAV, BCR) or that a rule maps. ")
+	b.WriteString("Mapped: a default rule describes it. Excluded: deliberately left unmapped, with a reason (`semantic.DefaultExclusions`). Unmapped: no rule yet.\n\n")
+	b.WriteString("| Class | Namespace | Measured or mapped | Mapped | Excluded | Unmapped |\n|---|---|---|---|---|---|\n")
+	var tm, tx, tu int
+	for _, c := range sem {
+		fmt.Fprintf(&b, "| %s | %s | %d | %d | %d | %d |\n", c.LNClass, c.Namespace, c.Mapped+c.Excluded+c.Unmapped, c.Mapped, c.Excluded, c.Unmapped)
+		tm, tx, tu = tm+c.Mapped, tx+c.Excluded, tu+c.Unmapped
+	}
+	fmt.Fprintf(&b, "| **Total** | | %d | %d | %d | %d |\n", tm+tx+tu, tm, tx, tu)
 	return b.Bytes(), nil
+}
+
+// SemanticCoverage is the coverage of one class by the default semantic
+// rules (semantic.ClassCoverage without the per data object list).
+type SemanticCoverage struct {
+	LNClass   string `json:"lnClass"`
+	Namespace string `json:"namespace"`
+	Mapped    int    `json:"mapped"`
+	Excluded  int    `json:"excluded"`
+	Unmapped  int    `json:"unmapped"`
+	// UnmappedDataObjects names the gaps.
+	UnmappedDataObjects []string `json:"unmappedDataObjects,omitempty"`
+}
+
+// ComputeSemanticCoverage returns the semantic coverage of every
+// concrete class of the profile that has measured values or mapped data
+// objects, ordered by class name and namespace.
+func ComputeSemanticCoverage(in Input) ([]SemanticCoverage, error) {
+	if err := in.validate(); err != nil {
+		return nil, err
+	}
+	cs, err := semantic.Coverage(in.Profile)
+	if err != nil {
+		return nil, err
+	}
+	var out []SemanticCoverage
+	for _, c := range cs {
+		if c.MeasuredValues() == 0 {
+			continue
+		}
+		sc := SemanticCoverage{LNClass: c.LNClass, Namespace: c.Namespace.String(), Mapped: c.Mapped, Excluded: c.Excluded, Unmapped: c.Unmapped}
+		for _, d := range c.DataObjects {
+			if d.Status == semantic.StatusUnmapped {
+				sc.UnmappedDataObjects = append(sc.UnmappedDataObjects, d.Name)
+			}
+		}
+		out = append(out, sc)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].LNClass != out[j].LNClass {
+			return out[i].LNClass < out[j].LNClass
+		}
+		return out[i].Namespace < out[j].Namespace
+	})
+	return out, nil
 }
 
 // jsonDoc is the envelope of the JSON exports.
@@ -411,6 +473,7 @@ type jsonDoc struct {
 	Namespaces   []*model.Namespace `json:"namespaces,omitempty"`
 	Graph        *ontology.Graph    `json:"graph,omitempty"`
 	Coverage     []Coverage         `json:"coverage,omitempty"`
+	Semantic     []SemanticCoverage `json:"semanticCoverage,omitempty"`
 }
 
 // JSON exports the profile as catalog.json (the normalized namespaces),
@@ -429,6 +492,10 @@ func JSON(in Input) (Files, error) {
 	if err != nil {
 		return nil, err
 	}
+	sem, err := ComputeSemanticCoverage(in)
+	if err != nil {
+		return nil, err
+	}
 	graph, err := ontology.BuildGraph(in.Profile, ontology.Options{Semantics: semantic.Default})
 	if err != nil {
 		return nil, err
@@ -438,7 +505,7 @@ func JSON(in Input) (Files, error) {
 		return nil, err
 	}
 	cat, covDoc := env(), env()
-	cat.Namespaces, covDoc.Coverage = nss, cov
+	cat.Namespaces, covDoc.Coverage, covDoc.Semantic = nss, cov, sem
 	docs := map[string]any{"catalog.json": cat, "ontology.json": graphDoc(env(), graph, in.IncludeDocText), "coverage.json": covDoc}
 	files := Files{}
 	for name, v := range docs {

@@ -1,0 +1,53 @@
+# DSTO (IEC 61850-7-420:2019A4), profile default
+
+coverage: 28 measured or mapped, 16 mapped, 12 excluded, 0 unmapped, 153 not measured
+
+## Measurements
+
+DSTO.SelfSvcWh | active-energy | unit Wh | deractualpower.selfsvcwh
+DSTO.AvlUpW | active-power | unit W | deractualpower.avlupw
+DSTO.AvlDnW | active-power | unit W | deractualpower.avldnw
+DSTO.DEROpSt | operating-state | derstate.deropst
+DSTO.ChaCycCnt | count | derstorage.chacyccnt
+DSTO.InWh | active-energy | unit Wh | derstorage.inwh
+DSTO.OutWh | active-energy | unit Wh | derstorage.outwh
+DSTO.SocWh | active-energy | unit Wh | derstorage.socwh
+DSTO.UseSocPct | state-of-charge | unit % | derstorage.usesocpct
+DSTO.SocEffWhPct | state-of-charge | unit % | derstorage.soceffwhpct
+DSTO.ChaWhTot | active-energy | unit Wh | derstorage.chawhtot
+DSTO.DschWhTot | active-energy | unit Wh | derstorage.dschwhtot
+DSTO.AvlDschW | active-power | unit W | derstorage.avldschw
+DSTO.AvlChaW | active-power | unit W | derstorage.avlchaw
+DSTO.AvlChaWTm | duration | unit s | derstorage.avlchawtm
+DSTO.AvlDschWTm | duration | unit s | derstorage.avldschwtm
+
+## Data objects
+
+SelfSvcWh MV (DER_ActualPowerInformationLN): mapped deractualpower.selfsvcwh
+VAPct MV (DER_ActualPowerInformationLN): excluded — apparent power as a percentage of a rating; the vocabulary has no such quantity
+AvlUpW MV (DER_ActualPowerInformationLN): mapped deractualpower.avlupw
+AvlDnW MV (DER_ActualPowerInformationLN): mapped deractualpower.avldnw
+DEROpSt ENS (DER_StateAbstractLN): mapped derstate.deropst
+ChaAvarTot MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+DschAvarTot MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+ChaIvarTot MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+DschIvarTot MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+ChaAvarAvl MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+DschAvarAvl MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+ChaIvarAvl MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+DschIvarAvl MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+EffWh MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+EffWhPct MV (StorageOperationalSettingsLN): excluded — operational setting of the storage unit published as a measured value, not a measurement
+ChaCycCnt INS (DER_StorageLN): mapped derstorage.chacyccnt
+InWh MV (DER_StorageLN): mapped derstorage.inwh
+OutWh MV (DER_StorageLN): mapped derstorage.outwh
+SocWh MV (DER_StorageLN): mapped derstorage.socwh
+UseSocPct MV (DER_StorageLN): mapped derstorage.usesocpct
+SocEffWhPct MV (DER_StorageLN): mapped derstorage.soceffwhpct
+ChaWhTot MV (DER_StorageLN): mapped derstorage.chawhtot
+DschWhTot MV (DER_StorageLN): mapped derstorage.dschwhtot
+AvlDschW MV (DER_StorageLN): mapped derstorage.avldschw
+AvlChaW MV (DER_StorageLN): mapped derstorage.avlchaw
+ChaVAPct MV (DER_StorageLN): excluded — apparent power as a percentage of a rating; the vocabulary has no such quantity
+AvlChaWTm MV (DER_StorageLN): mapped derstorage.avlchawtm
+AvlDschWTm MV (DER_StorageLN): mapped derstorage.avldschwtm

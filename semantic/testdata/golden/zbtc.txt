@@ -1,0 +1,15 @@
+# ZBTC ((Tr)IEC61850-90-3:2015B), profile extended
+
+coverage: 3 measured or mapped, 3 mapped, 0 excluded, 0 unmapped, 28 not measured
+
+## Measurements
+
+ZBTC.ChaTms | duration | unit s | batterycharger.chatms
+ZBTC.ChaA | current | unit A | batterycharger.chaa
+ZBTC.ChaV | voltage | unit V | batterycharger.chav
+
+## Data objects
+
+ChaTms INS (BatteryChargerLN): mapped batterycharger.chatms
+ChaA MV (BatteryChargerLN): mapped batterycharger.chaa
+ChaV MV (BatteryChargerLN): mapped batterycharger.chav

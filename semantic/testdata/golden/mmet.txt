@@ -1,0 +1,48 @@
+# MMET (IEC 61850-7-4:2007B6), profile default
+
+coverage: 22 measured or mapped, 17 mapped, 5 excluded, 0 unmapped, 20 not measured
+
+## Measurements
+
+MMET.EnvTmp | temperature | unit degC | mmet.envtmp
+MMET.WetBlbTmp | temperature | unit degC | mmet.wetblbtmp
+MMET.EnvHum | humidity | unit % | mmet.envhum
+MMET.DewPt | temperature | unit degC | mmet.dewpt
+MMET.DffInsol | irradiance | unit W/m² | mmet.dffinsol
+MMET.DctInsol | irradiance | unit W/m² | mmet.dctinsol
+MMET.DlDur | duration | unit s | mmet.dldur
+MMET.HorInsol | irradiance | unit W/m² | mmet.horinsol
+MMET.HorWdDir | direction | unit deg | mmet.horwddir
+MMET.HorWdSpd | speed | unit m/s | mmet.horwdspd
+MMET.VerWdDir | direction | unit deg | mmet.verwddir
+MMET.VerWdSpd | speed | unit m/s | mmet.verwdspd
+MMET.WdGustSpd | speed | unit m/s | mmet.wdgustspd
+MMET.EnvPres | pressure | unit Pa | mmet.envpres
+MMET.SnwDen | density | unit kg/m³ | mmet.snwden
+MMET.SnwTmp | temperature | unit degC | mmet.snwtmp
+MMET.PoaInsol | irradiance | unit W/m² | mmet.poainsol
+
+## Data objects
+
+EnvTmp MV (MMET): mapped mmet.envtmp
+WetBlbTmp MV (MMET): mapped mmet.wetblbtmp
+CloudCvr MV (MMET): excluded — cloud cover level whose unit (oktas or percent) the model does not state
+EnvHum MV (MMET): mapped mmet.envhum
+DewPt MV (MMET): mapped mmet.dewpt
+DffInsol MV (MMET): mapped mmet.dffinsol
+DctInsol MV (MMET): mapped mmet.dctinsol
+DlDur MV (MMET): mapped mmet.dldur
+HorInsol MV (MMET): mapped mmet.horinsol
+HorWdDir MV (MMET): mapped mmet.horwddir
+HorWdSpd MV (MMET): mapped mmet.horwdspd
+VerWdDir MV (MMET): mapped mmet.verwddir
+VerWdSpd MV (MMET): mapped mmet.verwdspd
+WdGustSpd MV (MMET): mapped mmet.wdgustspd
+EnvPres MV (MMET): mapped mmet.envpres
+RnFll MV (MMET): excluded — rainfall as a depth or a rate; the model states neither
+SnwDen MV (MMET): mapped mmet.snwden
+SnwTmp MV (MMET): mapped mmet.snwtmp
+SnwCvr MV (MMET): excluded — snow cover as a depth or a rate; the model states neither
+SnwFll MV (MMET): excluded — snowfall as a depth or a rate; the model states neither
+SnwEq MV (MMET): excluded — water equivalent of snowfall as a depth or a rate; the model states neither
+PoaInsol MV (MMET): mapped mmet.poainsol

@@ -1,0 +1,11 @@
+# DINV (IEC 61850-7-420:2019A4), profile default
+
+coverage: 1 measured or mapped, 1 mapped, 0 excluded, 0 unmapped, 62 not measured
+
+## Measurements
+
+DINV.VArAvl | reactive-power | unit VAr | dinv.varavl
+
+## Data objects
+
+VArAvl MV (DINV): mapped dinv.varavl

@@ -1,0 +1,13 @@
+# ZAXN (IEC 61850-7-4:2007B6), profile default
+
+coverage: 2 measured or mapped, 2 mapped, 0 excluded, 0 unmapped, 23 not measured
+
+## Measurements
+
+ZAXN.Vol | voltage | unit V | zaxn.vol
+ZAXN.Amp | current | unit A | zaxn.amp
+
+## Data objects
+
+Vol MV (ZAXN): mapped zaxn.vol
+Amp MV (ZAXN): mapped zaxn.amp
