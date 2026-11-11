@@ -31,7 +31,7 @@ namespace with --ns. Definitions are never merged.`,
 	}
 	cmd.PersistentFlags().StringVar(&a.ns, "ns", "", "Namespace to look names up in, e.g. \"IEC 61850-7-420\" or \"7-420\" (default: the whole profile)")
 	completeValues(cmd, "ns", namespaceValues)
-	cmd.AddCommand(a.modelShowCmd(), a.modelListCmd(), a.modelSearchCmd(), a.modelDescribeCmd(), a.modelMeasurementsCmd(), a.modelLeavesCmd())
+	cmd.AddCommand(a.modelShowCmd(), a.modelListCmd(), a.modelSearchCmd(), a.modelDescribeCmd(), a.modelMeasurementsCmd(), a.modelLeavesCmd(), a.modelCheckCmd())
 	return cmd
 }
 
