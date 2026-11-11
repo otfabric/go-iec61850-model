@@ -271,6 +271,37 @@ func TestEmptyProfileAndBaseSource(t *testing.T) {
 	if _, err := ComputeCoverage(Input{}); err == nil {
 		t.Error("coverage without profile")
 	}
+	if _, err := ComputeSemanticCoverage(Input{}); err == nil {
+		t.Error("semantic coverage without profile")
+	}
+	// A profile without measured values has no semantic coverage section.
+	docs, err := Docs(Input{Profile: p})
+	if err != nil || bytes.Contains(docs["coverage.md"], []byte("Semantic coverage")) {
+		t.Errorf("semantic coverage of an empty profile: %v\n%s", err, docs["coverage.md"])
+	}
+}
+
+func TestSemanticCoverage(t *testing.T) {
+	sem, err := ComputeSemanticCoverage(input(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	byClass := map[string]SemanticCoverage{}
+	for i, c := range sem {
+		byClass[c.LNClass] = c
+		if i > 0 && (sem[i-1].LNClass > c.LNClass || sem[i-1].LNClass == c.LNClass && sem[i-1].Namespace > c.Namespace) {
+			t.Errorf("not ordered: %s after %s", c.LNClass, sem[i-1].LNClass)
+		}
+	}
+	if d := byClass["DTST"]; d.Unmapped != 1 || len(d.UnmappedDataObjects) != 1 || d.UnmappedDataObjects[0] != "OutW" {
+		t.Errorf("DTST: %+v", d)
+	}
+	if m := byClass["MMXU"]; m.Mapped == 0 || m.Unmapped != 0 || m.UnmappedDataObjects != nil {
+		t.Errorf("MMXU: %+v", m)
+	}
+	if _, ok := byClass["GGIO"]; ok {
+		t.Error("a class without measured values is not listed")
+	}
 }
 
 // TestGolden compares the output for the synthetic fixtures with
