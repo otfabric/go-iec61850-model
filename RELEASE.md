@@ -1,35 +1,13 @@
 # go-iec61850-model Releases
 
-## v0.11.0
-
-**Date:** 2026-11-11
-**Previous release:** v0.10.0
-
-Semantic mapping for the measurement and status classes. The default rules grow from MMXU, MMXN and MMTR to the measurement, supervision, process and DER classes of IEC 61850-7-4 and 7-420, each derived from the data object name, its CDC and the standard's description; what the standard leaves open is excluded with a reason instead of guessed. `nsdctl` picks up the rules when it is re-pinned to this release.
-
-### Added
-
-- **Default rules** (294) for MMXU (`HzRte`), MMXN (`Imp`), MMTN, MSQI, MHAI, MHAN, MMDC, MMET, MFLW, MENV, MHYD; SIML, SARC, STMP, SPRS, SVBR, ZBAT, ZAXN and the operation counter of every supervision class; XCBR and XSWI positions and counters, YLTC and ATCC tap positions and measurements, KPMP and KFAN; the DER classes of 7-420 (DGEN, DLOD, DSTO, DBAT, DINV, SBAT, SINV and the other DER units through their abstract classes); ZBTC and SBAT of IEC TR 61850-90-3 and the measured energies of IEC TR 61850-90-6 in MMTR and MMTN.
-- **Vocabulary**: 38 new quantities (temperature, pressure, flow rate, irradiance, THD, crest factor, imbalance, switch and tap position, operating state, counts, ...), DC references (pole-pole, positive-ground, negative-ground), `Sequence`, `Descriptor.Of` and `Rule.Of` (the quantity a ratio refers to), `Descriptor.Harmonic` (the array index of HMV, HWYE and HDEL values), `ComponentState` for `stVal` and `valWTr.posVal`, `Quantity.IsState`, and `Criteria.Of`/`Criteria.Sequence`.
-- **Harmonics and sequences**: HWYE and HDEL take the phase from `phsAHar` … `phsCAHar`, HMV and SEQ data objects expand into their arrays and components; notes state the device dependencies (`numCyc`, `hvRef`, `seqT`).
-- **Exclusions**: `Exclusion`, `DefaultExclusions` (83, each with a reason), `Mapper.WithExclusions` and `Mapper.Exclusions`; an excluded data object fails `Describe` with `ErrNoMapping` and the reason.
-- **Coverage report**: `Coverage`, `Mapper.Coverage` and `Mapper.CoverageOf` report per class which data objects are mapped, excluded, unmapped or not measured; `IsMeasuredCDC`. The generated `coverage.md` and `coverage.json` gain a semantic coverage section per class.
-- Units: Pa, Pa/s, K/s, m/s, m/s², m³, m³/s, l/s, W/m², kg/m³, S/m, dB, ppm, 1/s, rad/s, min, h, Ah, As, C, and the SIUnitKind spelling "Watts".
-- `TestSpec_*` tests per class against the embedded official namespaces, and per-class golden files in `semantic/testdata/golden` (`make golden`).
-
-### Changed
-
-- Generator output format 6: the semantic coverage section and the new rules change `coverage.md`, `coverage.json`, `logical-nodes.md` and `ontology.json`. The committed `docs/reference` is regenerated when `nsdctl` is re-pinned.
-- `Quantity.DefaultUnit` is the zero unit for states, counts, rotational speed, vibration and imbalance.
-
----
-
 ## v0.10.0
 
 **Date:** 2026-11-11
 **Previous release:** v0.9.1
 
 Presence conditions are evaluated. The new package `presence` takes an instance (the data objects of a logical node, the attributes of a data object, with the values and context the conditions read) and returns, per element, whether the condition makes it required, optional or forbidden and whether the instance is satisfied or violated, with the reason. A condition that needs a fact the instance does not give is undetermined and names the fact; nothing is guessed.
+
+Semantic mapping for the measurement and status classes. The default rules grow from MMXU, MMXN and MMTR to the measurement, supervision, process and DER classes of IEC 61850-7-4 and 7-420, each derived from the data object name, its CDC and the standard's description; what the standard leaves open is excluded with a reason instead of guessed.
 
 ### Added
 
@@ -41,11 +19,20 @@ Presence conditions are evaluated. The new package `presence` takes an instance 
 - `model.ErrInvalidInstance`, `model.ErrPresenceViolation` and `*model.PresenceError`.
 - `nsdctl model check`: evaluate a class instance from `--present`, a JSON instance (`--instance`) or an SCL file (`--scl` with `--ln LD/LN` or `--ln-type ID`), with `--value`, `--fact`, `--ld-ns`, `--ln-ns`, `--ctl-model`, `--root-ld` and `--all`; exit code 1 on a violation. `nsdctl validate --presence`.
 - docs/presence.md.
+- **Default rules** (294) for MMXU (`HzRte`), MMXN (`Imp`), MMTN, MSQI, MHAI, MHAN, MMDC, MMET, MFLW, MENV, MHYD; SIML, SARC, STMP, SPRS, SVBR, ZBAT, ZAXN and the operation counter of every supervision class; XCBR and XSWI positions and counters, YLTC and ATCC tap positions and measurements, KPMP and KFAN; the DER classes of 7-420 (DGEN, DLOD, DSTO, DBAT, DINV, SBAT, SINV and the other DER units through their abstract classes); ZBTC and SBAT of IEC TR 61850-90-3 and the measured energies of IEC TR 61850-90-6 in MMTR and MMTN.
+- **Vocabulary**: 38 new quantities (temperature, pressure, flow rate, irradiance, THD, crest factor, imbalance, switch and tap position, operating state, counts, ...), DC references (pole-pole, positive-ground, negative-ground), `Sequence`, `Descriptor.Of` and `Rule.Of` (the quantity a ratio refers to), `Descriptor.Harmonic` (the array index of HMV, HWYE and HDEL values), `ComponentState` for `stVal` and `valWTr.posVal`, `Quantity.IsState`, and `Criteria.Of`/`Criteria.Sequence`.
+- **Harmonics and sequences**: HWYE and HDEL take the phase from `phsAHar` … `phsCAHar`, HMV and SEQ data objects expand into their arrays and components; notes state the device dependencies (`numCyc`, `hvRef`, `seqT`).
+- **Exclusions**: `Exclusion`, `DefaultExclusions` (83, each with a reason), `Mapper.WithExclusions` and `Mapper.Exclusions`; an excluded data object fails `Describe` with `ErrNoMapping` and the reason.
+- **Coverage report**: `Coverage`, `Mapper.Coverage` and `Mapper.CoverageOf` report per class which data objects are mapped, excluded, unmapped or not measured; `IsMeasuredCDC`. The generated `coverage.md` and `coverage.json` gain a semantic coverage section per class.
+- Units: Pa, Pa/s, K/s, m/s, m/s², m³, m³/s, l/s, W/m², kg/m³, S/m, dB, ppm, 1/s, rad/s, min, h, Ah, As, C, and the SIUnitKind spelling "Watts".
+- `TestSpec_*` tests per class against the embedded official namespaces, and per-class golden files in `semantic/testdata/golden` (`make golden`).
 
 ### Changed
 
 - The public text of `AllAtLeastOneGroup` (`texts/en/pc.tsv`) now says what the evaluator checks: every group complete or absent, at least one group present.
 - `nsdctl validate` documents its exit code 1 for errors (it said 3).
+- Generator output format 6: the semantic coverage section and the new rules change `coverage.md`, `coverage.json`, `logical-nodes.md` and `ontology.json`. The committed `docs/reference` is regenerated when `nsdctl` is re-pinned.
+- `Quantity.DefaultUnit` is the zero unit for states, counts, rotational speed, vibration and imbalance.
 
 ### Tests
 
