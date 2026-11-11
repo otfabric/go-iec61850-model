@@ -62,8 +62,18 @@ device or engineering tool.
 ## IEC content
 
 - The repository ships no NSD packages and no text from the standards. The
-  committed output has no documentation texts; NSDoc text is available only
-  from packages the caller loads ([docs/licensing.md](docs/licensing.md)).
+  committed output has no documentation texts; texts are available only from
+  NSDocs the caller loads, a doc set the caller supplies, or a build with the
+  `iecdocs` tag over a locally generated doc set
+  ([docs/licensing.md](docs/licensing.md#doc-sets)).
+- The doc set extractor (`internal/tools/docextract`) reads the PDF tables
+  heuristically. Coverage differs per standard (it is reported in
+  `.docs-work/report.txt`): abstract classes, sub data attributes and
+  extension namespaces have fewer texts, and a text the PDF layout splits
+  oddly can be cut short. Texts are never invented: an element without a
+  confident match stays empty.
+- `catalog.Query.Text` is a case-insensitive substring match of all terms,
+  not a ranked full-text search.
 - Regular CI runs on independently authored synthetic fixtures. The official
   packages are exercised only by `nsd.yml` and locally (`make official`).
 

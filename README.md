@@ -39,6 +39,7 @@ round.
 - [Install nsdctl](#install-nsdctl)
 - [Command-line tool](#command-line-tool)
 - [Official packages](#official-packages)
+- [Titles and descriptions](#titles-and-descriptions)
 - [Errors](#errors)
 - [Input safety](#input-safety)
 - [Documentation](#documentation)
@@ -378,6 +379,40 @@ make generate-check                 # fetch, then fail if the committed output i
 
 The [IEC NSD packages](.github/workflows/nsd.yml) workflow runs the same steps
 in CI without caches or artifacts.
+
+## Titles and descriptions
+
+The committed catalog carries no IEC text: `official.Default()` and
+`official.Extended()` have empty `model.Doc` fields. Texts come from sources
+you hold a license for, and stay on your machine
+([docs/licensing.md](docs/licensing.md#doc-sets)):
+
+- **NSDoc files** loaded with the NSD packages (`nsd.WithLanguage`).
+- **Doc sets**: texts keyed by path (`LN:MMXU`, `DO:MMXU.TotW`, `DA:MV.mag`,
+  `SP:SPC.ctlVal`, ...), read with `nsd.LoadDocSets` and applied with
+  `nsd.ApplyDocSet`, or with `nsd.WithFallbackDocs` to fill what the loaded
+  NSDocs leave empty.
+- **The official documented profiles**: `official.DefaultDocumented(lang)`,
+  `official.ExtendedDocumented(lang)` and `official.OpenDocumented(name, lang)`
+  apply a doc set to the embedded catalog and cache the result separately.
+  They return `official.ErrNoDocs` unless the library is built with
+  `-tags iecdocs` (embedding a locally generated `official/docs_gen.json.gz`)
+  or `IEC61850_MODEL_DOCS` names a doc set file.
+
+```go
+p, err := official.DefaultDocumented("en")
+if errors.Is(err, official.ErrNoDocs) {
+	p, err = official.Default() // same model, no texts
+}
+res, _ := resolver.New(p).ResolveString("MMXU.TotW.mag.f")
+fmt.Println(res.Doc().Text(), res.Description())
+```
+
+The texts also reach `semantic.Descriptor.Title`/`Description`, and
+`catalog.Query.Text` searches them. `make docs-extract SPECS_DIR=...` builds the
+doc set from your copies of the standards
+([internal/tools/docextract](internal/tools/docextract/README.md));
+`make build-docs` and `make test-docs` build and test with it embedded.
 
 ## Development
 

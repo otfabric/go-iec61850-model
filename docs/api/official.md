@@ -24,6 +24,22 @@ The catalog holds every NSD release IEC publishes: 7-2, 7-3 and 7-4 from 2007A2 
 
 [ForNamespace](#func-fornamespace) names the profile for the release a device declares in LLN0.NamPlt.ldNs; any other release can be selected by ID with Catalog().Profile. Definitions are never merged; catalog Overlaps compares definitions that share a name.
 
+## Constants
+
+```go
+const DocsEnv = "IEC61850_MODEL_DOCS"
+```
+
+DocsEnv names the environment variable that points to a doc set file (the JSON form, optionally gzip, or an NSDoc-compatible XML file; see nsd.ReadDocSets). When it is set, the file is used instead of any embedded doc set, so texts are available without a rebuild. It is read once, on first use.
+
+## Variables
+
+```go
+var ErrNoDocs = errors.New("iec61850-model: no documentation texts available (build with -tags iecdocs or set " + DocsEnv + ")")
+```
+
+ErrNoDocs reports that no documentation texts are available: the binary was built without the iecdocs tag and IEC61850\_MODEL\_DOCS is not set, or the doc set has no texts in the requested language.
+
 ## Functions
 
 ### func Catalog
@@ -34,6 +50,14 @@ func Catalog() (*catalog.Catalog, error)
 
 Catalog returns the catalog of every embedded namespace. It is parsed once and shared; it is immutable and safe for concurrent use.
 
+### func CatalogWithDocs
+
+```go
+func CatalogWithDocs(set *nsd.DocSet) (*catalog.Catalog, error)
+```
+
+CatalogWithDocs returns the catalog of every embedded namespace with the texts of set applied. It is built on every call.
+
 ### func Default
 
 ```go
@@ -42,6 +66,46 @@ func Default() (*catalog.Profile, error)
 
 Default returns the default profile: IEC 61850-7-2, 7-3, 7-4, 7-410 and 7-420. IEC 61850-7-420 is the source for current DER and storage models.
 
+### func DefaultDocumented
+
+```go
+func DefaultDocumented(lang string) (*catalog.Profile, error)
+```
+
+DefaultDocumented returns the default profile with texts; see [OpenDocumented](#func-opendocumented).
+
+### func DocLanguages
+
+```go
+func DocLanguages() []string
+```
+
+DocLanguages returns the languages of the available documentation texts, sorted; none without the iecdocs tag or IEC61850\_MODEL\_DOCS.
+
+### func Docs
+
+```go
+func Docs(lang string) (*nsd.DocSet, error)
+```
+
+Docs returns the doc set of the language, e.g. "en". It fails with ErrNoDocs when there is none, or with the error of reading the IEC61850\_MODEL\_DOCS file. Use the set with nsd.WithFallbackDocs to document namespaces loaded from packages.
+
+### func DocsSource
+
+```go
+func DocsSource() string
+```
+
+DocsSource names where the documentation texts come from: the path of IEC61850\_MODEL\_DOCS, "embedded" for an iecdocs build, or "" when there are none.
+
+### func DocumentedCatalog
+
+```go
+func DocumentedCatalog(lang string) (*catalog.Catalog, error)
+```
+
+DocumentedCatalog is like [Catalog](#func-catalog), with the texts of the doc set of the language applied to every embedded namespace. It is built once per language and shared; it fails with ErrNoDocs when no texts are available.
+
 ### func Extended
 
 ```go
@@ -49,6 +113,14 @@ func Extended() (*catalog.Profile, error)
 ```
 
 Extended returns the default profile plus the technical reports. Names a report defines again (e.g. DBAT in IEC TR 61850-90-9 and IEC 61850-7-420) are ambiguous in it; look them up with their namespace.
+
+### func ExtendedDocumented
+
+```go
+func ExtendedDocumented(lang string) (*catalog.Profile, error)
+```
+
+ExtendedDocumented returns the extended profile with texts; see [OpenDocumented](#func-opendocumented).
 
 ### func Namespaces
 
@@ -73,6 +145,22 @@ func Open(name string) (*catalog.Profile, error)
 ```
 
 Open returns the catalog profile of the named profile, built once and shared.
+
+### func OpenDocumented
+
+```go
+func OpenDocumented(name, lang string) (*catalog.Profile, error)
+```
+
+OpenDocumented is like [Open](#func-open), with the titles and descriptions of the doc set of the language applied: resolutions, descriptors and catalog text search then carry texts. The profile is built once per name and language and shared; it is separate from the one [Open](#func-open) returns, which stays without texts. It fails with ErrNoDocs when no texts are available.
+
+### func OpenWithDocs
+
+```go
+func OpenWithDocs(name string, set *nsd.DocSet) (*catalog.Profile, error)
+```
+
+OpenWithDocs returns the named profile with the texts of set applied, e.g. a doc set read at run time with nsd.LoadDocSets. Unlike [OpenDocumented](#func-opendocumented) the result is built on every call and not cached.
 
 ## Types
 

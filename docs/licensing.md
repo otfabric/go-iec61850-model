@@ -49,6 +49,27 @@ At run time the library holds what you loaded in memory, including NSDoc texts
 of your own installation is a matter of your IEC license; publishing them is
 not covered by this repository's license.
 
+### Doc sets
+
+A doc set (`nsd.DocSet`, format `otfabric-docset/1`) holds titles and
+descriptions keyed by model path. The repository ships **no** doc set with IEC
+text and none is distributed with releases:
+
+- The library code for doc sets, the `iecdocs` build tag and the extractor in
+  `internal/tools/docextract` are OTFabric code. The extractor reads PDFs you
+  supply and writes `official/docs_gen.json.gz`, which `.gitignore` excludes.
+- A doc set generated from the standards, a binary built with
+  `-tags iecdocs` (`make build-docs`), and output generated with
+  `nsdctl --docs ... generate docs --include-doc-text` contain IEC text. They
+  are local-only: do not commit them, attach them to releases, upload them as
+  CI artifacts or caches, or share them outside what your IEC license allows.
+- Without the build tag and without `IEC61850_MODEL_DOCS`, the library and
+  `nsdctl` contain no IEC text; `official.DefaultDocumented` returns
+  `official.ErrNoDocs`.
+- Tests that need the real doc set skip unless it is present
+  (`REQUIRE_IEC_DOCS=1` turns the skip into a failure); they assert coverage
+  and key matching, never the texts. Fixtures use OTFabric wording.
+
 ## The license of the packages
 
 Every official package declares the license `www.iec.ch/CCv1`, the IEC Code

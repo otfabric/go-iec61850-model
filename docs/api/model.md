@@ -552,9 +552,41 @@ type Doc struct {
 }
 ```
 
-Doc holds the documentation identifiers of a definition and, when an NSDoc file was applied, the resolved texts.
+Doc holds the documentation identifiers of a definition and, when an NSDoc file or a doc set (nsd.DocSet) was applied, the resolved texts.
 
-The texts originate from IEC NSDoc files. They are available at run time but are not redistributable; see docs/licensing.md.
+The texts originate from IEC NSDoc files or from a doc set generated locally from the standards. They are available at run time; this repository ships none of them (see docs/licensing.md).
+
+#### func (Doc) Clear
+
+```go
+func (d *Doc) Clear()
+```
+
+Clear removes the applied texts and keeps the identifiers.
+
+#### func (Doc) HasText
+
+```go
+func (d Doc) HasText() bool
+```
+
+HasText reports whether a title or a description was applied.
+
+#### func (Doc) Long
+
+```go
+func (d Doc) Long() string
+```
+
+Long returns the description, or the title when there is no description; "" when no text was applied.
+
+#### func (Doc) Text
+
+```go
+func (d Doc) Text() string
+```
+
+Text returns the title, or the description when there is no title; "" when no text was applied.
 
 ### type Enumeration
 
@@ -894,6 +926,14 @@ func (ns *Namespace) Namespaces() []*Namespace
 
 Namespaces returns ns as a one-element slice. It lets a single namespace be passed wherever a source of namespaces is accepted.
 
+#### func (Namespace) Presences
+
+```go
+func (ns *Namespace) Presences() []*PresenceCondition
+```
+
+Presences returns pointers to the presence conditions of every data object, sub data object, data attribute, service parameter and sub data attribute in the namespace, in a stable order: Presence, then DSPresence for data objects. Use it to fill or clear argument texts (PresenceCondition.ArgsText).
+
 ### type NamespaceChange
 
 ```go
@@ -986,6 +1026,10 @@ type PresenceCondition struct {
 	Args string `json:"args,omitempty"`
 	// ArgsID references a documentation text for the argument.
 	ArgsID string `json:"argsID,omitempty"`
+	// ArgsText is the documentation text of ArgsID, e.g. the condition
+	// behind MOcond(1). It is filled when an NSDoc file is applied
+	// (nsd.ApplyDoc) and empty otherwise.
+	ArgsText string `json:"argsText,omitempty"`
 }
 ```
 

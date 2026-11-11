@@ -72,6 +72,33 @@ correspondences:
 
 The table is a reading aid, not a normative mapping; the NSD is authoritative.
 
+`PresenceCondition.ArgsText` holds the text of the argument documentation ID
+(`argsID`, 7-7) when an NSDoc or doc set supplies it; `Doc` holds the text of
+the condition itself. Both are empty in the committed catalog.
+
+## Titles and descriptions
+
+Every documented element carries a `model.Doc`: the NSD documentation IDs
+(`TitleID`, `DescID`) and, when texts are applied, `Title` and `Description`.
+`Doc.Text()` prefers the title, `Doc.Long()` the description. Texts come from
+NSDocs (matched by namespace and release; the exact release wins) and from
+doc sets keyed by path:
+
+| Prefix | Element | Example |
+| --- | --- | --- |
+| `LN:` | logical node class | `LN:MMXU` |
+| `DO:` | data object | `DO:MMXU.TotW` |
+| `CDC:`, `DA:`, `SDO:`, `SP:` | CDC, its attribute, sub data object, service parameter | `DA:MV.mag` |
+| `CA:`, `SDA:` | constructed attribute and its member | `SDA:Vector.mag` |
+| `ENUM:`, `LIT:` | enumeration and literal | `LIT:BehaviourModeKind.on` |
+| `FC:`, `TRG:`, `PC:`, `BT:`, `ABBR:` | FC, trigger option, presence condition, basic type, abbreviation | `FC:ST` |
+
+A key without suffix sets the title; `#title` and `#desc` select the field.
+`nsd.DocKeys(ns)` lists the keys of a namespace. Applying a doc set fills
+only empty fields, so texts from your own NSDoc win. The resolver exposes the
+texts per step (`Step.Doc`), and `Resolution.Description()` returns the leaf
+text; see [docs/licensing.md](licensing.md#doc-sets) for what may be shared.
+
 ## Edition 2 (2010) and Edition 2.1 (NSD 2007B6)
 
 The embedded 2007B6 namespaces are Edition 2.1. Compared with the tables of

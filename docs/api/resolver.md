@@ -120,6 +120,22 @@ func (r *Resolution) DataObjectPath() string
 
 DataObjectPath returns the data object part of the path, e.g. "Hz" or "PNV.phsA".
 
+#### func (Resolution) Description
+
+```go
+func (r *Resolution) Description() string
+```
+
+Description returns the description of the leaf, or its title when it has no description; "" when no texts were applied.
+
+#### func (Resolution) Doc
+
+```go
+func (r *Resolution) Doc() model.Doc
+```
+
+Doc returns the documentation of the leaf.
+
 #### func (Resolution) FC
 
 ```go
@@ -303,6 +319,11 @@ type Step struct {
 	DeclaredIn string `json:"declaredIn"`
 	// Source is the namespace of DeclaredIn.
 	Source model.NamespaceID `json:"source"`
+	// Doc is the documentation of the element: its IDs and, when an
+	// NSDoc or a doc set was applied to the namespace (for example with
+	// official.DefaultDocumented), its title and description. Control
+	// service structures and their fixed parameters have none.
+	Doc model.Doc `json:"doc,omitzero"`
 }
 ```
 

@@ -34,6 +34,7 @@ Messages start with `iec61850-model:`.
 | `ErrUnknownUnit` | A unit string, SIUnit value or multiplier value cannot be interpreted |
 | `ErrInvalidRule` | A semantic rule or override is incomplete, names an unknown quantity or an unfitting unit, or conflicts with another |
 | `ErrUnknownConcept` | An ontology concept ID is not in the graph |
+| `official.ErrNoDocs` | No doc set is available: the library was built without `-tags iecdocs` and `IEC61850_MODEL_DOCS` is unset, the set has no texts in the requested language, or a nil set was passed |
 
 ---
 
@@ -153,6 +154,7 @@ Diagnostic codes:
 | `not-modeled` | info | A ServiceNS or ApplicableServiceNS document |
 | `not-processed` | info | A file or archive entry that is not an NSD document |
 | `no-documentation` | info | No NSDoc in the selected language for a namespace |
+| `doc-ids-unmatched` | warning | An NSDoc for the namespace applied no text although the namespace has documentation IDs (wrong release or a malformed NSDoc) |
 | `duplicate-doc` | warning | An NSDoc text ID used twice |
 | `conflicting-definition` | warning | A name defined by two namespaces of a profile |
 | `unresolved-reference` | error | A type, class, FC or presence condition not defined in the profile |
