@@ -492,15 +492,15 @@ func JSON(in Input) (Files, error) {
 	if err != nil {
 		return nil, err
 	}
+	sem, err := ComputeSemanticCoverage(in)
+	if err != nil {
+		return nil, err
+	}
 	graph, err := ontology.BuildGraph(in.Profile, ontology.Options{Semantics: semantic.Default})
 	if err != nil {
 		return nil, err
 	}
 	cov, err := ComputeCoverage(in)
-	if err != nil {
-		return nil, err
-	}
-	sem, err := ComputeSemanticCoverage(in)
 	if err != nil {
 		return nil, err
 	}

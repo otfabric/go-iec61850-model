@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/otfabric/go-iec61850-model/catalog"
 	"github.com/otfabric/go-iec61850-model/internal/fixtures"
 	"github.com/otfabric/go-iec61850-model/model"
 	"github.com/otfabric/go-iec61850-model/resolver"
@@ -185,5 +186,46 @@ func TestDescribeMalformedSubDataObject(t *testing.T) {
 	res.Steps[2].Name = "phsB(1" // only a hand-made resolution has this
 	if _, err := semantic.Default.DescribeResolution(p, res); !errors.Is(err, model.ErrNoMapping) {
 		t.Errorf("malformed sub data object: %v", err)
+	}
+}
+
+// lookup wraps a profile: it can list an abstract class and make
+// InheritanceIn fail.
+type lookup struct {
+	*catalog.Profile
+	extra       []*model.LogicalNodeClass
+	inheritance error
+}
+
+func (l lookup) ListLogicalNodes() []*model.LogicalNodeClass {
+	return append(l.extra, l.Profile.ListLogicalNodes()...)
+}
+
+func (l lookup) InheritanceIn(ns model.NamespaceID, name string) ([]*model.LogicalNodeClass, error) {
+	if l.inheritance != nil {
+		return nil, l.inheritance
+	}
+	return l.Profile.InheritanceIn(ns, name)
+}
+
+func TestCoverageErrors(t *testing.T) {
+	p := fixtures.Profile(t)
+	// An abstract class a Lookup lists is skipped.
+	cs, err := semantic.Coverage(lookup{Profile: p, extra: []*model.LogicalNodeClass{{Name: "StatisticsLN", Abstract: true, Source: fixtures.ID74}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range cs {
+		if c.LNClass == "StatisticsLN" {
+			t.Error("abstract class reported")
+		}
+	}
+	// A class the Lookup lists but cannot resolve fails the report.
+	if _, err := semantic.Coverage(lookup{Profile: p, extra: []*model.LogicalNodeClass{{Name: "XXXX", Source: fixtures.ID74}}}); !errors.Is(err, model.ErrUnknownLogicalNode) {
+		t.Errorf("unresolvable class: %v", err)
+	}
+	broken := errors.New("broken inheritance")
+	if _, err := semantic.Default.CoverageOf(lookup{Profile: p, inheritance: broken}, fixtures.ID74, "MMXU"); !errors.Is(err, broken) {
+		t.Errorf("InheritanceIn error: %v", err)
 	}
 }

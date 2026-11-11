@@ -495,3 +495,50 @@ func TestDocsIndexStageLegend(t *testing.T) {
 		t.Errorf("IS explained %d times:\n%s", n, legend)
 	}
 }
+
+// brokenAndDuplicate returns a profile whose MMXU has an undefined base
+// class (semantic coverage fails) and one where two namespaces define
+// MMXU (coverage is ordered by namespace).
+func brokenAndDuplicate(t *testing.T) (broken, dup *catalog.Profile) {
+	t.Helper()
+	ns := func(id model.NamespaceID, base string) *model.Namespace {
+		return &model.Namespace{ID: id, CDCs: []model.CommonDataClass{{Name: "MV", Source: id}},
+			LNClasses: []model.LogicalNodeClass{{Name: "MMXU", Base: base, Source: id, DataObjects: []model.DataObject{{Name: "Hz", Type: "MV"}}}}}
+	}
+	b, c := model.NamespaceID{Standard: "B", Version: "1"}, model.NamespaceID{Standard: "C", Version: "1"}
+	cb, err := catalog.New(ns(b, "Missing"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if broken, err = cb.Profile(b); err != nil {
+		t.Fatal(err)
+	}
+	cd, err := catalog.New(ns(c, ""), ns(b, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dup, err = cd.Profile(b, c); err != nil {
+		t.Fatal(err)
+	}
+	return broken, dup
+}
+
+func TestSemanticCoverageErrorsAndOrder(t *testing.T) {
+	broken, dup := brokenAndDuplicate(t)
+	if _, err := ComputeSemanticCoverage(Input{Profile: broken}); !errors.Is(err, model.ErrUnknownLogicalNode) {
+		t.Errorf("ComputeSemanticCoverage: %v", err)
+	}
+	if _, err := (&docGen{in: Input{Profile: broken}}).coverage(); err == nil {
+		t.Error("coverage.md of a broken profile")
+	}
+	if _, err := JSON(Input{Profile: broken}); err == nil {
+		t.Error("JSON of a broken profile")
+	}
+	sem, err := ComputeSemanticCoverage(Input{Profile: dup})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sem) != 2 || sem[0].Namespace != "B:1" || sem[1].Namespace != "C:1" || sem[0].Mapped != 1 {
+		t.Errorf("order by namespace: %+v", sem)
+	}
+}
