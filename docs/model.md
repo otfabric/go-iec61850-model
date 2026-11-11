@@ -93,7 +93,10 @@ doc sets keyed by path:
 | `ENUM:`, `LIT:` | enumeration and literal | `LIT:BehaviourModeKind.on` |
 | `FC:`, `TRG:`, `PC:`, `BT:`, `ABBR:` | FC, trigger option, presence condition, basic type, abbreviation | `FC:ST` |
 
-A key without suffix sets the title; `#title` and `#desc` select the field.
+The library ships public texts for every key (`official.PublicDocs`,
+[texts/](../texts/README.md)); a local doc set takes precedence where it has a
+text. A key without suffix sets the kind's default field (the title for `LN`,
+`CDC`, `CA`, `ENUM`, `FC`, `BT`, `TRG`; the description otherwise); `#title` and `#desc` select the field.
 `nsd.DocKeys(ns)` lists the keys of a namespace. Applying a doc set fills
 only empty fields, so texts from your own NSDoc win. The resolver exposes the
 texts per step (`Step.Doc`), and `Resolution.Description()` returns the leaf

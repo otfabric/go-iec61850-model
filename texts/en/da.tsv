@@ -1,0 +1,216 @@
+# Data attribute, sub data object and service parameter descriptions, by member name (all CDCs).
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+Check	Checks requested with the control command, such as synchrocheck and interlock check
+T	Time at which the originator issued the control command
+Test	Indicates that the control command is sent for test purposes only
+actSG	Number of the setting group that is currently active
+actVal	Current accumulated count value of the binary counter
+addInfo	Additional information about the most recent security violation
+addr	Address of the source that caused the most recent security violation
+altitude	Altitude of the device location above sea level
+angRef	Quantity used as the zero-angle reference for the phase angles of the values
+angSVC	Scaling and offset used to convert the integer angle value to engineering units
+blkEna	Indicates that updates of the value from the process are blocked
+bufTm	Time the control block waits to collect further changes before a report is sent
+c1	First sequence component of the three-phase values, normally the positive sequence
+c2	Second sequence component of the three-phase values, normally the negative sequence
+c3	Third sequence component of the three-phase values, normally the zero sequence
+cVal	Deadbanded complex value given as magnitude and angle
+cdcName	Name of the common data class on which the data object is based
+cdcNs	Namespace that defines the common data class of the data object
+certIssuer	Issuer of the certificate used by the client that invoked the tracked service
+cnfEdit	Confirms the edits made to the setting group so they are stored
+cnt	Number of security violations counted since the counter was last reset
+confRev	Configuration revision of the control block, incremented when its configuration or data set changes
+configRev	Revision of the configuration of the logical device or logical node
+crvPts	Array of points that define the shape of the curve
+ctlModel	Control model that defines how the object is operated, such as direct or select before operate
+ctlNum	Sequence number of the control command, set by the originator to match responses
+ctlVal	Value that the control command requests the object to take
+cur	Currency code used for the monetary values of the logical node
+d	Free text description of the data object, such as its purpose
+dU	Text description of the data object in Unicode characters
+datSet	Reference to the data set whose members the control block sends or logs
+dataNs	Namespace that defines the data object when it differs from that of the logical node
+db	Deadband that defines how far the value must change before the reported value is updated
+dbAng	Deadband that defines how far the angle must change before the reported angle is updated
+dbAngRef	Reference to a data object that provides the deadband for the angle	?
+dbRef	Reference to a data object that provides the deadband for the value	?
+dirGeneral	Direction of the detected fault, combined across all phases
+dirNeut	Direction of the detected fault in the neutral
+dirPhsA	Direction of the detected fault in phase A
+dirPhsB	Direction of the detected fault in phase B
+dirPhsC	Direction of the detected fault in phase C
+dstAddress	Destination address to which the messages of the control block are published
+ePSName	Name of the electric power system to which the device belongs	?
+editSG	Number of the setting group currently selected for editing
+entry	Log entries returned by the tracked log query service
+entryID	Identifier of the most recent entry in the report buffer
+errorCode	Error code returned by the tracked service when the service fails
+evalTm	Time window over which the harmonic values are evaluated
+frEna	Enables periodic freezing of the counter value at the configured period
+frPd	Period between successive freezes of the counter value
+frRs	Indicates that the counter is reset to zero each time it is frozen
+frTm	Time at which the counter value was last frozen
+frVal	Counter value captured at the most recent freeze of the counter
+frequency	Nominal power system frequency used as the fundamental for the harmonic values
+general	Activation indication combined across all phases and the neutral
+gi	Triggers a general interrogation that reports the current values of the whole data set
+goEna	Enables the publishing of GOOSE messages by the control block
+goID	Identifier carried in the GOOSE messages of the control block
+har	Harmonic and interharmonic values of a single quantity
+hstRangeC	Range configuration that defines the bins of the histogram
+hstVal	Values of the histogram bins, one count or value per bin
+hvRef	Reference used to express the harmonic values, such as the fundamental or the total rms value
+hwRev	Hardware revision of the device as declared by the vendor
+id	Identifier that distinguishes this instance, such as a tag or reference entry	?
+instCVal	Instantaneous complex value given as magnitude and angle, without deadband applied
+instMag	Instantaneous magnitude of the value, without deadband applied
+intAddr	Internal address of the input signal that the setting refers to
+intgPd	Integrity period after which all values of the data set are reported or logged
+lActTm	Time at which the active setting group was last changed
+latitude	Geographic latitude of the location where the device is installed
+ldNs	Namespace that defines the content of the logical device
+lnNs	Namespace that defines the content of the logical node
+location	Location where the device is installed, such as substation and bay
+logEna	Enables storing of entries by the log control block
+logRef	Reference to the log in which the control block stores its entries
+longitude	Geographic longitude of the location where the device is installed
+mRID	Globally unique resource identifier of the device for use across systems
+mag	Deadbanded magnitude of the measured value, updated when it exceeds the deadband
+magSVC	Scaling and offset used to convert the integer magnitude value to engineering units
+max	Maximum value that the sampled value can take
+maxPts	Maximum number of points the data object supports
+maxVal	Maximum value that the value or setting can take
+min	Minimum value that the sampled value can take
+minVal	Minimum value that the value or setting can take
+model	Model designation of the device as given by the vendor
+msvID	Identifier carried in the multicast sampled value messages of the control block
+mxVal	Current measured value of the controlled analogue process value
+name	Name given to the device to identify it in the system
+ndsCom	Indicates that the GOOSE control block needs commissioning before it can be used
+net	Net current, the vector sum of the three phase currents and the neutral current
+netHar	Harmonic values of the net current, the sum of all conductors
+neut	Value or activation indication for the neutral or ground conductor
+neutHar	Harmonic values of the neutral or ground conductor quantity
+newEnt	Identifier of the newest entry in the log
+newEntrTm	Time stamp of the newest entry in the log
+numCyc	Number of cycles of the fundamental used to calculate the harmonic values
+numHar	Number of harmonic values provided in the harmonic array
+numOfSG	Number of setting groups available in the logical device
+numPts	Number of points currently used to define the curve or histogram
+objRef	Reference to the object on which the tracked service was performed
+oldEnt	Identifier of the oldest entry in the log
+oldEntrTm	Time stamp of the oldest entry in the log
+opOk	Indicates that an operate command was accepted and is being executed
+opRcvd	Indicates that an operate command was received by the object
+operTimeout	Maximum time allowed for the operation to complete after the command was accepted
+operTm	Time at which a time-activated control command is to be executed
+operTmPhsA	Operate time of the protection function for phase A	?
+operTmPhsB	Operate time of the protection function for phase B	?
+operTmPhsC	Operate time of the protection function for phase C	?
+optFlds	Optional fields that the control block includes in its messages
+origin	Originator of the last control command that changed the value
+originSrc	Originator of the activation, such as the function that caused it	?
+originatorID	Identifier of the client that invoked the tracked service
+owner	Owner of the device, or the client currently associated with the report control block
+paramRev	Revision counter of parameter changes made while the device is running
+persistent	Indicates that the step command continues until stopped instead of producing a single step
+phsA	Value or activation indication for phase A of the system
+phsAB	Value measured or calculated between phase A and phase B
+phsABHar	Harmonic values between phase A and phase B
+phsAHar	Harmonic values of the quantity for phase A
+phsB	Value or activation indication for phase B of the system
+phsBC	Value measured or calculated between phase B and phase C
+phsBCHar	Harmonic values between phase B and phase C
+phsBHar	Harmonic values of the quantity for phase B
+phsC	Value or activation indication for phase C of the system
+phsCA	Value measured or calculated between phase C and phase A
+phsCAHar	Harmonic values between phase C and phase A
+phsCHar	Harmonic values of the quantity for phase C
+phsRef	Phase used as the reference for calculating the sequence components
+phsToNeut	Indicates that the phase values are measured to neutral instead of to ground
+pointZ	Z value to which this curve applies within a family of curves
+primeOper	Primary operator or organization responsible for operating the device
+pulsQty	Quantity of energy or other measurand that one counter pulse represents
+pulseConfig	Configuration of the output pulse generated by the control command
+purgeBuf	Discards all entries currently held in the report buffer
+purpose	Description of the purpose of the referenced input
+q	Quality of the value: validity, source and detail flags
+range	Range in which the value currently lies with respect to the configured limits
+rangeAng	Range in which the angle currently lies with respect to the configured limits
+rangeAngC	Limits that define the ranges for the angle
+rangeC	Limits that define the ranges for the value
+rangeStpTm	End of the time range selected for the tracked log query
+rangeStrTm	Start of the time range selected for the tracked log query
+res	Residual current, calculated as the vector sum of the three phase currents
+resHar	Harmonic values of the residual current calculated from the three phases
+respAddCause	Additional cause returned with the response to the control command
+resv	Indicates that the control block is reserved for use by one client
+resvTms	Time for which the control block remains reserved for a client
+rmsCyc	Number of cycles used to calculate the rms value
+rptEna	Enables sending of reports by the control block
+rptID	Identifier carried in the reports of the control block
+sVC	Scaling and offset used to convert integer values to engineering units
+sboClass	Whether a selection is valid for a single operation or for several operations
+sboTimeout	Time after which a selection expires if no operate command is received
+secondOper	Secondary operator or organization responsible for operating the device
+seqT	Kind of sequence components held in c1, c2 and c3, such as positive, negative and zero
+serNum	Serial number of the device as assigned by the vendor
+serviceType	Type of the service that was tracked, such as a write or control
+setCal	Calendar-based time setting, such as a recurring day and time
+setCharact	Selected curve characteristic, such as a standard inverse time curve
+setMag	Analogue setting value expressed in the configured unit of measure
+setParA	Parameter A of the selected curve characteristic, used to shape the curve
+setParB	Parameter B of the selected curve characteristic, used to shape the curve
+setParC	Parameter C of the selected curve characteristic, used to shape the curve
+setParD	Parameter D of the selected curve characteristic, used to shape the curve
+setParE	Parameter E of the selected curve characteristic, used to shape the curve
+setParF	Parameter F of the selected curve characteristic, used to shape the curve
+setSrcCB	Reference to the control block that publishes the source input signal
+setSrcRef	Reference to the object that provides the source input signal
+setTm	Time setting given as an absolute date and time
+setTstCB	Reference to the control block that publishes the test input signal
+setTstRef	Reference to the object that provides the test input signal
+setVal	Setting value of the data object as configured by the user
+sev	Severity of the most recent security violation that was counted
+smpMod	Sampling mode, telling whether the sampling rate is per nominal period, per second or seconds per sample
+smpRate	Sampling rate used for the values or messages
+sqNum	Sequence number of the most recent message sent by the control block
+stSeld	Indicates that the controllable object is currently selected
+stVal	The current status value of the data object
+startTime	Time from which the tag is in effect
+stepSize	Step by which the value or setting can be changed
+stopTime	Time at which the tag ceases to be in effect
+strTm	Start time from which periodic freezing of the counter begins
+subCVal	Complex value used in place of the process value while substitution is enabled
+subEna	Enables substitution, so the substituted value is used instead of the process value
+subID	Identifier of the client or function that set the substituted value
+subMag	Magnitude used in place of the process value while substitution is enabled
+subQ	Quality used in place of the process quality while substitution is enabled
+subVal	Value used in place of the process value while substitution is enabled
+svEna	Enables the publishing of sampled value messages by the control block
+swRev	Software revision of the device or logical node
+t	Time stamp of the last change of the value or its quality
+tOpOk	Time stamp of the last accepted operate command
+tagState	Current state of the tag, such as applied or removed
+timeOfEntry	Time at which the most recent entry was added to the report buffer
+trgOps	Trigger conditions that cause the control block to report or log a value
+tstEna	Enables use of the test input signal instead of the source input signal
+units	Unit of measure and multiplier of the value
+usvID	Identifier carried in the unicast sampled value messages of the control block
+val	Value held by the data object, such as a text or reference
+valRev	Revision counter of value changes made while the device is running
+valWTr	Step position value together with an indication of whether the device is in transition
+vendor	Name of the vendor of the device or logical node
+xD	Text description of the quantity shown on the x axis
+xDU	Description of the x axis in Unicode characters
+xUnits	Unit of measure and multiplier of the x axis values
+yD	Text description of the quantity shown on the y axis
+yDU	Description of the y axis in Unicode characters
+yUnits	Unit of measure and multiplier of the y axis values
+zD	Text description of the quantity shown on the z axis
+zDU	Description of the z axis in Unicode characters
+zUnits	Unit of measure and multiplier of the z axis values
+zeroDb	Zero deadband: values closer to zero than this limit are reported as zero
+zeroDbRef	Reference to a data object that provides the zero deadband	?

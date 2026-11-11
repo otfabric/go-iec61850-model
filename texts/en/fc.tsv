@@ -1,0 +1,14 @@
+# Functional constraint titles.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+BL	Blocking
+CF	Configuration
+DC	Description
+EX	Extended definition (namespace information)
+MX	Measurands (analogue values)
+OR	Operate received (last control command)
+SE	Setting group values being edited
+SG	Setting group values
+SP	Settings outside setting groups
+SR	Service response (service tracking)
+ST	Status information
+SV	Substitution

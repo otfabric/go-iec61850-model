@@ -21,7 +21,7 @@ func resetDocs(t *testing.T) {
 	docMu.Lock()
 	defer docMu.Unlock()
 	docsOnce = sync.Once{}
-	docSets, docsSource, docsErr = nil, "", nil
+	docSets, localSets, publicSets, docsSource, docsErr = nil, nil, nil, "", nil
 	docCatalogs = map[string]*catalog.Catalog{}
 	docProfiles = map[string]*catalog.Profile{}
 	t.Cleanup(func() {
@@ -60,29 +60,111 @@ func fixtureDocs(t *testing.T) string {
 	return path
 }
 
-func TestNoDocs(t *testing.T) {
+// Without a local doc set, the public OT Fabric texts are in use.
+func TestPublicDocsOnly(t *testing.T) {
 	if len(embeddedDocs) > 0 {
 		t.Skip("built with the iecdocs tag")
 	}
 	resetDocs(t)
 	t.Setenv(DocsEnv, "")
-	if DocLanguages() != nil || DocsSource() != "" {
-		t.Errorf("languages %v source %q", DocLanguages(), DocsSource())
+	if l := DocLanguages(); len(l) != 1 || l[0] != "en" || DocsSource() != PublicDocsSource {
+		t.Errorf("languages %v source %q", l, DocsSource())
 	}
-	if _, err := Docs("en"); !errors.Is(err, ErrNoDocs) {
-		t.Errorf("Docs: %v", err)
+	pub, err := PublicDocs()
+	if err != nil || pub.Len() == 0 {
+		t.Fatalf("PublicDocs: %v", err)
 	}
-	if _, err := DefaultDocumented("en"); !errors.Is(err, ErrNoDocs) {
-		t.Errorf("DefaultDocumented: %v", err)
+	if set, err := Docs("en"); err != nil || set.Len() != pub.Len() {
+		t.Errorf("Docs(en): %v", err)
 	}
-	if _, err := DocumentedCatalog("en"); !errors.Is(err, ErrNoDocs) {
-		t.Errorf("DocumentedCatalog: %v", err)
+	if _, err := Docs("de"); !errors.Is(err, ErrNoDocs) {
+		t.Errorf("Docs(de): %v", err)
+	}
+	doc, err := DefaultDocumented("en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := resolver.New(doc).ResolveString("LD0/MMXU1.TotW.mag.f[MX]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, st := range res.Steps[:3] {
+		if !st.Doc.HasText() {
+			t.Errorf("step %d has no text", i)
+		}
+	}
+	if _, err := DocumentedCatalog("de"); !errors.Is(err, ErrNoDocs) {
+		t.Errorf("DocumentedCatalog(de): %v", err)
 	}
 	if _, err := CatalogWithDocs(nil); !errors.Is(err, ErrNoDocs) {
 		t.Errorf("CatalogWithDocs(nil): %v", err)
 	}
 	if _, err := OpenWithDocs("default", nil); !errors.Is(err, ErrNoDocs) {
 		t.Errorf("OpenWithDocs(nil): %v", err)
+	}
+}
+
+// Every key of every embedded namespace has a public text, and every
+// public key names an element.
+func TestPublicDocsCoverAllElements(t *testing.T) {
+	resetDocs(t)
+	t.Setenv(DocsEnv, "")
+	pub, err := PublicDocs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	nss, err := decodeNamespaces(catalogJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{}
+	for _, ns := range nss {
+		for _, k := range nsd.DocKeys(ns) {
+			want[k] = true
+			if txt, ok := pub.Text(k); !ok || txt.Title == "" && txt.Description == "" {
+				t.Errorf("%s: no public text", k)
+			}
+		}
+	}
+	for _, k := range pub.Keys() {
+		if !want[k] {
+			t.Errorf("%s: matches no element", k)
+		}
+	}
+}
+
+// A local doc set wins where it has a text; the public texts fill the
+// rest.
+func TestLocalDocsOverridePublic(t *testing.T) {
+	resetDocs(t)
+	fixtureDocs(t)
+	set, err := Docs("en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pub, _ := PublicDocs()
+	if txt, _ := set.Text("DO:MMXU.TotW"); txt.Description != "OTFabric test text for TotW" {
+		t.Errorf("TotW: %+v", txt)
+	}
+	ptxt, _ := pub.Text("DO:MMXU.A")
+	if txt, _ := set.Text("DO:MMXU.A"); txt != ptxt || txt.Description == "" {
+		t.Errorf("MMXU.A: %+v, public %+v", txt, ptxt)
+	}
+	if set.Len() != pub.Len() {
+		t.Errorf("merged %d keys, public %d", set.Len(), pub.Len())
+	}
+}
+
+func TestMergeDocSetsLanguages(t *testing.T) {
+	en, de := nsd.NewDocSet("en"), nsd.NewDocSet("de")
+	_ = en.Set("LN:MMXU", "a")
+	_ = de.Set("LN:MMXU#desc", "b")
+	got := mergeDocSets([]*nsd.DocSet{en}, []*nsd.DocSet{de})
+	if len(got) != 2 || got[0].Lang() != "en" || got[1].Lang() != "de" {
+		t.Fatalf("langs %v", got)
+	}
+	if txt, _ := got[1].Text("LN:MMXU"); txt.Description != "b" || txt.Title != "" {
+		t.Errorf("de: %+v", txt)
 	}
 }
 
@@ -198,6 +280,9 @@ func TestDocsEnvErrors(t *testing.T) {
 	}
 	if DocLanguages() != nil || DocsSource() != "" {
 		t.Error("no languages from a failed load")
+	}
+	if pub, err := PublicDocs(); err != nil || pub.Len() == 0 {
+		t.Errorf("PublicDocs after a failed local load: %v", err)
 	}
 	if _, err := decodeNamespaces([]byte("{")); err == nil {
 		t.Error("decode")

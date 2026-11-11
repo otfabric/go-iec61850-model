@@ -3,6 +3,7 @@
 package official
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -22,7 +23,11 @@ import (
 func realDocs(t *testing.T) *nsd.DocSet {
 	t.Helper()
 	resetDocs(t)
-	set, err := Docs("en")
+	_, err := Docs("en")
+	set := nsd.SelectDocSet(localSets, "en")
+	if err == nil && set == nil {
+		err = errors.New("only the public texts")
+	}
 	if err != nil {
 		if os.Getenv("REQUIRE_IEC_DOCS") == "1" {
 			t.Fatalf("REQUIRE_IEC_DOCS=1 but no doc set: %v", err)
@@ -151,4 +156,48 @@ func TestRealDocsProfilesRace(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+// The public texts are OT Fabric's own wording: no public text of ten
+// words or more shares most of its words with the local text of the same
+// key. Shorter texts are names and term expansions ("Total active
+// power"), which necessarily match.
+func TestPublicTextsAreOwnWording(t *testing.T) {
+	local := realDocs(t)
+	pub, err := PublicDocs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	words := func(t nsd.DocText) map[string]bool {
+		m := map[string]bool{}
+		for _, w := range strings.FieldsFunc(strings.ToLower(t.Title+" "+t.Description), func(r rune) bool {
+			return (r < 'a' || r > 'z') && (r < '0' || r > '9')
+		}) {
+			m[w] = true
+		}
+		return m
+	}
+	checked := 0
+	for _, k := range pub.Keys() {
+		lt, ok := local.Text(k)
+		if !ok {
+			continue
+		}
+		pt, _ := pub.Text(k)
+		a, b := words(pt), words(lt)
+		if len(a) < 10 || len(b) == 0 {
+			continue
+		}
+		checked++
+		inter := 0
+		for w := range a {
+			if b[w] {
+				inter++
+			}
+		}
+		if j := float64(inter) / float64(len(a)+len(b)-inter); j >= 0.8 {
+			t.Errorf("%s: public text shares %.0f%% of its words with the local text", k, 100*j)
+		}
+	}
+	t.Logf("%d long public texts compared", checked)
 }

@@ -1,0 +1,9 @@
+{"namespaces":[{"id":{"standard":"T","version":"2007","revision":"B"},
+ "abbreviations":[{"name":"Tot"},{"name":"W"},{"name":"Tm"}],
+ "functionalConstraints":[{"abbreviation":"ST"}],
+ "basicTypes":[{"name":"BOOLEAN"}],
+ "presenceConditions":[{"name":"M"}],
+ "enumerations":[{"name":"HealthKind","literals":[{"name":"Ok","literalVal":1},{"name":"test-blocked","literalVal":2}]}],
+ "constructedAttributes":[{"name":"Vector","subDataAttributes":[{"name":"mag","type":"AnalogueValue"}]}],
+ "cdcs":[{"name":"MV","dataAttributes":[{"name":"mag","type":"AnalogueValue","fc":"MX"}],"subDataObjects":[{"name":"sub","type":"MV"}],"serviceParameters":[{"name":"sp","type":"BOOLEAN"}]}],
+ "lnClasses":[{"name":"MMXU","dataObjects":[{"name":"TotW","type":"MV"},{"name":"Tm2W","type":"MV"},{"name":"Odd","type":"MV"},{"name":"Spec","type":"MV"}]}]}]}

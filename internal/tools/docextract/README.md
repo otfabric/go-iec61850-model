@@ -17,7 +17,9 @@ make test-docs                                  # tests against it (-tags iecdoc
 make build-docs                                 # binaries with it embedded
 ```
 
-or, without a rebuild, point a program at the file:
+Its texts take precedence over the public OT Fabric texts (`texts/`), which
+fill every key it leaves out. Or, without a rebuild, point a program at the
+file:
 
 ```sh
 IEC61850_MODEL_DOCS=$PWD/official/docs_gen.json.gz nsdctl ...

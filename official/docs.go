@@ -14,21 +14,28 @@ import (
 	"github.com/otfabric/go-iec61850-model/nsd"
 )
 
-// DocsEnv names the environment variable that points to a doc set file
-// (the JSON form, optionally gzip, or an NSDoc-compatible XML file; see
-// nsd.ReadDocSets). When it is set, the file is used instead of any
-// embedded doc set, so texts are available without a rebuild. It is
+// DocsEnv names the environment variable that points to a local doc set
+// file (the JSON form, optionally gzip, or an NSDoc-compatible XML file;
+// see nsd.ReadDocSets). Its texts take precedence over the public OT
+// Fabric texts, which fill every key it leaves out. When it is set, it is
+// used instead of a doc set embedded with the iecdocs build tag. It is
 // read once, on first use.
 const DocsEnv = "IEC61850_MODEL_DOCS"
 
-// ErrNoDocs reports that no documentation texts are available: the
-// binary was built without the iecdocs tag and IEC61850_MODEL_DOCS is
-// not set, or the doc set has no texts in the requested language.
-var ErrNoDocs = errors.New("iec61850-model: no documentation texts available (build with -tags iecdocs or set " + DocsEnv + ")")
+// PublicDocsSource is what [DocsSource] reports when only the public OT
+// Fabric texts are in use.
+const PublicDocsSource = "otfabric"
+
+// ErrNoDocs reports that no documentation texts are available in the
+// requested language: the public texts are English, and other languages
+// need a local doc set (IEC61850_MODEL_DOCS or -tags iecdocs).
+var ErrNoDocs = errors.New("iec61850-model: no documentation texts available in this language (the public texts are English; set " + DocsEnv + " for others)")
 
 var (
 	docsOnce   sync.Once
-	docSets    []*nsd.DocSet
+	docSets    []*nsd.DocSet // public texts with the local doc set applied
+	localSets  []*nsd.DocSet // the local doc set alone, if any
+	publicSets []*nsd.DocSet
 	docsSource string
 	docsErr    error
 
@@ -39,23 +46,66 @@ var (
 
 func loadDocs() ([]*nsd.DocSet, error) {
 	docsOnce.Do(func() {
-		if path := os.Getenv(DocsEnv); path != "" {
-			docSets, docsErr = nsd.LoadDocSets(path)
+		publicSets, docsErr = nsd.ReadDocSets(publicDocs)
+		if docsErr != nil {
+			return
+		}
+		docsSource = PublicDocsSource
+		switch path := os.Getenv(DocsEnv); {
+		case path != "":
+			localSets, docsErr = nsd.LoadDocSets(path)
 			docsSource = path
+		case len(embeddedDocs) > 0:
+			localSets, docsErr = nsd.ReadDocSets(embeddedDocs)
+			docsSource = "embedded"
+		}
+		if docsErr != nil {
+			docsSource = ""
 			return
 		}
-		if len(embeddedDocs) == 0 {
-			return
-		}
-		docSets, docsErr = nsd.ReadDocSets(embeddedDocs)
-		docsSource = "embedded"
+		docSets = mergeDocSets(publicSets, localSets)
 	})
 	return docSets, docsErr
 }
 
+// mergeDocSets returns one set per language: the texts of over, and the
+// texts of base for the fields over leaves empty.
+func mergeDocSets(base, over []*nsd.DocSet) []*nsd.DocSet {
+	var langs []string
+	seen := map[string]bool{}
+	for _, s := range append(append([]*nsd.DocSet(nil), base...), over...) {
+		if !seen[s.Lang()] {
+			seen[s.Lang()] = true
+			langs = append(langs, s.Lang())
+		}
+	}
+	out := make([]*nsd.DocSet, 0, len(langs))
+	for _, lang := range langs {
+		m := nsd.NewDocSet(lang)
+		for _, src := range []*nsd.DocSet{nsd.SelectDocSet(base, lang), nsd.SelectDocSet(over, lang)} {
+			if src == nil {
+				continue
+			}
+			for _, k := range src.Keys() {
+				t, _ := src.Text(k)
+				if t.Title != "" {
+					_ = m.Set(k+"#title", t.Title) // keys come from a valid set
+				}
+				if t.Description != "" {
+					_ = m.Set(k+"#desc", t.Description)
+				}
+			}
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
 // DocsSource names where the documentation texts come from: the path
-// of IEC61850_MODEL_DOCS, "embedded" for an iecdocs build, or "" when
-// there are none.
+// of IEC61850_MODEL_DOCS or "embedded" (an iecdocs build) when a local
+// doc set is applied on top of the public texts, [PublicDocsSource] when
+// only the public texts are in use, or "" when the local doc set cannot
+// be read.
 func DocsSource() string {
 	if _, err := loadDocs(); err != nil {
 		return ""
@@ -64,7 +114,8 @@ func DocsSource() string {
 }
 
 // DocLanguages returns the languages of the available documentation
-// texts, sorted; none without the iecdocs tag or IEC61850_MODEL_DOCS.
+// texts, sorted: "en" for the public texts, plus those of a local doc
+// set.
 func DocLanguages() []string {
 	sets, err := loadDocs()
 	if err != nil {
@@ -80,9 +131,22 @@ func DocLanguages() []string {
 	return out
 }
 
-// Docs returns the doc set of the language, e.g. "en". It fails with
-// [ErrNoDocs] when there is none, or with the error of reading the
-// IEC61850_MODEL_DOCS file. Use the set with nsd.WithFallbackDocs to
+// PublicDocs returns the public OT Fabric doc set: English titles and
+// descriptions for every element of every embedded namespace, written by
+// OT Fabric (MIT). Most data object descriptions are composed from the
+// expansions of the terms their names are built from. Unlike [Docs] it
+// ignores any local doc set.
+func PublicDocs() (*nsd.DocSet, error) {
+	if _, err := loadDocs(); err != nil && publicSets == nil {
+		return nil, err
+	}
+	return nsd.SelectDocSet(publicSets, "en"), nil
+}
+
+// Docs returns the doc set of the language, e.g. "en": the public
+// texts with a local doc set applied, if there is one. It fails with
+// [ErrNoDocs] for a language without texts, or with the error of reading
+// the IEC61850_MODEL_DOCS file. Use the set with nsd.WithFallbackDocs to
 // document namespaces loaded from packages.
 func Docs(lang string) (*nsd.DocSet, error) {
 	sets, err := loadDocs()
@@ -100,8 +164,8 @@ func Docs(lang string) (*nsd.DocSet, error) {
 // the doc set of the language applied: resolutions, descriptors and
 // catalog text search then carry texts. The profile is built once per
 // name and language and shared; it is separate from the one [Open]
-// returns, which stays without texts. It fails with [ErrNoDocs] when no
-// texts are available.
+// returns, which stays without texts. It fails with [ErrNoDocs] for a
+// language without texts.
 func OpenDocumented(name, lang string) (*catalog.Profile, error) {
 	set, err := Docs(lang)
 	if err != nil {
@@ -141,8 +205,8 @@ func cachedDocumentedCatalog(lang string, set *nsd.DocSet) (*catalog.Catalog, er
 
 // DocumentedCatalog is like [Catalog], with the texts of the doc set of
 // the language applied to every embedded namespace. It is built once
-// per language and shared; it fails with [ErrNoDocs] when no texts are
-// available.
+// per language and shared; it fails with [ErrNoDocs] for a language
+// without texts.
 func DocumentedCatalog(lang string) (*catalog.Catalog, error) {
 	set, err := Docs(lang)
 	if err != nil {

@@ -30,15 +30,21 @@ The catalog holds every NSD release IEC publishes: 7-2, 7-3 and 7-4 from 2007A2 
 const DocsEnv = "IEC61850_MODEL_DOCS"
 ```
 
-DocsEnv names the environment variable that points to a doc set file (the JSON form, optionally gzip, or an NSDoc-compatible XML file; see nsd.ReadDocSets). When it is set, the file is used instead of any embedded doc set, so texts are available without a rebuild. It is read once, on first use.
+DocsEnv names the environment variable that points to a local doc set file (the JSON form, optionally gzip, or an NSDoc-compatible XML file; see nsd.ReadDocSets). Its texts take precedence over the public OT Fabric texts, which fill every key it leaves out. When it is set, it is used instead of a doc set embedded with the iecdocs build tag. It is read once, on first use.
+
+```go
+const PublicDocsSource = "otfabric"
+```
+
+PublicDocsSource is what [DocsSource](#func-docssource) reports when only the public OT Fabric texts are in use.
 
 ## Variables
 
 ```go
-var ErrNoDocs = errors.New("iec61850-model: no documentation texts available (build with -tags iecdocs or set " + DocsEnv + ")")
+var ErrNoDocs = errors.New("iec61850-model: no documentation texts available in this language (the public texts are English; set " + DocsEnv + " for others)")
 ```
 
-ErrNoDocs reports that no documentation texts are available: the binary was built without the iecdocs tag and IEC61850\_MODEL\_DOCS is not set, or the doc set has no texts in the requested language.
+ErrNoDocs reports that no documentation texts are available in the requested language: the public texts are English, and other languages need a local doc set (IEC61850\_MODEL\_DOCS or -tags iecdocs).
 
 ## Functions
 
@@ -80,7 +86,7 @@ DefaultDocumented returns the default profile with texts; see [OpenDocumented](#
 func DocLanguages() []string
 ```
 
-DocLanguages returns the languages of the available documentation texts, sorted; none without the iecdocs tag or IEC61850\_MODEL\_DOCS.
+DocLanguages returns the languages of the available documentation texts, sorted: "en" for the public texts, plus those of a local doc set.
 
 ### func Docs
 
@@ -88,7 +94,7 @@ DocLanguages returns the languages of the available documentation texts, sorted;
 func Docs(lang string) (*nsd.DocSet, error)
 ```
 
-Docs returns the doc set of the language, e.g. "en". It fails with ErrNoDocs when there is none, or with the error of reading the IEC61850\_MODEL\_DOCS file. Use the set with nsd.WithFallbackDocs to document namespaces loaded from packages.
+Docs returns the doc set of the language, e.g. "en": the public texts with a local doc set applied, if there is one. It fails with ErrNoDocs for a language without texts, or with the error of reading the IEC61850\_MODEL\_DOCS file. Use the set with nsd.WithFallbackDocs to document namespaces loaded from packages.
 
 ### func DocsSource
 
@@ -96,7 +102,7 @@ Docs returns the doc set of the language, e.g. "en". It fails with ErrNoDocs whe
 func DocsSource() string
 ```
 
-DocsSource names where the documentation texts come from: the path of IEC61850\_MODEL\_DOCS, "embedded" for an iecdocs build, or "" when there are none.
+DocsSource names where the documentation texts come from: the path of IEC61850\_MODEL\_DOCS or "embedded" (an iecdocs build) when a local doc set is applied on top of the public texts, PublicDocsSource when only the public texts are in use, or "" when the local doc set cannot be read.
 
 ### func DocumentedCatalog
 
@@ -104,7 +110,7 @@ DocsSource names where the documentation texts come from: the path of IEC61850\_
 func DocumentedCatalog(lang string) (*catalog.Catalog, error)
 ```
 
-DocumentedCatalog is like [Catalog](#func-catalog), with the texts of the doc set of the language applied to every embedded namespace. It is built once per language and shared; it fails with ErrNoDocs when no texts are available.
+DocumentedCatalog is like [Catalog](#func-catalog), with the texts of the doc set of the language applied to every embedded namespace. It is built once per language and shared; it fails with ErrNoDocs for a language without texts.
 
 ### func Extended
 
@@ -152,7 +158,7 @@ Open returns the catalog profile of the named profile, built once and shared.
 func OpenDocumented(name, lang string) (*catalog.Profile, error)
 ```
 
-OpenDocumented is like [Open](#func-open), with the titles and descriptions of the doc set of the language applied: resolutions, descriptors and catalog text search then carry texts. The profile is built once per name and language and shared; it is separate from the one [Open](#func-open) returns, which stays without texts. It fails with ErrNoDocs when no texts are available.
+OpenDocumented is like [Open](#func-open), with the titles and descriptions of the doc set of the language applied: resolutions, descriptors and catalog text search then carry texts. The profile is built once per name and language and shared; it is separate from the one [Open](#func-open) returns, which stays without texts. It fails with ErrNoDocs for a language without texts.
 
 ### func OpenWithDocs
 
@@ -161,6 +167,14 @@ func OpenWithDocs(name string, set *nsd.DocSet) (*catalog.Profile, error)
 ```
 
 OpenWithDocs returns the named profile with the texts of set applied, e.g. a doc set read at run time with nsd.LoadDocSets. Unlike [OpenDocumented](#func-opendocumented) the result is built on every call and not cached.
+
+### func PublicDocs
+
+```go
+func PublicDocs() (*nsd.DocSet, error)
+```
+
+PublicDocs returns the public OT Fabric doc set: English titles and descriptions for every element of every embedded namespace, written by OT Fabric (MIT). Most data object descriptions are composed from the expansions of the terms their names are built from. Unlike [Docs](#func-docs) it ignores any local doc set.
 
 ## Types
 

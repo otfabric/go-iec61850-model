@@ -382,37 +382,43 @@ in CI without caches or artifacts.
 
 ## Titles and descriptions
 
-The committed catalog carries no IEC text: `official.Default()` and
-`official.Extended()` have empty `model.Doc` fields. Texts come from sources
-you hold a license for, and stay on your machine
-([docs/licensing.md](docs/licensing.md#doc-sets)):
+The library ships **public texts** written by OT Fabric (MIT,
+[texts/](texts/README.md)): a title or description for every element of every
+embedded namespace, 10,056 keys. Logical node, CDC, attribute, type and
+condition texts are written by hand; data object descriptions are composed
+from the expansions of the terms their names are built from (`TotW` →
+"Total active power"); enumeration texts are derived from the names.
 
-- **NSDoc files** loaded with the NSD packages (`nsd.WithLanguage`).
-- **Doc sets**: texts keyed by path (`LN:MMXU`, `DO:MMXU.TotW`, `DA:MV.mag`,
-  `SP:SPC.ctlVal`, ...), read with `nsd.LoadDocSets` and applied with
-  `nsd.ApplyDocSet`, or with `nsd.WithFallbackDocs` to fill what the loaded
-  NSDocs leave empty.
-- **The official documented profiles**: `official.DefaultDocumented(lang)`,
-  `official.ExtendedDocumented(lang)` and `official.OpenDocumented(name, lang)`
-  apply a doc set to the embedded catalog and cache the result separately.
-  They return `official.ErrNoDocs` unless the library is built with
-  `-tags iecdocs` (embedding a locally generated `official/docs_gen.json.gz`)
-  or `IEC61850_MODEL_DOCS` names a doc set file.
+- **The documented profiles**: `official.DefaultDocumented("en")`,
+  `official.ExtendedDocumented("en")` and `official.OpenDocumented(name, "en")`
+  apply the texts to the embedded catalog and cache the result separately;
+  `official.Default()` and `official.Extended()` stay without texts.
+  `official.PublicDocs()` returns the public doc set alone.
+- **A local doc set** on top: texts you hold a license for (for example
+  generated from your copies of the standards with `make docs-extract
+  SPECS_DIR=...`, see [internal/tools/docextract](internal/tools/docextract/README.md))
+  take precedence where they have a text; the public texts fill the rest. Set
+  `IEC61850_MODEL_DOCS` to the file, or build with `-tags iecdocs`
+  (`make build-docs`). They stay on your machine
+  ([docs/licensing.md](docs/licensing.md#doc-sets)). Other languages than
+  English need a local doc set; `official.ErrNoDocs` reports a language without
+  texts.
+- **NSDoc files** loaded with the NSD packages (`nsd.WithLanguage`), and **doc
+  sets** keyed by path (`LN:MMXU`, `DO:MMXU.TotW`, `DA:MV.mag`, ...) read with
+  `nsd.LoadDocSets` and applied with `nsd.ApplyDocSet` or
+  `nsd.WithFallbackDocs`.
 
 ```go
 p, err := official.DefaultDocumented("en")
-if errors.Is(err, official.ErrNoDocs) {
-	p, err = official.Default() // same model, no texts
+if err != nil {
+	return err
 }
 res, _ := resolver.New(p).ResolveString("MMXU.TotW.mag.f")
 fmt.Println(res.Doc().Text(), res.Description())
 ```
 
 The texts also reach `semantic.Descriptor.Title`/`Description`, and
-`catalog.Query.Text` searches them. `make docs-extract SPECS_DIR=...` builds the
-doc set from your copies of the standards
-([internal/tools/docextract](internal/tools/docextract/README.md));
-`make build-docs` and `make test-docs` build and test with it embedded.
+`catalog.Query.Text` searches them.
 
 ## Development
 

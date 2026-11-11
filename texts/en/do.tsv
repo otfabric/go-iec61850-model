@@ -1,0 +1,20 @@
+# Data object descriptions that override the composed text: by name, or by class.name.
+# OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
+CO2Ems	Carbon dioxide emissions
+COEms	Carbon monoxide emissions
+CTrd	Carbon trading	?
+ClcNxTmms	Time until the next calculation in milliseconds	?
+DisplA	Displacement current	?
+Droop	Droop
+FldAmpRtgO	Field current rating	?
+GrnTag	Green tag (environmental label)	?
+HKf	Harmonic K factor
+HTif	Telephone influence factor
+LeakA	Leakage current
+NOxEms	Nitrogen oxide emissions
+PartSens	Particulate matter sensor setting	?
+RegClas	Regulatory class	?
+SOxEms	Sulfur oxide emissions
+StatLeakX	Stator leakage reactance
+Tm1ldTmms	First lead time constant in milliseconds	?
+Tm2ldTmms	Second lead time constant in milliseconds	?
