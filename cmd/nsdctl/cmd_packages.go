@@ -120,14 +120,17 @@ type validation struct {
 }
 
 func (a *app) validateCmd() *cobra.Command {
-	return &cobra.Command{
+	var withPresence bool
+	cmd := &cobra.Command{
 		Use:   "validate [SOURCE...]",
 		Short: "Validate NSD packages and the profiles they form",
 		Long: `Validate parses every source (use --strict to make importer warnings
 fatal) and checks the profile of each loaded namespace with its
 dependencies: missing or ambiguous dependencies, conflicting definitions
 and unresolved type references. With --profile only that profile is
-checked. Exit code 3 when errors are found.`,
+checked. --presence adds warnings for presence conditions without an
+evaluator rule, with a malformed argument or naming no sibling. Exit
+code 1 when errors are found.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, pkgs, err := a.loadCatalog(a.sourceArgs(args))
 			if err != nil {
@@ -167,6 +170,9 @@ checked. Exit code 3 when errors are found.`,
 					addAll(p.Diagnostics())
 				}
 			}
+			if withPresence {
+				addAll(presenceDiagnostics(c.Namespaces()))
+			}
 			res.Errors = len(res.Diagnostics.Errors())
 			res.Warnings = len(res.Diagnostics.AtLeast(model.SeverityWarning)) - res.Errors
 			w := cmd.OutOrStdout()
@@ -184,6 +190,8 @@ checked. Exit code 3 when errors are found.`,
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&withPresence, "presence", false, "Also check the presence conditions the namespaces use")
+	return cmd
 }
 
 type dependency struct {

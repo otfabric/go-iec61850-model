@@ -53,9 +53,20 @@ device or engineering tool.
 - **Control services follow 8-1.** `SBO`, `SBOw`, `Oper` and `Cancel` (FC CO)
   are the IEC 61850-8-1 mapping. Which of them a device has depends on its
   `ctlModel`, which the model does not know.
-- **Presence conditions are not evaluated.** Conditional forms (`MOcond`,
-  `AtLeastOne`, ...) are carried verbatim; equal instance-number widths
-  (7-2 §22.2) are not checked.
+- **Presence evaluation needs the facts.** `presence` evaluates every
+  condition of the embedded catalog against an instance
+  ([docs/presence.md](docs/presence.md)), but conditions whose subject the
+  model does not show (`MOcond`, `MFcond`, `OFcond`, `MOoperTm`, `MONamPlt`,
+  `MORange`, `OMSynPh`, `MFsg`, `MFnsg`, and `MFsubst` without a
+  substitution attribute) stay undetermined until the caller states the
+  fact; the texts behind the `MOcond(n)` IDs are not in the repository.
+- **Presence readings.** `AllAtLeastOneGroup` is read as "every group all or
+  none, at least one complete" and `MAllOrNonePerGroup` as "all or none,
+  required with status information", from their use in the catalog (BCR,
+  SPC); `na` and the data set presence (`DSPresence`) are not evaluated
+  against data sets. Instance-number widths are checked per data object, not
+  across the logical node. `nsdctl model check --scl` reads data type
+  templates and DOI values, not services, data sets or control blocks.
 
 ## Model gaps from upstream
 

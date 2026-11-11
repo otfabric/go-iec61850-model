@@ -34,6 +34,8 @@ Messages start with `iec61850-model:`.
 | `ErrUnknownUnit` | A unit string, SIUnit value or multiplier value cannot be interpreted |
 | `ErrInvalidRule` | A semantic rule, override or exclusion is incomplete, names an unknown quantity or an unfitting unit, or conflicts with another (an exclusion of a mapped data object) |
 | `ErrUnknownConcept` | An ontology concept ID is not in the graph |
+| `ErrInvalidInstance` | A presence instance cannot be read (malformed JSON or SCL, unknown fields, trailing data, null child, beyond the reader's limits), or names no class |
+| `ErrPresenceViolation` | An instance violates a presence condition (`presence.Evaluator.Validate`, `resolver.Resolver.ValidatePresence`, `Report.Err`) |
 | `official.ErrNoDocs` | No texts in the requested language (the public texts are English; other languages need a local doc set through `IEC61850_MODEL_DOCS` or `-tags iecdocs`), or a nil set was passed |
 
 ---
@@ -129,6 +131,20 @@ type ValidationError struct {
 }
 ```
 
+### `*PresenceError`
+
+An instance that violates presence conditions (package `presence`). Unwraps to
+`ErrPresenceViolation`. Each entry of `Violations` reads
+`path: condition: reason`, e.g. `Pos.sboTimeout: MOsbo: ctlModel
+sbo-with-normal-security, …; absent`.
+
+```go
+type PresenceError struct {
+    Class      string   // LN class, CDC or constructed type
+    Violations []string
+}
+```
+
 ---
 
 ## Diagnostics
@@ -158,6 +174,7 @@ Diagnostic codes:
 | `duplicate-doc` | warning | An NSDoc text ID used twice |
 | `conflicting-definition` | warning | A name defined by two namespaces of a profile |
 | `unresolved-reference` | error | A type, class, FC or presence condition not defined in the profile |
+| `presence-unknown-condition`, `presence-missing-argument`, `presence-invalid-argument`, `presence-unexpected-argument`, `presence-unknown-sibling` | warning | `presence.ValidateNamespace` (`nsdctl validate --presence`): a condition without evaluator rule, a missing or malformed argument, an argument on a condition that takes none, a sibling the class does not declare |
 
 ---
 
@@ -170,9 +187,9 @@ mapping.
 | Code | Meaning |
 | --- | --- |
 | 0 | Success |
-| 1 | Findings: `validate` errors, unsatisfied `dependencies`, `diff --exit-code`, `generate --check`, `sources check --packages` (missing package, other release, digest), `schema --exit-code` |
+| 1 | Findings: `validate` errors, violated presence conditions in `model check`, unsatisfied `dependencies`, `diff --exit-code`, `generate --check`, `sources check --packages` (missing package, other release, digest), `schema --exit-code` |
 | 2 | Usage: invalid flags or arguments, unknown or ambiguous name (`ErrUnknownNamespace`, `ErrUnknownLogicalNode`, `ErrUnknownDataObject`, `ErrUnknownCDC`, `ErrUnknownAttribute`, `ErrUnknownType`, `ErrAmbiguousReference`, `ErrInvalidReference`, `ErrNoMapping`), `ErrWouldOverwrite` without `--force` |
-| 3 | Invalid input: `ErrSourceUnavailable`, `ErrInvalidNSD`, `ErrUnsupportedSchema`, `ErrLimitExceeded`, `ErrUnsafeArchive`, `*ValidationError`, `*DependencyError`, invalid lock or registry, `ErrDigestMismatch`, `ErrNotPinned` |
+| 3 | Invalid input: `ErrSourceUnavailable`, `ErrInvalidNSD`, `ErrUnsupportedSchema`, `ErrLimitExceeded`, `ErrUnsafeArchive`, `ErrInvalidInstance` (`model check`), `*ValidationError`, `*DependencyError`, invalid lock or registry, `ErrDigestMismatch`, `ErrNotPinned` |
 | 4 | Transport: a download of `sources fetch` failed |
 | 9 | Permission: `ErrPolicyRefused` (license policy refused `generate --publish`) |
 | 10 | Internal: writing the output failed, or an unexpected error |

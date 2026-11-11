@@ -1,9 +1,9 @@
 # go-iec61850-model Releases
 
-## v0.10.0
+## v0.11.0
 
 **Date:** 2026-11-11
-**Previous release:** v0.9.1
+**Previous release:** v0.10.0
 
 Semantic mapping for the measurement and status classes. The default rules grow from MMXU, MMXN and MMTR to the measurement, supervision, process and DER classes of IEC 61850-7-4 and 7-420, each derived from the data object name, its CDC and the standard's description; what the standard leaves open is excluded with a reason instead of guessed. `nsdctl` picks up the rules when it is re-pinned to this release.
 
@@ -21,6 +21,35 @@ Semantic mapping for the measurement and status classes. The default rules grow 
 
 - Generator output format 6: the semantic coverage section and the new rules change `coverage.md`, `coverage.json`, `logical-nodes.md` and `ontology.json`. The committed `docs/reference` is regenerated when `nsdctl` is re-pinned.
 - `Quantity.DefaultUnit` is the zero unit for states, counts, rotational speed, vibration and imbalance.
+
+---
+
+## v0.10.0
+
+**Date:** 2026-11-11
+**Previous release:** v0.9.1
+
+Presence conditions are evaluated. The new package `presence` takes an instance (the data objects of a logical node, the attributes of a data object, with the values and context the conditions read) and returns, per element, whether the condition makes it required, optional or forbidden and whether the instance is satisfied or violated, with the reason. A condition that needs a fact the instance does not give is undetermined and names the fact; nothing is guessed.
+
+### Added
+
+- **Package `presence`**: `Evaluate` over an element list; `New(profile)` with `LogicalNode`, `CDC`, `ConstructedAttribute`, `Check`, `Validate` and `In`, following described children (data object → CDC → sub data objects and constructed members). `Report.All`, `Violations`, `Undetermined`, `OK`, `Err`; `Result` with `Requirement`, `Verdict`, `Reason`, `Missing`, `Instances`.
+- Rules for every condition the embedded catalog uses or defines (40): `M`, `O`, `F`, `na`; `Mmulti`, `Omulti`, `MmultiRange`, `OmultiRange` with range and instance-number width checks (7-2 §22.2); the sibling forms `MF`, `MO`, `OF`, `OM`, `FM`, `MmultiF`; the groups `AtLeastOne`, `AtMostOne`, `AllOrNonePerGroup`, `AllOnlyOneGroup`, `AllAtLeastOneGroup`, `MAllOrNonePerGroup`; the context forms `MOln0`, `MFln0`, `MOrootLD`, `MOlnNs`, `MOdataNs`, `MOcdcNs`, `MOsbo`, `MOenhanced`, `MOrms`, `MFsubst`, `MFscaledAV`, `MFscaledMagV`, `MFscaledAngV`; and the fact forms `MOcond`, `MFcond`, `OFcond`, `MOoperTm`, `MONamPlt`, `MORange`, `OMSynPh`, `MFsg`, `MFnsg`. `Conditions`, `Describe`, `Known`, `IsMultiInstance`, `ParseRange`.
+- `presence.ReadInstance`: the JSON form of an instance, with size, name-count and depth limits.
+- `presence.ValidateNamespace`: warnings for presence conditions without a rule, with a missing or malformed argument, an unexpected argument or an undeclared sibling. In the embedded catalog it reports one: IEC 61850-7-410 AEMC.VolFunRef is `Mmulti(VolSpt)`.
+- `resolver.Resolver.Presence` and `ValidatePresence`: the evaluation through a resolver, honouring `In`. Resolution itself is unchanged.
+- `model.ErrInvalidInstance`, `model.ErrPresenceViolation` and `*model.PresenceError`.
+- `nsdctl model check`: evaluate a class instance from `--present`, a JSON instance (`--instance`) or an SCL file (`--scl` with `--ln LD/LN` or `--ln-type ID`), with `--value`, `--fact`, `--ld-ns`, `--ln-ns`, `--ctl-model`, `--root-ld` and `--all`; exit code 1 on a violation. `nsdctl validate --presence`.
+- docs/presence.md.
+
+### Changed
+
+- The public text of `AllAtLeastOneGroup` (`texts/en/pc.tsv`) now says what the evaluator checks: every group complete or absent, at least one group present.
+- `nsdctl validate` documents its exit code 1 for errors (it said 3).
+
+### Tests
+
+- `TestSpec_7_3_Table1_*` and `TestSpec_7_2_22_2_MultiInstance` per condition family, on synthetic element lists; a coverage test that every condition name of the embedded catalog has a rule and every fact rule is undetermined without its fact; evaluation of every class of the default and extended profiles; `FuzzReadInstance`; `FuzzReadSCL` and synthetic SCL fixtures for `nsdctl model check`.
 
 ---
 

@@ -37,7 +37,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | Command | Purpose |
 | --- | --- |
 | `inspect [SOURCE...]` | Namespaces, counts, dependencies, digests, manifest, documentation, warnings |
-| `validate [SOURCE...]` | Parse, then check each namespace's profile (or `--profile`): dependencies, conflicts, unresolved references |
+| `validate [SOURCE...] [--presence]` | Parse, then check each namespace's profile (or `--profile`): dependencies, conflicts, unresolved references; `--presence` adds the presence-condition checks of `presence.ValidateNamespace` |
 | `dependencies [SOURCE...]` (`deps`) | Each declared dependency and whether the loaded sources satisfy it (ok, missing), with the release a profile adds: the newest that satisfies it |
 | `diff OLD NEW [--exit-code]` | Added, removed and changed definitions between two sources |
 | `model show NAME\|PATH` | A class (with inherited data objects and semantics), CDC, type, enumeration or basic type; or a resolved path with every step |
@@ -46,6 +46,7 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `model describe REF` | Semantic descriptor: quantity, phase, reference, component, unit hint, rule |
 | `model measurements LNCLASS` | Mapped measurements of a class, per phase |
 | `model leaves LNCLASS[.DO...] [--fc FC]` | All leaf attributes below a class or path |
+| `model check [CLASS] [--instance FILE \| --scl FILE --ln LD/LN \| --scl FILE --ln-type ID \| --present A,B] [--value --fact --ld-ns --ln-ns --ctl-model --root-ld --all]` | Evaluate the presence conditions of an instance: required, optional or forbidden, satisfied, violated or undetermined, with the reason ([presence.md](../../../docs/presence.md)); exit code 1 when one is violated |
 | `catalog profiles` | The named profiles and the namespaces they select |
 | `catalog overlaps [--left NS --right NS] [--class C]` | Names two namespaces both define, classified identical, compatible-extension or conflicting, with the differing data objects, CDCs, presence and inheritance |
 | `catalog select NAMESPACE` | The embedded profile for the release a device declares in `LLN0.NamPlt.ldNs` or `lnNs`, e.g. `IEC 61850-7-4:2007A` |
@@ -479,6 +480,33 @@ MMXU.TotW.mag.f      FLOAT32    BASIC       MX
 MMXU.TotW.range      RangeKind  ENUMERATED  MX
 MMXU.TotW.q          Quality    BASIC       MX
 MMXU.TotW.t          Timestamp  BASIC       MX
+```
+
+### Presence conditions
+
+`model check` evaluates the presence conditions of one instance. Data
+objects come from `--present`, a JSON instance (`--instance`, `-` for stdin)
+or an SCL file: `--ln LD/LN` takes the logical node, its lnType, its DOI
+values of ctlModel and hvRef and the ldNs/lnNs of the name plates;
+`--ln-type ID` takes an LNodeType of the templates. Values, facts and context
+come from flags:
+
+| Flag | Meaning |
+| --- | --- |
+| `--value NAME=VALUE` | An attribute value (ctlModel, hvRef); `Pos.ctlModel=…` for a child |
+| `--fact COND=true\|false` | Whether a condition holds: `MOcond(1)=true`, `Mir:MOcond(1)=false`, `MFsubst=false` |
+| `--ld-ns`, `--ln-ns` | Namespaces of the logical device and node (`MOlnNs`, `MOdataNs`, `MOcdcNs`) |
+| `--ctl-model` | Control model of data objects without a ctlModel value |
+| `--root-ld true\|false` | Whether the logical device is the root logical device (`MOrootLD`) |
+| `--all` | List every element, not only the violated and undetermined ones |
+
+```console
+$ nsdctl model check XCBR --present Beh,Loc,OpCnt,Pos,BlkOpn,BlkCls,CBOpCap --value Pos.ctlModel=sbo-with-normal-security
+PATH            CONDITION  REQUIREMENT   VERDICT       REASON
+…
+Pos.stSeld      MOsbo      required      violated      ctlModel sbo-with-normal-security, so ctlModel is a select-before-operate model; absent
+…
+XCBR: 63 elements, 52 satisfied, 5 violated, 6 undetermined
 ```
 
 ### Profiles and namespaces

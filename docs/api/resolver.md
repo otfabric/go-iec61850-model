@@ -222,6 +222,14 @@ Leaves expands a model path into every attribute leaf below it: the basic, enume
 
 Leaves are returned in model order: data objects in class order, members of a CDC or constructed type in document order.
 
+#### func (Resolver) Presence
+
+```go
+func (r *Resolver) Presence(lnClass string, inst *presence.Instance) (*presence.Report, error)
+```
+
+Presence evaluates the presence conditions of a logical node instance (see package presence): which data objects, and, for the described children, which attributes the instance requires, allows or forbids, and whether it has them. It honours [Resolver.In](#func-resolver-in). Path resolution never evaluates presence; this is the opt-in check.
+
 #### func (Resolver) Resolve
 
 ```go
@@ -279,6 +287,14 @@ func (r *Resolver) ResolveString(s string) (*Resolution, error)
 ```
 
 ResolveString parses s as an instance reference when it contains "/" and as a class reference otherwise, and resolves it.
+
+#### func (Resolver) ValidatePresence
+
+```go
+func (r *Resolver) ValidatePresence(lnClass string, inst *presence.Instance) error
+```
+
+ValidatePresence evaluates a logical node instance like [Resolver.Presence](#func-resolver-presence) and returns a [\*model.PresenceError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#PresenceError) when it violates a presence condition. Undetermined conditions do not fail.
 
 ### type Step
 

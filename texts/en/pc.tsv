@@ -1,6 +1,6 @@
 # Presence condition descriptions.
 # OT Fabric wording (MIT). name<TAB>text[<TAB>?]; "?" marks a text to review.
-AllAtLeastOneGroup	At least one member of each numbered group is present; the groups are independent
+AllAtLeastOneGroup	Each numbered group is present completely or not at all, and at least one group is present
 AllOnlyOneGroup	Only one group is present, and then with all of its elements
 AllOrNonePerGroup	Within each group, either all elements are present or none
 AtLeastOne	At least one element of the group is present

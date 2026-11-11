@@ -128,6 +128,21 @@ Sentinel errors for the failure categories of this module. Every package of the 
 
 Use [errors.Is](https://pkg.go.dev/errors#Is) to test against these values.
 
+```go
+var (
+	// ErrInvalidInstance indicates an instance description that cannot
+	// be read: malformed JSON, unknown fields, or input beyond the
+	// reader's limits.
+	ErrInvalidInstance = errors.New("iec61850-model: invalid instance")
+
+	// ErrPresenceViolation indicates an instance whose present elements
+	// violate a presence condition of the model.
+	ErrPresenceViolation = errors.New("iec61850-model: presence condition violated")
+)
+```
+
+Sentinel errors of the presence evaluation (package presence).
+
 ## Functions
 
 ### func Path
@@ -1080,6 +1095,36 @@ type PresenceConditionDef struct {
 ```
 
 PresenceConditionDef is the namespace definition of a presence condition, e.g. M, O or AtLeastOne.
+
+### type PresenceError
+
+```go
+type PresenceError struct {
+	// Class is the logical node class, CDC or constructed type the
+	// instance was checked against.
+	Class string
+	// Violations describe each violated condition, e.g.
+	// "Pos.sboTimeout: MOsbo: required for ctlModel
+	// sbo-with-enhanced-security, but absent".
+	Violations []string
+}
+```
+
+PresenceError reports the presence conditions an instance violates.
+
+It unwraps to ErrPresenceViolation.
+
+#### func (PresenceError) Error
+
+```go
+func (e *PresenceError) Error() string
+```
+
+#### func (PresenceError) Unwrap
+
+```go
+func (e *PresenceError) Unwrap() error
+```
 
 ### type Provenance
 

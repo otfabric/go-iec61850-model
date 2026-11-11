@@ -43,14 +43,15 @@ in `Step.Instance`. For `MmultiRange`/`OmultiRange` the argument `"min, max"`
 bounds the number: `TmAChr` is `OmultiRange(33, 48)`, so `TmAChr33` resolves
 and `TmAChr32` fails with `ErrUnknownDataObject`. The bare name (`TmAChr`)
 resolves too, because the Data-Instance-ID of IEC 61850-7-2:2010 §22.2 is
-optional; the rule that all instances of a class use the same number of digits
-needs the whole logical node and is not checked.
+optional. The resolver sees one reference at a time; the presence evaluation
+of a logical node instance checks that the instances of one data object use
+one number of digits ([presence.md](presence.md)).
 
 ## Presence conditions
 
 `PresenceCondition` keeps the NSD name and argument verbatim; `IsMandatory` and
-`IsOptional` recognize only `M` and `O`. The library has no evaluator for the
-conditional forms. The Edition 2.1 NSD (2007B) uses the condition names of the
+`IsOptional` recognize only `M` and `O`. Package `presence` evaluates every
+condition against an instance ([presence.md](presence.md)). The Edition 2.1 NSD (2007B) uses the condition names of the
 7-2 NSD, which replace the names of IEC 61850-7-3:2010 Table 1. The main
 correspondences:
 
