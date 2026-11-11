@@ -246,3 +246,43 @@ func TestSpec_7_2_6_1_2_3_InstanceNameNeedsLD(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+// A controllable CDC without a ctlVal service parameter (the deprecated
+// IEC 61850-7-410 TAG declares only operTm) has control structures
+// without ctlVal: its leaves resolve, and ctlVal itself is refused.
+func TestSpec_8_1_20_3_ControlWithoutCtlVal(t *testing.T) {
+	p, err := official.Extended()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ns model.NamespaceID
+	for _, n := range p.Namespaces() {
+		if n.ID.Standard == "IEC 61850-7-410" {
+			ns = n.ID
+		}
+	}
+	if ns.Standard == "" {
+		t.Skip("no IEC 61850-7-410 namespace in the extended profile")
+	}
+	r := resolver.New(p).In(ns)
+	leaves, err := r.Leaves("HGTE", []string{"Tag"}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var oper int
+	for _, l := range leaves {
+		path := l.AttributePath()
+		if strings.Contains(path, "ctlVal") {
+			t.Errorf("leaf %s: TAG declares no ctlVal", path)
+		}
+		if strings.HasPrefix(path, "Oper.") {
+			oper++
+		}
+	}
+	if oper == 0 {
+		t.Error("no Oper leaves")
+	}
+	if _, err := r.Leaves("HGTE", []string{"Tag", "Oper", "ctlVal"}, ""); err == nil || !strings.Contains(err.Error(), "declares no service parameter ctlVal") {
+		t.Errorf("Tag.Oper.ctlVal: %v", err)
+	}
+}

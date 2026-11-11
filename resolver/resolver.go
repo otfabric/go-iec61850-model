@@ -846,6 +846,11 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 	case leaf.Kind == StepControlService && leaf.TypeKind == model.TypeKindConstructed:
 		typeKey = "ctl:" + leaf.Name
 		for _, p := range controlServices[leaf.Name] {
+			// A CDC without a ctlVal service parameter (the deprecated
+			// 7-410 TAG declares only operTm) has no ctlVal member.
+			if p == "ctlVal" && ctlVal(res.CDC) == nil {
+				continue
+			}
 			members = append(members, member{name: p})
 		}
 	case leaf.TypeKind == model.TypeKindConstructed:

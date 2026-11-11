@@ -9,7 +9,7 @@ Spec review against IEC 61850-7-2:2010, 7-3:2010, 7-4:2010 and 8-1:2011. The imp
 
 ### Fixed
 
-- **Control references resolve** (8-1 §20.3, Tables 80/83/85/88/90): `SBO`, `SBOw`, `Oper` and `Cancel` with FC CO are built from the CDC service parameters (`ctlVal`, `operTm`, `origin`, `ctlNum`, `T`, `Test`, `Check`; Cancel has no Check), so `XCBR.Pos.Oper.ctlVal[CO]` and `Pos[CO]` resolve and `Leaves` lists the control leaves (MDL-01).
+- **Control references resolve** (8-1 §20.3, Tables 80/83/85/88/90): `SBO`, `SBOw`, `Oper` and `Cancel` with FC CO are built from the CDC service parameters (`ctlVal`, `operTm`, `origin`, `ctlNum`, `T`, `Test`, `Check`; Cancel has no Check), so `XCBR.Pos.Oper.ctlVal[CO]` and `Pos[CO]` resolve and `Leaves` lists the control leaves; a CDC without a ctlVal parameter (the deprecated 7-410 TAG) gets no ctlVal member (MDL-01).
 - **Array elements** `name(n)` (7-2 §6.1.2.3) are parsed per component and resolved; a malformed index or an index on a non-array is rejected; `ToMMS` rejects indexed references (MDL-02).
 - **Length limits** (7-2 Table 4, 8-1 §8.1.3.2.2): `ParseStrict` measures without the `[FC]` suffix and enforces LD ≤ 64 and path ≤ 64; `Validate` enforces LD ≤ 64; `ToMMS`/`FromMMS` enforce the 64-character MMS identifier (MDL-03, MDL-04, MDL-05).
 - **FC syntax** (7-2 Table 20, 8-1 Figure 4): an FC is two upper-case letters; the constants are split into ACSI and SCSM sets with `IsACSI`/`IsSCSM`, plus `FCGS` and `FCXX` (MDL-06).
