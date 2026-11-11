@@ -1,5 +1,16 @@
 # go-iec61850-model Releases
 
+## v0.9.1
+
+**Date:** 2026-11-11
+**Previous release:** v0.9.0
+
+### Changed
+
+- `nsdctl` is built on library v0.9.0. The v0.9.0 binaries were built on a pre-release commit with the same library code.
+
+---
+
 ## v0.9.0
 
 **Date:** 2026-11-11
