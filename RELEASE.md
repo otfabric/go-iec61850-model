@@ -1,5 +1,18 @@
 # go-iec61850-model Releases
 
+## v0.10.1
+
+**Date:** 2026-11-11
+**Previous release:** v0.10.0
+
+### Changed
+
+- `nsdctl` is built on library v0.10.0. The v0.10.0 binaries were built on a pre-release commit with the same library code.
+- The committed generated output (`names`, `official`, `docs/reference`) is regenerated with generator output format 6: the semantic coverage section in `coverage.md` and the semantics of the new default rules in `logical-nodes.md`. The catalog content is unchanged.
+- docs/use-cases.md and cmd/nsdctl/docs/cli.md show the `nsdctl` output of v0.10.0: the wider SEMANTICS column and the quantity and mapping lines of `model show`.
+
+---
+
 ## v0.10.0
 
 **Date:** 2026-11-11

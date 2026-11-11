@@ -579,8 +579,8 @@ group        D Distributed energy resources
 title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
 
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS  TEXT
-NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6    -          Name plate
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS        TEXT
+NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6    -                Name plate
 …
 ```
 
@@ -602,12 +602,12 @@ group        D Distributed energy resources
 title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
 
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE                  SEMANTICS  TEXT
-NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6       -          Name plate
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE                  SEMANTICS        TEXT
+NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6       -                Name plate
 …
-CelSerCnt     ING  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Cell series count
-DschWattCrv   CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Discharge watts curve
-DschWattTm    CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Discharge watts time
+CelSerCnt     ING  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -                Cell series count
+DschWattCrv   CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -                Discharge watts curve
+DschWattTm    CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -                Discharge watts time
 ```
 
 ```console
