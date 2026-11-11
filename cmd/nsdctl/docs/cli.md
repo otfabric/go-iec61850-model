@@ -125,9 +125,9 @@ or single NSD file works as a source.
 
 ```console
 $ nsdctl version
-nsdctl 0.9.1 (tag v0.9.1, commit 510097cdc9c7556d074fac934e36f3585d55e40a, built 2026-11-11T11:29:41Z, go1.26.11, darwin/arm64)
+nsdctl 0.10.1 (tag v0.10.1, commit 95016f06c1862e1516e859c709e50eadaa874afc, built 2026-11-11T19:18:03Z, go1.26.11, darwin/arm64)
 $ nsdctl version --json
-{"name":"nsdctl","version":"0.9.1","tag":"v0.9.1","commit":"510097cdc9c7556d074fac934e36f3585d55e40a","built":"2026-11-11T11:29:41Z","libraries":[],"go":"go1.26.11","platform":"darwin/arm64"}
+{"name":"nsdctl","version":"0.10.1","tag":"v0.10.1","commit":"95016f06c1862e1516e859c709e50eadaa874afc","built":"2026-11-11T19:18:03Z","libraries":[],"go":"go1.26.11","platform":"darwin/arm64"}
 ```
 
 Release binaries carry version, tag, full commit and build date. A binary
