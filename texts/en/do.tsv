@@ -32,3 +32,17 @@ PTTR.ConsTms	Thermal time constant in seconds
 PMHT.ConsTms	Thermal time constant in seconds
 APST.Tc6Tra	Transducer time constant 6
 APST.Tc7Tra	Transducer time constant 7
+APSF.HHiLim	High-band output upper limit
+APSF.HLoLim	High-band output lower limit
+APSF.IHiLim	Intermediate-band output upper limit
+APSF.ILoLim	Intermediate-band output lower limit
+APSF.LHiLim	Low-band output upper limit
+APSF.LLoLim	Low-band output lower limit
+APSF.InputHHz	High-band input frequency
+APSF.InputLIHz	Low- and intermediate-band input frequency
+APSF.OutH	High-band output
+APSF.OutI	Intermediate-band output
+APSF.OutL	Low-band output
+APSF.OutHBG	High-band output before gain
+APSF.OutIBG	Intermediate-band output before gain
+APSF.OutLBG	Low-band output before gain
