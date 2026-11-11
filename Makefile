@@ -141,6 +141,8 @@ fuzz: ## Run all fuzz targets for FUZZTIME each (default 15s)
 	@go test -run='^$$' -fuzz=FuzzReadDocSets -fuzztime=$(FUZZTIME) ./nsd
 	@echo "Fuzzing reference.Parse"
 	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./reference
+	@echo "Fuzzing presence.ReadInstance"
+	@go test -run='^$$' -fuzz=FuzzReadInstance -fuzztime=$(FUZZTIME) ./presence
 
 bench: ## Run benchmarks
 	@echo "Running benchmarks"

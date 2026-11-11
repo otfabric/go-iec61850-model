@@ -11,6 +11,8 @@
                                |
                +---------------+---------------+
                |                               |
+           presence (presence conditions of an instance)
+               |
            resolver  <-------- reference
                |
            semantic (quantities, phases, units, rules)
@@ -28,7 +30,8 @@
 | `nsd` | `model` | Parse NSD/NSDoc XML and ZIP packages safely, normalize into `model` |
 | `catalog` | `model` | Index namespaces, build profiles, qualified and scoped lookups, overlap reports, search, diff |
 | `reference` | `model` | Instance and class reference syntax |
-| `resolver` | `model`, `catalog`, `reference` | Resolve paths to types |
+| `presence` | `model`, `catalog` | Evaluate presence conditions against an instance |
+| `resolver` | `model`, `catalog`, `reference`, `presence` | Resolve paths to types; opt-in presence evaluation |
 | `semantic` | `model`, `resolver` | Describe elements in engineering terms from explicit rules |
 | `ontology` | `model`, `catalog`, `semantic` | Concept graph, traversal, JSON export |
 | `official` | `model`, `catalog` | Generated: the official namespaces embedded, with the named profiles |
@@ -47,7 +50,9 @@ resolver depends on the small `resolver.Lookup` interface, which both
   format and validation rules match `go-iec61850`'s `Ref`, so values convert
   field by field (`LD`, `LN`, `Path`, `FC`).
 - SCL (device configuration) stays in `go-iec61850/scl`. This module owns the
-  normative class and type catalog only.
+  normative class and type catalog only; `presence` takes an instance (the
+  names a device or SCL type has), not SCL. `nsdctl model check --scl` reads
+  only the data type templates and DOI values it needs to build one.
 - No network access, no disk writes, no global mutable state. Catalogs and
   profiles are immutable after construction and safe for concurrent reads.
 
@@ -67,10 +72,13 @@ resolver depends on the small `resolver.Lookup` interface, which both
    objects → data attribute → constructed type members → leaf type, recording
    for every step where it is declared and in which namespace.
 
-6. `semantic` describes a resolved path with the rule that matches its class
+6. `presence` evaluates an instance against the flattened data objects of a
+   class, the members of a CDC or constructed type, and the described
+   children, without guessing facts the instance lacks.
+7. `semantic` describes a resolved path with the rule that matches its class
    (or a base class) and data object, provided the CDC fits; WYE/DEL sub data
    objects give the phase, the attribute path the component.
-7. `ontology` turns a profile, optionally with the semantic descriptors, into
+8. `ontology` turns a profile, optionally with the semantic descriptors, into
    a concept graph.
 
 ## Tools
