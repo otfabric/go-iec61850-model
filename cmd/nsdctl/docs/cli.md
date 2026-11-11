@@ -107,8 +107,10 @@ arguments complete NSD, XSD and ZIP files, `--lock` and `--index` JSON files,
 
 Every example below is real output of `nsdctl` run on the 33 official packages
 tracked by this repository (`make nsd-fetch`), cut where marked with `…`. The
-packages contain the model, not documentation texts, so the output shows
-identifiers, types and structure only.
+packages contain the model, not documentation texts. The titles and the TEXT
+column are OT Fabric's own public texts (MIT, [texts/](../../../texts/README.md)),
+built into nsdctl; `--docs FILE` or `IEC61850_MODEL_DOCS` puts a local doc set
+on top, and `--lang ""` turns texts off.
 
 The `model` and `catalog` examples use the catalog embedded in nsdctl, which
 is generated from the same packages (every release since nsdctl v0.8.1;
@@ -122,9 +124,9 @@ or single NSD file works as a source.
 
 ```console
 $ nsdctl version
-nsdctl 0.4.0 (tag v0.4.0, commit 3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c, built 2026-11-07T16:00:00Z, go1.27.3, darwin/arm64)
+nsdctl 0.9.1 (tag v0.9.1, commit 510097cdc9c7556d074fac934e36f3585d55e40a, built 2026-11-11T11:29:41Z, go1.26.11, darwin/arm64)
 $ nsdctl version --json
-{"name":"nsdctl","version":"0.4.0","tag":"v0.4.0","commit":"3f2a9c1e5b7d4c0a9e8f6d2b1a0c9e8f7d6b5a4c","built":"2026-11-07T16:00:00Z","libraries":[],"go":"go1.27.3","platform":"darwin/arm64"}
+{"name":"nsdctl","version":"0.9.1","tag":"v0.9.1","commit":"510097cdc9c7556d074fac934e36f3585d55e40a","built":"2026-11-11T11:29:41Z","libraries":[],"go":"go1.26.11","platform":"darwin/arm64"}
 ```
 
 Release binaries carry version, tag, full commit and build date. A binary
@@ -277,15 +279,16 @@ namespace that declares each and the rule-based semantics:
 $ nsdctl model show MMXU
 logical node class MMXU (IEC 61850-7-4:2007B6)
 group        M Metering and measurement
+title        Three-phase measurement
 inheritance  MMXU → FunctionLN → StatisticsLN → DomainLN
 
-DATA OBJECT  CDC  PRESENCE   DECLARED IN   NAMESPACE               SEMANTICS
-NamPlt       LPL  MONamPlt   DomainLN      IEC 61850-7-4:2007B6    -
-Beh          ENS  M          DomainLN      IEC 61850-7-4:2007B6    -
-Health       ENS  O          DomainLN      IEC 61850-7-4:2007B6    -
-Mir          SPS  MOcond(1)  DomainLN      IEC 61850-7-4:2007B6    -
-Mod          ENC  O          DomainLN      IEC 61850-7-4:2007B6    -
-InRef        ORG  Omulti     DomainLN      IEC 61850-7-4:2007B6    -
+DATA OBJECT  CDC  PRESENCE   DECLARED IN   NAMESPACE               SEMANTICS                        TEXT
+NamPlt       LPL  MONamPlt   DomainLN      IEC 61850-7-4:2007B6    -                                Name plate
+Beh          ENS  M          DomainLN      IEC 61850-7-4:2007B6    -                                Behavior
+Health       ENS  O          DomainLN      IEC 61850-7-4:2007B6    -                                Health
+Mir          SPS  MOcond(1)  DomainLN      IEC 61850-7-4:2007B6    -                                Mirror
+Mod          ENC  O          DomainLN      IEC 61850-7-4:2007B6    -                                Mode
+InRef        ORG  Omulti     DomainLN      IEC 61850-7-4:2007B6    -                                Input reference
 …
 ```
 
@@ -307,6 +310,7 @@ With `-p extended`, 90-6 adds `PwrFlwDir` too.
 ```console
 $ nsdctl model show 'LD0/MMXU1.PhV.phsA.cVal.mag.f[MX]'
 MMXU.PhV.phsA.cVal.mag.f → FLOAT32 (BASIC) [MX]
+Value as a floating-point number
 
 STEP              NAME  TYPE           FC  PRESENCE       DECLARED IN    NAMESPACE
 LogicalNode       MMXU  MMXU           -   -              MMXU           IEC 61850-7-4:2007B6
@@ -330,6 +334,7 @@ so; with one it selects the variant:
 ```console
 $ nsdctl model show 'PTOC.StrVal.setMag.f'
 PTOC.StrVal.setMag.f → FLOAT32 (BASIC)
+Control value as a floating-point number
 
 STEP              NAME    TYPE              FC  PRESENCE            DECLARED IN       NAMESPACE
 LogicalNode       PTOC    PTOC              -   -                   PTOC              IEC 61850-7-4:2007B6
@@ -344,6 +349,7 @@ Append [FC] to the reference to select one.
 ```console
 $ nsdctl model show 'PTOC.StrVal.setMag.f[SG]'
 PTOC.StrVal.setMag.f → FLOAT32 (BASIC) [SG]
+Control value as a floating-point number
 
 STEP              NAME    TYPE              FC  PRESENCE            DECLARED IN       NAMESPACE
 LogicalNode       PTOC    PTOC              -   -                   PTOC              IEC 61850-7-4:2007B6
@@ -437,16 +443,16 @@ MMTR.DmdVArh  reactive-energy  total  -          demand     VArh  mmtr.dmdvarh
 
 ```console
 $ nsdctl model search --cdc WYE --kind do --standard "IEC 61850-7-4"
-KIND  PATH            TYPE  FC  PRESENCE            NAMESPACE
-do    MFLK.PhPiLoFil  WYE   -   O                   IEC 61850-7-4:2007B6
-do    MFLK.PhPiMax    WYE   -   O                   IEC 61850-7-4:2007B6
-do    MFLK.PhPiRoot   WYE   -   O                   IEC 61850-7-4:2007B6
-do    MFLK.PhPlt      WYE   -   O                   IEC 61850-7-4:2007B6
-do    MFLK.PhPst      WYE   -   O                   IEC 61850-7-4:2007B6
-do    MHAI.HATm       WYE   -   O                   IEC 61850-7-4:2007B6
-do    MHAI.HCfA       WYE   -   O                   IEC 61850-7-4:2007B6
-do    MHAI.HCfPhV     WYE   -   O                   IEC 61850-7-4:2007B6
-do    MHAI.HKFact     WYE   -   O                   IEC 61850-7-4:2007B6
+KIND  PATH            TYPE  FC  PRESENCE            NAMESPACE             TEXT
+do    MFLK.PhPiLoFil  WYE   -   O                   IEC 61850-7-4:2007B6  Phase instantaneous flicker low filter
+do    MFLK.PhPiMax    WYE   -   O                   IEC 61850-7-4:2007B6  Phase instantaneous flicker maximum
+do    MFLK.PhPiRoot   WYE   -   O                   IEC 61850-7-4:2007B6  Phase instantaneous flicker root
+do    MFLK.PhPlt      WYE   -   O                   IEC 61850-7-4:2007B6  Long-term flicker severity per phase
+do    MFLK.PhPst      WYE   -   O                   IEC 61850-7-4:2007B6  Short-term flicker severity per phase
+do    MHAI.HATm       WYE   -   O                   IEC 61850-7-4:2007B6  Harmonic current time
+do    MHAI.HCfA       WYE   -   O                   IEC 61850-7-4:2007B6  Harmonic crest factor current
+do    MHAI.HCfPhV     WYE   -   O                   IEC 61850-7-4:2007B6  Harmonic crest factor phase voltage
+do    MHAI.HKFact     WYE   -   O                   IEC 61850-7-4:2007B6  Harmonic K-factor
 …
 ```
 
@@ -542,10 +548,11 @@ IEC TR 61850-90-9 and IEC 61850-7-420 both define `DBAT`, `DSTO` and `SBAT`.
 $ nsdctl model show DBAT
 logical node class DBAT (IEC 61850-7-420:2019A4)
 group        D Distributed energy resources
+title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
 
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS
-NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6    -
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS  TEXT
+NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6    -          Name plate
 …
 ```
 
@@ -564,14 +571,15 @@ first, then in its dependencies:
 $ nsdctl -p extended model show DBAT --ns IEC_TR_61850-90-9
 logical node class DBAT ((Tr)IEC 61850-90-9:2018A3)
 group        D Distributed energy resources
+title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
 
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE                  SEMANTICS
-NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6       -
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE                  SEMANTICS  TEXT
+NamPlt        LPL  MONamPlt   DomainLN                     IEC 61850-7-4:2007B6       -          Name plate
 …
-CelSerCnt     ING  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -
-DschWattCrv   CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -
-DschWattTm    CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -
+CelSerCnt     ING  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Cell series count
+DschWattCrv   CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Discharge watts curve
+DschWattTm    CSG  O          DBAT                         (Tr)IEC 61850-90-9:2018A3  -          Discharge watts time
 ```
 
 ```console
@@ -770,7 +778,9 @@ $ nsdctl --json model describe MMXU.Hz
   "confidence": "high",
   "basis": "rule",
   "rule": "mmxu.hz",
-  "source": "otfabric-default"
+  "source": "otfabric-default",
+  "title": "Frequency",
+  "description": "Frequency"
 }
 ```
 

@@ -7,8 +7,11 @@ or setup is needed: without `--source`, nsdctl uses the embedded default
 profile (IEC 61850-7-2, 7-3, 7-4, 7-410 and 7-420).
 
 The models contain identifiers, types and structure, not the descriptive text
-of the standards; the semantics column comes from OTFabric's explicit mapping
-rules (see [semantic.md](semantic.md)).
+of the standards. The titles and the TEXT column are OT Fabric's own public
+texts (MIT, [texts/](../texts/README.md)), built into nsdctl; a local doc set
+(`--docs` or `IEC61850_MODEL_DOCS`) takes precedence where it has a text, and
+`--lang ""` turns texts off. The semantics column comes from OT Fabric's
+explicit mapping rules (see [semantic.md](semantic.md)).
 
 - [1. What can I read from a power meter?](#1-what-can-i-read-from-a-power-meter)
 - [2. What does this tag from an IED or SCADA export mean?](#2-what-does-this-tag-from-an-ied-or-scada-export-mean)
@@ -99,6 +102,7 @@ before configuring a client, or to explain a value in a UI:
 ```console
 $ nsdctl model show 'LD0/MMXU1.PhV.phsA.cVal.mag.f[MX]'
 MMXU.PhV.phsA.cVal.mag.f → FLOAT32 (BASIC) [MX]
+Value as a floating-point number
 
 STEP              NAME  TYPE           FC  PRESENCE       DECLARED IN    NAMESPACE
 LogicalNode       MMXU  MMXU           -   -              MMXU           IEC 61850-7-4:2007B6
@@ -170,33 +174,34 @@ IEC 61850-7-420 models a battery in `DBAT` and the storage system as a DER in
 `DSTO`. Which battery data objects exist, and which are mandatory?
 
 ```console
-$ nsdctl model show DBAT | grep -E 'class|inheritance|^DATA| M  |^Soc|^Avl|^Watt|^Amp'
+$ nsdctl model show DBAT | grep -E 'class|^title|inheritance|^DATA| M  |^Soc|^Avl|^Watt|^Amp'
 logical node class DBAT (IEC 61850-7-420:2019A4)
+title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
-DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS
-Beh           ENS  M          DomainLN                     IEC 61850-7-4:2007B6    -
-SocPro        SPS  O          DBAT                         IEC 61850-7-420:2019A4  -
-BatSt         SPS  M          DBAT                         IEC 61850-7-420:2019A4  -
-Amp           MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-Watt          MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-AvlChaAhr     MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-AvlDschAhr    MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-SocEffAhrPct  MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-SocDvPct      MV   O          DBAT                         IEC 61850-7-420:2019A4  -
-BatTyp        ENG  M          DBAT                         IEC 61850-7-420:2019A4  -
+DATA OBJECT   CDC  PRESENCE   DECLARED IN                  NAMESPACE               SEMANTICS  TEXT
+Beh           ENS  M          DomainLN                     IEC 61850-7-4:2007B6    -          Behavior
+SocPro        SPS  O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge protection
+BatSt         SPS  M          DBAT                         IEC 61850-7-420:2019A4  -          Battery status
+Amp           MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Current
+Watt          MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Watts
+AvlChaAhr     MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Available charge ampere-hours
+AvlDschAhr    MV   O          DBAT                         IEC 61850-7-420:2019A4  -          Available discharge ampere-hours
+SocEffAhrPct  MV   O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge effective ampere-hours percent
+SocDvPct      MV   O          DBAT                         IEC 61850-7-420:2019A4  -          State of charge deviation percent
+BatTyp        ENG  M          DBAT                         IEC 61850-7-420:2019A4  -          Battery type
 ```
 
 Search by name when you know part of it, e.g. state of charge (`Soc`):
 
 ```console
 $ nsdctl model search --name Soc --kind do
-KIND  PATH               TYPE  FC  PRESENCE  NAMESPACE
-do    DBAT.CycSocRngPct  MV    -   O         IEC 61850-7-420:2019A4
-do    DBAT.SocDvPct      MV    -   O         IEC 61850-7-420:2019A4
-do    DBAT.SocEffAhrPct  MV    -   O         IEC 61850-7-420:2019A4
-do    DBAT.SocPro        SPS   -   O         IEC 61850-7-420:2019A4
-do    DTCD.SocDate       TCS   -   O         IEC 61850-7-420:2019A4
-do    DTCD.SocUseTgtPct  ING   -   M         IEC 61850-7-420:2019A4
+KIND  PATH               TYPE  FC  PRESENCE  NAMESPACE               TEXT
+do    DBAT.CycSocRngPct  MV    -   O         IEC 61850-7-420:2019A4  Cycle state of charge range percent
+do    DBAT.SocDvPct      MV    -   O         IEC 61850-7-420:2019A4  State of charge deviation percent
+do    DBAT.SocEffAhrPct  MV    -   O         IEC 61850-7-420:2019A4  State of charge effective ampere-hours percent
+do    DBAT.SocPro        SPS   -   O         IEC 61850-7-420:2019A4  State of charge protection
+do    DTCD.SocDate       TCS   -   O         IEC 61850-7-420:2019A4  State of charge date
+do    DTCD.SocUseTgtPct  ING   -   M         IEC 61850-7-420:2019A4  State of charge use target percent
 ```
 
 The power limits to configure for charging and discharging live in `DSTO`,
@@ -204,11 +209,11 @@ inherited from the storage base classes:
 
 ```console
 $ nsdctl model show DSTO | grep -E '^(ChaWMax|DschWMax|WhRtg|EffWh|EffWhPct) '
-EffWh         MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -
-EffWhPct      MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -
-ChaWMax       ASG  M              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -
-DschWMax      ASG  O              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -
-WhRtg         ASG  O              StorageNameplateRatingsLN     IEC 61850-7-420:2019A4  -
+EffWh         MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Effective active energy
+EffWhPct      MV   AtLeastOne(1)  StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Effective active energy percent
+ChaWMax       ASG  M              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Charge active power maximum
+DschWMax      ASG  O              StorageOperationalSettingsLN  IEC 61850-7-420:2019A4  -          Discharge active power maximum
+WhRtg         ASG  O              StorageNameplateRatingsLN     IEC 61850-7-420:2019A4  -          Active energy rating
 ```
 
 ## 5. Monitor a circuit breaker
@@ -217,21 +222,23 @@ WhRtg         ASG  O              StorageNameplateRatingsLN     IEC 61850-7-420:
 commands come from the switching equipment base class:
 
 ```console
-$ nsdctl model show XCBR | grep -E 'class|inheritance|^DATA|^(Loc|OpCnt|Pos|BlkOpn|BlkCls|CBOpCap) '
+$ nsdctl model show XCBR | grep -E 'class|^title|inheritance|^DATA|^(Loc|OpCnt|Pos|BlkOpn|BlkCls|CBOpCap) '
 logical node class XCBR (IEC 61850-7-4:2007B6)
+title        Circuit breaker
 inheritance  XCBR → SwitchingEquipmentLN → EquipmentInterfaceLN → FunctionLN → StatisticsLN → DomainLN
-DATA OBJECT  CDC  PRESENCE   DECLARED IN           NAMESPACE             SEMANTICS
-Loc          SPS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -
-OpCnt        INS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -
-Pos          DPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -
-BlkOpn       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -
-BlkCls       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -
-CBOpCap      ENS  O          XCBR                  IEC 61850-7-4:2007B6  -
+DATA OBJECT  CDC  PRESENCE   DECLARED IN           NAMESPACE             SEMANTICS  TEXT
+Loc          SPS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Local
+OpCnt        INS  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Operate count
+Pos          DPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Position
+BlkOpn       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Blocked open
+BlkCls       SPC  M          SwitchingEquipmentLN  IEC 61850-7-4:2007B6  -          Blocked close
+CBOpCap      ENS  O          XCBR                  IEC 61850-7-4:2007B6  -          Circuit breaker operate capability
 ```
 
 ```console
 $ nsdctl model show XCBR.Pos.stVal
 XCBR.Pos.stVal → Dbpos (BASIC) [ST]
+The current status value of the data object
 
 STEP           NAME   TYPE   FC  PRESENCE  DECLARED IN           NAMESPACE
 LogicalNode    XCBR   XCBR   -   -         XCBR                  IEC 61850-7-4:2007B6
@@ -258,6 +265,7 @@ Append [FC] to the reference to select one.
 ```console
 $ nsdctl model show 'PTOC.StrVal.setMag.f[SG]'
 PTOC.StrVal.setMag.f → FLOAT32 (BASIC) [SG]
+Control value as a floating-point number
 
 STEP              NAME    TYPE              FC  PRESENCE            DECLARED IN       NAMESPACE
 LogicalNode       PTOC    PTOC              -   -                   PTOC              IEC 61850-7-4:2007B6
@@ -272,15 +280,15 @@ Which data objects anywhere in the model are binary counters (CDC `BCR`)?
 
 ```console
 $ nsdctl model search --cdc BCR --kind do
-KIND  PATH           TYPE  FC  PRESENCE       NAMESPACE
-do    FCNT.CntVal    BCR   -   M              IEC 61850-7-4:2007B6
-do    GGIO.CntVal    BCR   -   Omulti         IEC 61850-7-4:2007B6
-do    LCCH.RedRxCnt  BCR   -   OF(RedChLiv)   IEC 61850-7-4:2007B6
-do    LCCH.RxCnt     BCR   -   O              IEC 61850-7-4:2007B6
-do    LCCH.TxCnt     BCR   -   O              IEC 61850-7-4:2007B6
-do    MFLW.VlmCnt    BCR   -   AtLeastOne(1)  IEC 61850-7-4:2007B6
-do    MHYD.FishCnt   BCR   -   O              IEC 61850-7-4:2007B6
-do    XCBR.SumSwARs  BCR   -   O              IEC 61850-7-4:2007B6
+KIND  PATH           TYPE  FC  PRESENCE       NAMESPACE             TEXT
+do    FCNT.CntVal    BCR   -   M              IEC 61850-7-4:2007B6  Count value
+do    GGIO.CntVal    BCR   -   Omulti         IEC 61850-7-4:2007B6  Count value
+do    LCCH.RedRxCnt  BCR   -   OF(RedChLiv)   IEC 61850-7-4:2007B6  Redundancy receive count
+do    LCCH.RxCnt     BCR   -   O              IEC 61850-7-4:2007B6  Receive count
+do    LCCH.TxCnt     BCR   -   O              IEC 61850-7-4:2007B6  Transmit count
+do    MFLW.VlmCnt    BCR   -   AtLeastOne(1)  IEC 61850-7-4:2007B6  Volume count
+do    MHYD.FishCnt   BCR   -   O              IEC 61850-7-4:2007B6  Fish count
+do    XCBR.SumSwARs  BCR   -   O              IEC 61850-7-4:2007B6  Sum switch current reset
 ```
 
 `model search` filters by name, CDC, attribute type, functional constraint,
@@ -302,6 +310,7 @@ nsdctl: iec61850-model: ambiguous logical node class "DBAT": defined in (Tr)IEC 
 $ nsdctl -p extended model show DBAT --ns 90-9
 logical node class DBAT ((Tr)IEC 61850-90-9:2018A3)
 group        D Distributed energy resources
+title        Battery system
 inheritance  DBAT → StorageUnitLN → ControlEquipmentInterfaceLN → ControlledLN → ControllingLN → FunctionLN → StatisticsLN → DomainLN
 …
 ```

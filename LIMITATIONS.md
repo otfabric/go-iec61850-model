@@ -74,7 +74,9 @@ device or engineering tool.
 ## IEC content
 
 - The repository ships no NSD packages and no text from the standards. The
-  committed output has no documentation texts; texts are available only from
+  generated output has no documentation texts from the standards. The titles
+  and descriptions it ships are OT Fabric's own public texts (MIT,
+  [texts/](texts/README.md)); texts from the standards are available only from
   NSDocs the caller loads, a doc set the caller supplies, or a build with the
   `iecdocs` tag over a locally generated doc set
   ([docs/licensing.md](docs/licensing.md#doc-sets)).

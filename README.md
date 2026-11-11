@@ -20,7 +20,9 @@ round.
 
 > **IEC content.** The repository ships no NSD files and no text from the
 > standards. It commits what is generated from the 28 official NSD namespaces
-> (identifiers, types and structure; no documentation texts), under the IEC
+> (identifiers, types and structure; no documentation texts from the
+> standards; the titles and descriptions are OT Fabric's own MIT
+> [public texts](texts/README.md)), under the IEC
 > Code Components license with the attribution in `NOTICE.md`: the embedded
 > catalog [`official`](official), the constants [`names`](names) and the
 > [model reference](docs/reference/index.md). You can also load officially
