@@ -15,8 +15,9 @@ constraints and presence conditions.
 Use it to look up what a logical node such as `MMXU` holds, resolve
 `LD0/MMXU1.Hz.mag.f[MX]` down to `FLOAT32`, validate references, compare
 namespace releases, or explain the model in a UI. It contains no MMS, GOOSE,
-Sampled Values or SCL runtime; those depend on this library, not the other way
-round.
+Sampled Values or SCL runtime and does not depend on one; applications such as
+[iec61850-explorer](https://github.com/otfabric/iec61850-explorer) combine it
+with them.
 
 > **IEC content.** The repository ships no NSD files and no text from the
 > standards. It commits what is generated from the 28 official NSD namespaces
@@ -291,7 +292,7 @@ position, protection settings per setting group, devices on the older IEC TR
 
 ```bash
 nsdctl sources fetch                         # official packages into .nsd-cache/, digests verified
-nsdctl sources check --packages .nsd-cache   # coverage of the 14 tracked packages
+nsdctl sources check --packages .nsd-cache   # coverage of the 33 tracked packages
 nsdctl validate .nsd-cache
 nsdctl -s .nsd-cache model show MMXU
 nsdctl -s .nsd-cache model describe 'LD0/MMXU1.PNV.phsA.cVal.mag.f[MX]'

@@ -56,10 +56,12 @@ Points the plan left open or that needed adjustment:
 
 Open decisions 1–3 of REQUIREMENTS §16 (official URLs, redistribution, 7-410
 NSD) still need someone with IEC access; they block real data, not code.
+(Since resolved; see Phase M0.)
 
 ## Phase M0 — Scaffolding and source/license gate
 
-**Status:** Scaffolding complete; source discovery and license review open
+**Status:** Complete; official sources verified 2026-10-21 and 2026-11-09,
+licensing decided 2026-10-21
 
 | Item | State |
 | --- | --- |
@@ -69,12 +71,12 @@ NSD) still need someone with IEC access; they block real data, not code.
 | README, ERRORS, SECURITY, CONTRIBUTING, RELEASE, docs/ (architecture, model, namespaces, reference, nsd-sources, licensing) | Done |
 | `sources/index.json`, `sources/nsd.lock.json` skeletons | Done (unverified) |
 | Synthetic fixtures (`testdata/nsd`) | Done |
-| Verify official NSD availability, URLs, EULA; 7-410:2026 NSD | **Open** — needs IEC access |
-| Licensing decision for generated output | **Open** |
+| Verify official NSD availability, URLs, EULA; 7-410:2026 NSD | Done — all 33 tracked packages downloadable from `assets.iec.ch`; the 7-410 package is 2024A4 ([docs/nsd-sources.md](docs/nsd-sources.md)) |
+| Licensing decision for generated output | Done — redistribution permitted under the IEC Code Components license ([docs/licensing.md](docs/licensing.md#decision)) |
 
 ## Phase M1 — Importer and foundation types
 
-**Status:** Complete on synthetic fixtures; official-package validation open
+**Status:** Complete; validated against the official packages
 
 | File | Purpose |
 | --- | --- |
@@ -88,12 +90,14 @@ NSD) still need someone with IEC access; they block real data, not code.
 | `nsd/manifest.go` | Generic manifest reader |
 | `nsd/package.go` | `LoadZIP`, `ReadZIP`, `LoadFile`, `LoadDir`; archive safety; provenance; documentation |
 
-Exit criterion "all obtainable official NSDs parse, or gaps are reported"
-waits for official packages.
+Exit criterion "all obtainable official NSDs parse, or gaps are reported":
+met; all 33 tracked packages parse and the upstream gaps are listed in
+docs/nsd-sources.md (see the official package sections below).
 
 ## Phase M2 — Catalog, profiles, resolution
 
-**Status:** Complete on synthetic fixtures
+**Status:** Complete; built on synthetic fixtures, since run against the
+official packages
 
 | File | Purpose |
 | --- | --- |
@@ -119,7 +123,8 @@ catalog 98.1%, reference 99.5%, resolver 96.1%. Fuzz targets:
 
 ## Phase M3 — Semantic mapping and ontology helpers
 
-**Status:** Complete on synthetic fixtures
+**Status:** Complete; built on synthetic fixtures, since run against the
+official packages
 
 **Date:** 2026-10-21
 
@@ -165,7 +170,8 @@ overrides, graph queries and traversal.
 
 ## Phase M4 — Generator, CLI and docs
 
-**Status:** Complete on synthetic fixtures
+**Status:** Complete; built on synthetic fixtures, since run against the
+official packages
 
 **Date:** 2026-10-21
 
@@ -358,11 +364,10 @@ track 33 packages: 7-2, 7-3 and 7-4 from 2007A2 to 2007B6, 90-6 2018A5 besides
 
 ## Next
 
-- **M0** — verify official sources and the license; fill `sources/`.
 - **Service namespaces** — model ServiceNS (8-1) content, which likely defines
   `PhyComAddrL2`/`PhyComAddrUDP`.
 - **M3 follow-up** — extend default rules for 7-420 DER and 7-410 classes once
   their official NSDs are loaded (only with rules whose CDCs are verified).
 - **M5** — `nsd-monitor.yml`: weekly discovery against verified official
-  endpoints (needs M0), compare with the lock via `nsdctl sources check`,
+  endpoints, compare with the lock via `nsdctl sources check`,
   deduplicated issues; `docs/integration.md`; the go-iec61850 adapter.
