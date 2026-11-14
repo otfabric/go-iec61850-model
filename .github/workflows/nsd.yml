@@ -1,3 +1,5 @@
+# Called by pr.yml on every pull request that is not documentation only;
+# dispatch it to run it on a branch without a pull request.
 name: IEC NSD packages
 run-name: "IEC NSD packages (${{ github.event_name }}) on ${{ github.ref_name }}"
 
@@ -19,42 +21,10 @@ run-name: "IEC NSD packages (${{ github.event_name }}) on ${{ github.ref_name }}
 # The regular CI (ci.yml) never downloads IEC packages.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "sources/**"
-      - "nsd/**"
-      - "model/**"
-      - "catalog/**"
-      - "resolver/**"
-      - "semantic/**"
-      - "ontology/**"
-      - "internal/**"
-      - "cmd/**"
-      - "names/**"
-      - "official/**"
-      - "docs/reference/**"
-      - "Makefile"
-      - ".github/workflows/nsd.yml"
-  pull_request:
-    paths:
-      - "sources/**"
-      - "nsd/**"
-      - "model/**"
-      - "catalog/**"
-      - "resolver/**"
-      - "semantic/**"
-      - "ontology/**"
-      - "internal/**"
-      - "cmd/**"
-      - "names/**"
-      - "official/**"
-      - "docs/reference/**"
-      - "Makefile"
-      - ".github/workflows/nsd.yml"
   schedule:
     # Mondays at 05:17 UTC: detect packages that changed or disappeared upstream.
     - cron: "17 5 * * 1"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
