@@ -591,7 +591,7 @@ Create **two independent workflows**.
 
 ### 10.1 Standard `ci.yml`
 
-Run on pushes and pull requests:
+Run on pull requests:
 
 - `go test ./...`, race tests where appropriate, `go vet`, formatting, static analysis/lint.
 - Synthetic-fixture schema/parser and resolver tests.
