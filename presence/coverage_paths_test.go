@@ -19,9 +19,9 @@ func TestSibling_OutsideTheClass(t *testing.T) {
 	check(t, e, present("unrelated"), map[string]want{"a": forSat})
 }
 
-// An instance number too long for an int is not range-checked.
+// An instance number too long for an int is outside every range.
 func TestMultiInstance_HugeNumber(t *testing.T) {
-	check(t, els("Chr=OmultiRange(1, 9)"), present("Chr"+strings.Repeat("9", 30)), map[string]want{"Chr": optSat})
+	check(t, els("Chr=OmultiRange(1, 9)"), present("Chr"+strings.Repeat("9", 30)), map[string]want{"Chr": {presence.Optional, presence.Violated}})
 }
 
 // Facts of the logical node and of a child merge; the child's win.

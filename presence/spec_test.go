@@ -106,6 +106,60 @@ func TestSpec_7_2_22_2_MultiInstance(t *testing.T) {
 	})
 	// A malformed range is not enforced.
 	check(t, els("X=OmultiRange(9)"), present("X1"), map[string]want{"X": optSat})
+
+	// The range at its boundaries, and numbers at and beyond the widths
+	// of int: the verdict is the same on every platform.
+	optVio := want{presence.Optional, presence.Violated}
+	for _, tc := range []struct {
+		digits string
+		want   want
+	}{
+		{"0", optVio},
+		{"32", optVio},
+		{"33", optSat},
+		{"34", optSat},
+		{"47", optSat},
+		{"48", optSat},
+		{"49", optVio},
+		{"2147483647", optVio},                     // math.MaxInt32
+		{"2147483648", optVio},                     // one more: beyond a 32-bit int
+		{"4294967296", optVio},                     // 2^32
+		{"9223372036854775807", optVio},            // math.MaxInt64
+		{"9223372036854775808", optVio},            // one more: beyond a 64-bit int
+		{"18446744073709551616", optVio},           // 2^64
+		{"100000000000000000000000000033", optVio}, // 30 digits
+	} {
+		rep := check(t, e, present("Chr"+tc.digits, "Set1", "Alm1"), map[string]want{"Chr": tc.want, "Set": reqSat})
+		if tc.want == optVio && !strings.Contains(rep.Results[2].Reason, "instance Chr"+tc.digits+" is outside 33..48") {
+			t.Errorf("Chr%s: reason %q does not name the range", tc.digits, rep.Results[2].Reason)
+		}
+		if rep.OK() != (tc.want == optSat) {
+			t.Errorf("Chr%s: OK() = %v", tc.digits, rep.OK())
+		}
+	}
+	// The same through the JSON form of an instance.
+	inst, err := presence.ReadInstance(strings.NewReader(`{"class": "X", "present": ["Chr9223372036854775808", "Set1", "Alm1"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep := presence.Evaluate("X", e, inst); rep.OK() || rep.Results[2].Verdict != presence.Violated {
+		t.Errorf("a number beyond a 64-bit int, read from JSON: %+v", rep.Results[2])
+	}
+	// The width rule holds for every number, with and without a range:
+	// a number beyond the int range is compared like the others.
+	for _, names := range [][]string{
+		{"Ind1", "Ind9223372036854775808"},
+		{"Ind9223372036854775808", "Ind18446744073709551616"},
+		{"Ind00000000000000000000", "Ind1"},
+	} {
+		rep := check(t, e, present(append(names, "Alm1", "Set1")...), map[string]want{"Ind": optVio})
+		if !strings.Contains(rep.Results[0].Reason, "one width per data object") {
+			t.Errorf("%v: reason %q does not name the width rule", names, rep.Results[0].Reason)
+		}
+	}
+	// Without a range, numbers of one width are instances whatever their size.
+	check(t, e, present("Ind9223372036854775808", "Ind9223372036854775809", "Alm1", "Set1"), map[string]want{"Ind": optSat})
+	check(t, e, present("Set1", "Set9223372036854775808"), map[string]want{"Set": reqVio})
 }
 
 // NSD MF, MO, OF, OM, FM and MmultiF take a sibling name (7-3 Table 1

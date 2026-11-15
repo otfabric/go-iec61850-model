@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -160,5 +161,30 @@ func TestCheckDestination(t *testing.T) {
 	}
 	if _, ok := lock.PackageDigest("b.zip"); ok {
 		t.Error("entry without digest")
+	}
+}
+
+// The size limit of a download at its boundary and at the largest
+// value: a package of exactly the limit is complete.
+func TestFetchSizeLimitBoundary(t *testing.T) {
+	srv, f, _ := fetchServer(t)
+	f.AllowUnpinned = true
+	idx := &Index{Packages: []Package{pkg(srv, "big.zip")}} // 100 bytes
+	for _, tc := range []struct {
+		limit int64
+		ok    bool
+	}{{1, false}, {99, false}, {100, true}, {101, true}, {math.MaxInt64 - 1, true}, {math.MaxInt64, true}, {0, true}, {-1, true}} {
+		f.MaxSize, f.Refresh = tc.limit, true
+		dir := t.TempDir()
+		res, err := f.Fetch(context.Background(), idx, &Lock{}, dir, Tiers())
+		switch {
+		case tc.ok && (err != nil || res[0].Size != 100 || res[0].SHA256 != digest(strings.Repeat("x", 100))):
+			t.Errorf("limit %d: %+v, %v", tc.limit, res, err)
+		case !tc.ok && !errors.Is(err, model.ErrLimitExceeded):
+			t.Errorf("limit %d: error = %v, want ErrLimitExceeded", tc.limit, err)
+		}
+		if _, statErr := os.Stat(filepath.Join(dir, "big.zip")); tc.ok != (statErr == nil) {
+			t.Errorf("limit %d: file in the cache: %v", tc.limit, statErr == nil)
+		}
 	}
 }

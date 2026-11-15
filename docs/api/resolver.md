@@ -96,6 +96,8 @@ type Resolution struct {
 
 Resolution is a resolved model path, from a logical node class down to a data object or data attribute.
 
+The resolver returns resolutions with at least one step. The zero value has none: its leaf is the zero [Step](#type-step), and its paths, types and class reference are empty.
+
 #### func (Resolution) AttributePath
 
 ```go
@@ -158,7 +160,7 @@ IsAttribute reports whether the path ends at an attribute.
 func (r *Resolution) Leaf() Step
 ```
 
-Leaf returns the last step.
+Leaf returns the last step, or the zero Step for a resolution without steps.
 
 #### func (Resolution) Path
 
@@ -194,6 +196,8 @@ type Resolver struct {
 
 Resolver resolves references and model paths against a [Lookup](#type-lookup), usually a namespace profile. It is safe for concurrent use.
 
+The zero value is not usable: create a Resolver with [New](#func-new).
+
 The logical node class of a path is looked up unqualified, unless the resolver is restricted to a namespace with [Resolver.In](#func-resolver-in). Every other reference (CDCs, constructed types, enumerations, basic types, base classes) is resolved in the scope of the namespace that declares it, so a name that two namespaces define does not make paths through the other one ambiguous.
 
 #### func New
@@ -221,6 +225,8 @@ func (r *Resolver) Leaves(lnClass string, path []string, fc model.FunctionalCons
 Leaves expands a model path into every attribute leaf below it: the basic, enumerated and other non-constructed attributes, with constructed types expanded. An empty path expands every data object of the class, including inherited ones. When fc is set, only data attributes with that functional constraint are followed.
 
 Leaves are returned in model order: data objects in class order, members of a CDC or constructed type in document order.
+
+One call visits at most 100 000 model elements, leaves and the structures above them together, and follows at most DefaultMaxDepth levels; an expansion beyond either fails with [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded). The largest class of the embedded catalog has 11 043 leaves.
 
 #### func (Resolver) Presence
 
@@ -276,7 +282,7 @@ ResolveInheritance returns the class chain of a logical node class, from the cla
 func (r *Resolver) ResolvePath(lnClass string, path []string, fc model.FunctionalConstraint) (*Resolution, error)
 ```
 
-ResolvePath resolves a path of data object and attribute names below a logical node class. When fc is set, every data attribute on the path must have that functional constraint, and a path that ends at a data object must contain at least one attribute with it.
+ResolvePath resolves a path of data object and attribute names below a logical node class. When fc is set, every data attribute on the path must have that functional constraint, and a path that ends at a data object must contain at least one attribute with it, in its CDC or in a CDC of its sub data objects. The search for that attribute examines each CDC once per lookup.
 
 Errors wrap [model.ErrUnknownLogicalNode](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownLogicalNode), [model.ErrUnknownDataObject](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownDataObject), [model.ErrUnknownCDC](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownCDC), [model.ErrUnknownAttribute](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownAttribute), [model.ErrUnknownType](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnknownType), [model.ErrCycle](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrCycle) or [model.ErrAmbiguousReference](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrAmbiguousReference).
 

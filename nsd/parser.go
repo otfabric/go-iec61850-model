@@ -85,9 +85,15 @@ type Document struct {
 // The input is bounded by the configured size, depth and token limits;
 // DOCTYPE declarations are rejected. A document whose structure has
 // errors, or warnings in strict mode, is rejected with a
-// [*model.ValidationError] that lists every finding.
+// [*model.ValidationError] that lists every finding. A document with
+// more than 10 000 findings is rejected with [model.ErrLimitExceeded],
+// and so is an option that is not a positive limit; the reason names
+// the option.
 func Parse(r io.Reader, opts ...Option) (*Document, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readBounded(r, o.MaxDocumentSize, o.Source)
 	if err != nil {
 		return nil, err
@@ -103,8 +109,9 @@ func ParseNamespace(r io.Reader, opts ...Option) (*model.Namespace, model.Diagno
 		return nil, nil, err
 	}
 	if doc.Kind != KindNS {
+		o, _ := buildOptions(opts) // valid: Parse accepted them
 		return nil, doc.Diagnostics, &model.SourceError{
-			Source: sourceName(buildOptions(opts).Source),
+			Source: sourceName(o.Source),
 			Reason: fmt.Sprintf("expected an NS document, got %s", doc.Kind),
 			Err:    model.ErrUnsupportedSchema,
 		}
@@ -116,11 +123,11 @@ func readBounded(r io.Reader, limit int64, source string) ([]byte, error) {
 	if r == nil {
 		return nil, &model.SourceError{Source: sourceName(source), Reason: "nil reader", Err: model.ErrSourceUnavailable}
 	}
-	data, err := io.ReadAll(io.LimitReader(r, limit+1))
+	data, more, err := readLimited(r, limit)
 	if err != nil {
 		return nil, &model.SourceError{Source: sourceName(source), Reason: "read failed", Err: errors.Join(model.ErrSourceUnavailable, err)}
 	}
-	if int64(len(data)) > limit {
+	if more {
 		return nil, &model.SourceError{
 			Source: sourceName(source),
 			Reason: fmt.Sprintf("document exceeds %d bytes", limit),
@@ -128,6 +135,25 @@ func readBounded(r io.Reader, limit int64, source string) ([]byte, error) {
 		}
 	}
 	return data, nil
+}
+
+// readLimited reads at most limit bytes from r and reports whether r
+// holds more. It reads limit bytes and then asks for one more, so the
+// computation is right for every limit up to math.MaxInt64.
+func readLimited(r io.Reader, limit int64) (data []byte, more bool, err error) {
+	data, err = io.ReadAll(io.LimitReader(r, limit))
+	if err != nil || int64(len(data)) < limit {
+		return data, false, err
+	}
+	var one [1]byte
+	n, err := io.ReadFull(r, one[:])
+	if n > 0 {
+		return data, true, nil
+	}
+	if err == io.EOF {
+		err = nil
+	}
+	return data, false, err
 }
 
 func parseBytes(data []byte, o *Options) (*Document, error) {
@@ -155,7 +181,9 @@ func parseBytes(data []byte, o *Options) (*Document, error) {
 		}
 		ns := n.namespace(&raw)
 		ns.Provenance = model.Provenance{Source: o.Source, SHA256: doc.SHA256, SchemaNamespace: root.Space}
-		n.diags = append(n.diags, Validate(ns)...)
+		found, dropped := validate(ns, maxDiagnostics-len(n.diags))
+		n.diags = append(n.diags, found...)
+		n.dropped += dropped
 		doc.Namespace, doc.ID = ns, ns.ID
 	case KindNSDoc:
 		var raw rawNSDoc
@@ -170,9 +198,17 @@ func parseBytes(data []byte, o *Options) (*Document, error) {
 			return nil, &model.SourceError{Source: src, Reason: "malformed document", Err: errors.Join(model.ErrInvalidNSD, err)}
 		}
 		doc.ID = n.idFromAttrs(raw.Attrs, "/"+root.Local)
-		n.add(model.SeverityInfo, "not-modeled", "/"+root.Local, fmt.Sprintf("%s documents are recognized but their content is not modeled yet", root.Local))
+		n.add(model.SeverityInfo, "not-modeled", "/"+root.Local, "%s documents are recognized but their content is not modeled yet", root.Local)
 	}
 
+	if n.dropped > 0 {
+		first := n.diags[0]
+		return nil, &model.SourceError{
+			Source: src,
+			Reason: fmt.Sprintf("document has more than %d findings; the first is %s at %s: %s", maxDiagnostics, first.Code, first.Path, first.Message),
+			Err:    model.ErrLimitExceeded,
+		}
+	}
 	doc.Diagnostics = n.diags
 	for i := range doc.Diagnostics {
 		doc.Diagnostics[i].Source = src
@@ -200,7 +236,9 @@ func decode(data []byte, v any) error {
 
 // prescan walks the token stream once to enforce depth and token
 // limits, reject DTDs and entity declarations, and find the root
-// element, before the document is decoded into structures.
+// element, before the document is decoded into structures. Every
+// attribute of a start element counts as a token: the decoder keeps a
+// name and a value for each.
 func prescan(data []byte, o *Options) (xml.Name, error) {
 	src := sourceName(o.Source)
 	d := xml.NewDecoder(bytes.NewReader(data))
@@ -215,6 +253,9 @@ func prescan(data []byte, o *Options) (xml.Name, error) {
 			return root, &model.SourceError{Source: src, Reason: "malformed XML", Err: errors.Join(model.ErrInvalidNSD, err)}
 		}
 		tokens++
+		if se, ok := tok.(xml.StartElement); ok {
+			tokens += len(se.Attr)
+		}
 		if tokens > o.MaxTokens {
 			return root, &model.SourceError{Source: src, Reason: fmt.Sprintf("document exceeds %d XML tokens", o.MaxTokens), Err: model.ErrLimitExceeded}
 		}

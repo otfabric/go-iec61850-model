@@ -7,13 +7,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/otfabric/go-iec61850-model/internal/fixtures"
 	"github.com/otfabric/go-iec61850-model/model"
+	"github.com/otfabric/go-iec61850-model/presence"
 )
 
 const (
@@ -209,6 +212,118 @@ func TestSCLLimits(t *testing.T) {
 	}
 }
 
+// nestedSCL returns data type templates with LNodeType L, whose data
+// object has a DOType of two SDOs, each of the next DOType, depth times;
+// the last DOType has one attribute.
+func nestedSCL(depth int) string {
+	var b strings.Builder
+	b.WriteString(`<SCL><DataTypeTemplates><LNodeType id="L" lnClass="MMXU"><DO name="A" type="D1"/></LNodeType>`)
+	for i := 1; i < depth; i++ {
+		fmt.Fprintf(&b, `<DOType id="D%d" cdc="WYE"><SDO name="x" type="D%d"/><SDO name="y" type="D%d"/></DOType>`, i, i+1, i+1)
+	}
+	fmt.Fprintf(&b, `<DOType id="D%d" cdc="MV"><DA name="q" bType="Quality"/></DOType></DataTypeTemplates></SCL>`, depth)
+	return b.String()
+}
+
+// names counts the names and values of an instance, as the limit of
+// the JSON form does.
+func names(inst *presence.Instance) int {
+	n := len(inst.Present) + len(inst.Values)
+	for _, c := range inst.Children {
+		n += names(c)
+	}
+	return n
+}
+
+// An instance built from SCL templates has at most as many names as the
+// JSON form of an instance may have: every reference to a type builds
+// its members again, so a few types nested a few levels deep multiply.
+func TestSCLInstanceNameLimit(t *testing.T) {
+	build := func(doc string) (*presence.Instance, error) {
+		t.Helper()
+		d, err := readSCL(strings.NewReader(doc))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return newSCLIndex(d).lnType("L")
+	}
+	// Depth d has 3*2^(d-1)-1 names: 49 151 at 15, 98 303 at 16, 196 607 at 17.
+	for depth, want := range map[int]int{1: 2, 2: 5, 3: 11, 15: 49151, 16: 98303} {
+		inst, err := build(nestedSCL(depth))
+		if err != nil || names(inst) != want {
+			t.Errorf("depth %d: %d names, error %v, want %d", depth, names(inst), err, want)
+		}
+	}
+	for _, depth := range []int{17, 20, 30} {
+		doc := nestedSCL(depth)
+		d, err := readSCL(strings.NewReader(doc))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var before, after runtime.MemStats
+		runtime.GC()
+		runtime.ReadMemStats(&before)
+		inst, err := newSCLIndex(d).lnType("L")
+		runtime.ReadMemStats(&after)
+		if inst != nil || !errors.Is(err, model.ErrLimitExceeded) || !errors.Is(err, model.ErrInvalidInstance) || !strings.Contains(err.Error(), "more than 100000 names") {
+			t.Errorf("depth %d: error = %v, want ErrLimitExceeded", depth, err)
+		}
+		// What is built before the limit is reached is the same at every
+		// depth: about 30 MiB here for 100 000 names.
+		if got := after.TotalAlloc - before.TotalAlloc; got > 64<<20 {
+			t.Errorf("depth %d, a file of %d bytes: %d MiB allocated before the limit, budget 64 MiB", depth, len(doc), got>>20)
+		}
+	}
+
+	// At the boundary: a data object with n attributes has n+1 names; an
+	// attribute with a value the conditions read counts twice.
+	flat := func(n int, extra string) string {
+		return `<SCL><DataTypeTemplates><LNodeType id="L" lnClass="MMXU"><DO name="A" type="D"/></LNodeType><DOType id="D" cdc="MV">` +
+			strings.Repeat(`<DA name="a" bType="INT32"/>`, n) + extra + `</DOType></DataTypeTemplates></SCL>`
+	}
+	const value = `<DA name="ctlModel" bType="Enum"><Val>status-only</Val></DA>`
+	for _, tc := range []struct {
+		n     int
+		extra string
+		ok    bool
+	}{
+		{presence.MaxInstanceNames - 2, "", true},
+		{presence.MaxInstanceNames - 1, "", true},
+		{presence.MaxInstanceNames, "", false},
+		{presence.MaxInstanceNames - 3, value, true},
+		{presence.MaxInstanceNames - 2, value, false},
+	} {
+		inst, err := build(flat(tc.n, tc.extra))
+		switch {
+		case tc.ok && (err != nil || names(inst) > presence.MaxInstanceNames):
+			t.Errorf("%d attributes%s: error = %v", tc.n, tc.extra, err)
+		case !tc.ok && !errors.Is(err, model.ErrLimitExceeded):
+			t.Errorf("%d attributes%s: error = %v, want ErrLimitExceeded", tc.n, tc.extra, err)
+		}
+	}
+
+	// The limit is per instance: a second one starts from zero.
+	d, err := readSCL(strings.NewReader(nestedSCL(16)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ix := newSCLIndex(d)
+	for range 2 {
+		if _, err := ix.lnType("L"); err != nil {
+			t.Errorf("a second instance of 98 303 names: %v", err)
+		}
+	}
+
+	// Through the command: exit code 3, as for the other limits of the input.
+	path := filepath.Join(t.TempDir(), "nested.scd")
+	if err := os.WriteFile(path, []byte(nestedSCL(24)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, errOut, code := nsdctl(t, "model", "check", "--scl", path, "--ln-type", "L"); code != exitInvalidInput || !strings.Contains(errOut, "more than 100000 names") {
+		t.Errorf("exit %d: %s", code, errOut)
+	}
+}
+
 type failingReader struct{}
 
 func (failingReader) Read([]byte) (int, error) { return 0, errors.New("boom") }
@@ -230,6 +345,8 @@ func FuzzReadSCL(f *testing.F) {
 	}
 	f.Add(data, "CTRL/Q0XCBR1", "T_XCBR")
 	f.Add([]byte(`<SCL><DataTypeTemplates><LNodeType id="L"><DO name="A" type="D"/></LNodeType><DOType id="D"><SDO name="s" type="D"/></DOType></DataTypeTemplates></SCL>`), "a/b", "L")
+	f.Add([]byte(nestedSCL(4)), "a/b", "L")
+	f.Add([]byte(nestedSCL(18)), "a/b", "L")
 	f.Fuzz(func(t *testing.T, data []byte, ln, lnType string) {
 		doc, err := readSCL(bytes.NewReader(data))
 		if err != nil {
@@ -239,12 +356,22 @@ func FuzzReadSCL(f *testing.F) {
 			return
 		}
 		ix := newSCLIndex(doc)
-		for _, fn := range []func() error{
-			func() error { _, err := ix.ln(ln); return err },
-			func() error { _, err := ix.lnType(lnType); return err },
+		for _, fn := range []func() (*presence.Instance, error){
+			func() (*presence.Instance, error) { return ix.ln(ln) },
+			func() (*presence.Instance, error) { return ix.lnType(lnType) },
 		} {
-			if err := fn(); err != nil && !errors.Is(err, model.ErrInvalidInstance) {
+			inst, err := fn()
+			switch {
+			case err != nil && inst != nil:
+				t.Fatalf("an instance with an error: %v", err)
+			case err != nil && !errors.Is(err, model.ErrInvalidInstance):
 				t.Fatalf("error does not wrap ErrInvalidInstance: %v", err)
+			case err == nil && inst == nil:
+				t.Fatal("neither an instance nor an error")
+			case err == nil && names(inst) > presence.MaxInstanceNames+len(data):
+				// The templates give at most MaxInstanceNames names; the
+				// values of the DOIs come from the file itself.
+				t.Fatalf("an instance of %d names from a file of %d bytes", names(inst), len(data))
 			}
 		}
 	})

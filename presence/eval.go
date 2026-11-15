@@ -284,7 +284,8 @@ func verdict(req Requirement, present bool) Verdict {
 
 // checkInstances checks the instance numbers of a multi-instance
 // element: within the range of MmultiRange/OmultiRange, and of one
-// width.
+// width. A number that does not fit an int is outside every range, on
+// every platform, and counts for the width like any other.
 func (e *evaluation) checkInstances(res *Result, i int) {
 	el := e.elems[i]
 	stem := baseName(el.Name)
@@ -298,11 +299,10 @@ func (e *evaluation) checkInstances(res *Result, i int) {
 		if digits == "" {
 			continue
 		}
+		// The digits are decimal, so the conversion fails only for a
+		// number beyond the int range, which no range holds.
 		n, err := strconv.Atoi(digits)
-		if err != nil {
-			continue
-		}
-		if ranged && (n < lo || n > hi) {
+		if ranged && (err != nil || n < lo || n > hi) {
 			res.Verdict = Violated
 			res.Reason += fmt.Sprintf("; instance %s is outside %d..%d", inst, lo, hi)
 		}

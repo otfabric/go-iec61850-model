@@ -7,9 +7,51 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/otfabric/go-iec61850-model/model"
 )
+
+// Fixed bounds of the importer. They are not options: SECURITY.md lists
+// them with the configurable limits.
+const (
+	// maxDiagnostics bounds the findings one document may carry. A
+	// document with more is refused with model.ErrLimitExceeded.
+	maxDiagnostics = 10_000
+	// maxPackageDiagnostics bounds the findings of one package (an
+	// archive, a directory or a single file) over all its documents.
+	maxPackageDiagnostics = 100_000
+	// maxQuoted bounds, in bytes, how much of a name, an attribute value
+	// or a namespace URI a diagnostic path or message quotes. The
+	// longest name of the embedded catalog has 119 bytes.
+	maxQuoted = 256
+)
+
+// clip returns s cut to maxQuoted bytes on a rune boundary, with "..."
+// appended when it was cut, so that the size of a path or message does
+// not depend on the length of the names it quotes.
+func clip(s string) string {
+	if len(s) <= maxQuoted {
+		return s
+	}
+	n := maxQuoted
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n] + "..."
+}
+
+// hasControl reports whether s contains a control character or a
+// Unicode line or paragraph separator.
+func hasControl(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) || r == '\u2028' || r == '\u2029' {
+			return true
+		}
+	}
+	return false
+}
 
 // normalizer converts the raw XML structures into the model types and
 // collects diagnostics on the way.
@@ -18,10 +60,32 @@ type normalizer struct {
 	strict bool
 	id     model.NamespaceID
 	diags  model.Diagnostics
+	// dropped counts the findings beyond maxDiagnostics; they are not
+	// kept and their messages are not built.
+	dropped int
 }
 
-func (n *normalizer) add(sev model.Severity, code, path, msg string) {
+// add records a finding. The message is formatted only when the
+// finding is kept.
+func (n *normalizer) add(sev model.Severity, code, path, format string, args ...any) {
+	if len(n.diags) >= maxDiagnostics {
+		n.dropped++
+		return
+	}
+	msg := format
+	if len(args) > 0 {
+		msg = fmt.Sprintf(format, args...)
+	}
 	n.diags = append(n.diags, model.Diagnostic{Severity: sev, Code: code, Namespace: n.id, Path: path, Message: msg})
+}
+
+// name reports a name-bearing attribute (name, abbreviation, id,
+// version, revision) that contains a control character. Names end up
+// in generated source and documents, one per line.
+func (n *normalizer) name(path, attr, v string) {
+	if hasControl(v) {
+		n.add(model.SeverityError, "invalid-name", path, "attribute %q contains a control character", attr)
+	}
 }
 
 // unknownAttrs reports attributes the importer does not model. XML
@@ -31,13 +95,13 @@ func (n *normalizer) unknownAttrs(path string, attrs []xml.Attr) {
 		if isMetaAttr(a.Name) {
 			continue
 		}
-		n.add(model.SeverityWarning, "unknown-attribute", path, fmt.Sprintf("attribute %q is not supported and was not imported", qname(a.Name)))
+		n.add(model.SeverityWarning, "unknown-attribute", path, "attribute %q is not supported and was not imported", qname(a.Name))
 	}
 }
 
 func (n *normalizer) unknownElems(path string, elems []rawAny) {
 	for _, e := range elems {
-		n.add(model.SeverityWarning, "unknown-element", path, fmt.Sprintf("element %q is not supported and was not imported", e.XMLName.Local))
+		n.add(model.SeverityWarning, "unknown-element", path, "element %q is not supported and was not imported", clip(e.XMLName.Local))
 	}
 }
 
@@ -57,9 +121,9 @@ func isMetaAttr(name xml.Name) bool {
 
 func qname(name xml.Name) string {
 	if name.Space == "" {
-		return name.Local
+		return clip(name.Local)
 	}
-	return name.Space + ":" + name.Local
+	return clip(name.Space) + ":" + clip(name.Local)
 }
 
 func (n *normalizer) boolean(path, attr, v string) bool {
@@ -69,7 +133,7 @@ func (n *normalizer) boolean(path, attr, v string) bool {
 	case "true", "1":
 		return true
 	default:
-		n.add(model.SeverityError, "invalid-boolean", path, fmt.Sprintf("attribute %q has invalid boolean value %q", attr, v))
+		n.add(model.SeverityError, "invalid-boolean", path, "attribute %q has invalid boolean value %q", attr, clip(v))
 		return false
 	}
 }
@@ -81,7 +145,7 @@ func (n *normalizer) release(path, v string) int {
 	}
 	r, err := strconv.Atoi(v)
 	if err != nil || r < 0 {
-		n.add(model.SeverityError, "invalid-release", path, fmt.Sprintf("invalid release %q", v))
+		n.add(model.SeverityError, "invalid-release", path, "invalid release %q", clip(v))
 		return 0
 	}
 	return r
@@ -89,17 +153,20 @@ func (n *normalizer) release(path, v string) int {
 
 func (n *normalizer) require(path, attr, v string) {
 	if strings.TrimSpace(v) == "" {
-		n.add(model.SeverityError, "missing-attribute", path, fmt.Sprintf("required attribute %q is missing", attr))
+		n.add(model.SeverityError, "missing-attribute", path, "required attribute %q is missing", attr)
 	}
 }
 
 func doc(d rawDocAttrs) model.Doc { return model.Doc{TitleID: d.TitleID, DescID: d.DescID} }
 
+// elemPath returns the path of a child element, e.g.
+// "/NS/CDCs/CDC[MV]". The element name and the name are quoted up to
+// maxQuoted bytes each.
 func elemPath(parent, elem, name string) string {
 	if name == "" {
-		return parent + "/" + elem
+		return parent + "/" + clip(elem)
 	}
-	return parent + "/" + elem + "[" + name + "]"
+	return parent + "/" + clip(elem) + "[" + clip(name) + "]"
 }
 
 func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
@@ -112,6 +179,7 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 	n.id.Release = n.release(root, raw.Release)
 	n.require(root, "id", raw.ID)
 	n.require(root, "version", raw.Version)
+	n.identity(root, n.id)
 	n.unknownAttrs(root, raw.Attrs)
 	n.unknownElems(root, raw.Any)
 
@@ -155,12 +223,14 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 			}
 			ns.DependencyTypes[strings.TrimSpace(d.ID)] = d.DependencyType
 		}
-		ns.Dependencies = append(ns.Dependencies, model.NamespaceID{
+		dep := model.NamespaceID{
 			Standard: strings.TrimSpace(d.ID),
 			Version:  strings.TrimSpace(d.Version),
 			Revision: strings.TrimSpace(d.Revision),
 			Release:  n.release(p, d.Release),
-		})
+		}
+		n.identity(p, dep)
+		ns.Dependencies = append(ns.Dependencies, dep)
 	}
 
 	if c := raw.BasicTypes; c != nil {
@@ -215,6 +285,7 @@ func (n *normalizer) namespace(raw *rawNS) *model.Namespace {
 		for _, it := range c.Items {
 			ip := elemPath(p, "PresenceCondition", it.Name)
 			n.require(ip, "name", it.Name)
+			n.name(ip, "name", it.Name)
 			n.unknownAttrs(ip, it.Attrs)
 			n.unknownElems(ip, it.Any)
 			ns.PresenceConditions = append(ns.PresenceConditions, model.PresenceConditionDef{
@@ -277,8 +348,17 @@ func (n *normalizer) container(path string, attrs []xml.Attr, elems []rawAny) {
 	n.unknownElems(path, elems)
 }
 
+// identity reports the control characters in the standard, version and
+// revision of a namespace ID.
+func (n *normalizer) identity(path string, id model.NamespaceID) {
+	n.name(path, "id", id.Standard)
+	n.name(path, "version", id.Version)
+	n.name(path, "revision", id.Revision)
+}
+
 func (n *normalizer) named(path string, it *rawNamed) {
 	n.require(path, "name", it.Name)
+	n.name(path, "name", it.Name)
 	n.boolean(path, "deprecated", it.Deprecated)
 	n.unknownAttrs(path, it.Attrs)
 	n.unknownElems(path, it.Any)
@@ -286,6 +366,7 @@ func (n *normalizer) named(path string, it *rawNamed) {
 
 func (n *normalizer) abbreviated(path string, it *rawAbbreviated) {
 	n.require(path, "abbreviation", it.Abbreviation)
+	n.name(path, "abbreviation", it.Abbreviation)
 	n.unknownAttrs(path, it.Attrs)
 	n.unknownElems(path, it.Any)
 }
@@ -293,6 +374,7 @@ func (n *normalizer) abbreviated(path string, it *rawAbbreviated) {
 func (n *normalizer) enumeration(parent string, raw *rawEnumeration) model.Enumeration {
 	p := elemPath(parent, "Enumeration", raw.Name)
 	n.require(p, "name", raw.Name)
+	n.name(p, "name", raw.Name)
 	n.unknownAttrs(p, raw.Attrs)
 	n.unknownElems(p, raw.Any)
 	e := model.Enumeration{
@@ -308,14 +390,20 @@ func (n *normalizer) enumeration(parent string, raw *rawEnumeration) model.Enume
 			lp = elemPath(p, "Literal", "@literalVal="+l.LiteralVal)
 			n.add(model.SeverityInfo, "empty-literal-name", lp, "literal has an empty name")
 		}
+		n.name(lp, "name", l.Name)
 		n.unknownAttrs(lp, l.Attrs)
 		n.unknownElems(lp, l.Any)
-		v, err := strconv.Atoi(strings.TrimSpace(l.LiteralVal))
+		// An enumeration value is a 32-bit integer: the type the
+		// generator declares and the width of an MMS enumerated value.
+		// It is parsed with that size, so the result is the same on
+		// every platform.
+		v, err := strconv.ParseInt(strings.TrimSpace(l.LiteralVal), 10, 32)
 		if err != nil {
-			n.add(model.SeverityError, "invalid-literal", lp, fmt.Sprintf("literalVal %q is not an integer", l.LiteralVal))
+			v = 0
+			n.add(model.SeverityError, "invalid-literal", lp, "literalVal %q is not a 32-bit integer", clip(l.LiteralVal))
 		}
 		e.Literals = append(e.Literals, model.Literal{
-			Name: l.Name, Value: v, Deprecated: n.boolean(lp, "deprecated", l.Deprecated), Doc: doc(l.rawDocAttrs),
+			Name: l.Name, Value: int(v), Deprecated: n.boolean(lp, "deprecated", l.Deprecated), Doc: doc(l.rawDocAttrs),
 		})
 	}
 	return e
@@ -324,6 +412,7 @@ func (n *normalizer) enumeration(parent string, raw *rawEnumeration) model.Enume
 func (n *normalizer) constructed(parent string, raw *rawConstructedAttr) model.ConstructedAttribute {
 	p := elemPath(parent, "ConstructedAttribute", raw.Name)
 	n.require(p, "name", raw.Name)
+	n.name(p, "name", raw.Name)
 	n.unknownAttrs(p, raw.Attrs)
 	ca := model.ConstructedAttribute{
 		Name:       raw.Name,
@@ -334,7 +423,7 @@ func (n *normalizer) constructed(parent string, raw *rawConstructedAttr) model.C
 	for i := range raw.Children {
 		c := &raw.Children[i]
 		if c.XMLName.Local != "SubDataAttribute" {
-			n.add(model.SeverityWarning, "unknown-element", p, fmt.Sprintf("element %q is not supported and was not imported", c.XMLName.Local))
+			n.add(model.SeverityWarning, "unknown-element", p, "element %q is not supported and was not imported", clip(c.XMLName.Local))
 			continue
 		}
 		cp := elemPath(p, "SubDataAttribute", c.Name)
@@ -350,6 +439,8 @@ func (n *normalizer) cdc(parent string, raw *rawCDC) model.CommonDataClass {
 	}
 	p := elemPath(parent, "CDC", key)
 	n.require(p, "name", raw.Name)
+	n.name(p, "name", raw.Name)
+	n.name(p, "variant", raw.Variant)
 	n.unknownAttrs(p, raw.Attrs)
 	c := model.CommonDataClass{
 		Name:                  raw.Name,
@@ -372,6 +463,7 @@ func (n *normalizer) cdc(parent string, raw *rawCDC) model.CommonDataClass {
 			c.DataAttributes = append(c.DataAttributes, n.attribute(mp, m, i, true))
 		case "ServiceParameter":
 			n.require(mp, "name", m.Name)
+			n.name(mp, "name", m.Name)
 			n.unknownAttrs(mp, m.Attrs)
 			n.unknownElems(mp, m.Any)
 			c.ServiceParameters = append(c.ServiceParameters, model.ServiceParameter{
@@ -383,7 +475,7 @@ func (n *normalizer) cdc(parent string, raw *rawCDC) model.CommonDataClass {
 				Position: i,
 			})
 		default:
-			n.add(model.SeverityWarning, "unknown-element", p, fmt.Sprintf("element %q is not supported and was not imported", m.XMLName.Local))
+			n.add(model.SeverityWarning, "unknown-element", p, "element %q is not supported and was not imported", clip(m.XMLName.Local))
 		}
 	}
 	return c
@@ -392,6 +484,7 @@ func (n *normalizer) cdc(parent string, raw *rawCDC) model.CommonDataClass {
 func (n *normalizer) lnClass(parent, elem string, raw *rawLNClass, abstract bool) model.LogicalNodeClass {
 	p := elemPath(parent, elem, raw.Name)
 	n.require(p, "name", raw.Name)
+	n.name(p, "name", raw.Name)
 	n.unknownAttrs(p, raw.Attrs)
 	n.unknownElems(p, raw.Any)
 	ln := model.LogicalNodeClass{
@@ -414,6 +507,7 @@ func (n *normalizer) lnClass(parent, elem string, raw *rawLNClass, abstract bool
 
 func (n *normalizer) dataObject(p string, m *rawCDCMember, pos int) model.DataObject {
 	n.require(p, "name", m.Name)
+	n.name(p, "name", m.Name)
 	n.require(p, "type", m.Type)
 	if m.FC != "" {
 		n.add(model.SeverityWarning, "unexpected-attribute", p, "attribute \"fc\" is not defined for data objects and was ignored")
@@ -446,13 +540,14 @@ func (n *normalizer) dataObject(p string, m *rawCDCMember, pos int) model.DataOb
 func (n *normalizer) unexpectedTriggers(p string, m *rawCDCMember) {
 	for _, a := range []struct{ name, v string }{{"dchg", m.Dchg}, {"qchg", m.Qchg}, {"dupd", m.Dupd}, {"defaultValue", m.DefaultValue}, {"minValue", m.MinValue}, {"maxValue", m.MaxValue}} {
 		if a.v != "" {
-			n.add(model.SeverityWarning, "unexpected-attribute", p, fmt.Sprintf("attribute %q is not defined for data objects and was ignored", a.name))
+			n.add(model.SeverityWarning, "unexpected-attribute", p, "attribute %q is not defined for data objects and was ignored", a.name)
 		}
 	}
 }
 
 func (n *normalizer) attribute(p string, m *rawCDCMember, pos int, withFC bool) model.DataAttribute {
 	n.require(p, "name", m.Name)
+	n.name(p, "name", m.Name)
 	if withFC {
 		n.require(p, "fc", m.FC)
 	} else if m.FC != "" {
@@ -510,6 +605,7 @@ func (n *normalizer) idFromAttrs(attrs []xml.Attr, path string) model.NamespaceI
 			id.Release = n.release(path, a.Value)
 		}
 	}
+	n.identity(path, id)
 	return id
 }
 
@@ -522,6 +618,7 @@ func (n *normalizer) nsdoc(raw *rawNSDoc) *NSDoc {
 	}
 	n.id.Release = n.release(root, raw.Release)
 	n.require(root, "id", raw.ID)
+	n.identity(root, n.id)
 	n.unknownAttrs(root, raw.Attrs)
 	n.unknownElems(root, raw.Any)
 	d := &NSDoc{ID: n.id, Lang: raw.Lang, texts: make(map[string]string, len(raw.Docs))}

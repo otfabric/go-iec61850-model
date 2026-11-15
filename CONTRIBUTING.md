@@ -33,8 +33,12 @@ document covers the guidelines for contributing.
 ```sh
 make check   # format, tidy, vet, lint, vulnerability scan, race tests, coverage gates (90% total, COVER_PKG_MIN per package)
 make test    # unit tests
-make fuzz    # fuzz targets, FUZZTIME each (default 15s)
+make fuzz    # every fuzz target of both modules, FUZZTIME each (default 15s)
+make bench   # benchmarks
 ```
+
+[TESTING.md](TESTING.md) describes the tiers, the limit and allocation tests
+and the fuzz targets.
 
 Run `make` (or `make help`) for the full list of targets.
 

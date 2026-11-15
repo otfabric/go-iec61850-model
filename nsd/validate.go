@@ -16,10 +16,18 @@ import (
 // catalog package checks them when it builds a profile. Parse runs
 // Validate on every NS document it reads.
 func Validate(ns *model.Namespace) model.Diagnostics {
+	ds, _ := validate(ns, -1)
+	return ds
+}
+
+// validate is Validate with a bound on the findings it keeps: limit,
+// or none when limit is negative. It also returns the number of
+// findings beyond the limit, which are not kept.
+func validate(ns *model.Namespace, limit int) (model.Diagnostics, int) {
 	if ns == nil {
-		return model.Diagnostics{{Severity: model.SeverityError, Code: "nil-namespace", Message: "namespace is nil"}}
+		return model.Diagnostics{{Severity: model.SeverityError, Code: "nil-namespace", Message: "namespace is nil"}}, 0
 	}
-	v := &validator{ns: ns}
+	v := &validator{ns: ns, limit: limit}
 
 	for _, dep := range ns.Dependencies {
 		if dep.Standard == ns.ID.Standard {
@@ -39,10 +47,14 @@ func Validate(ns *model.Namespace) model.Diagnostics {
 		return ns.ConstructedAttributes[i].Name
 	})
 	v.unique("/NS/CDCs", "CDC", len(ns.CDCs), func(i int) string { return ns.CDCs[i].Key() })
+	// The definitions per CDC name, counted in one pass.
+	variants := make(map[string]int, len(ns.CDCs))
+	for i := range ns.CDCs {
+		variants[ns.CDCs[i].Name]++
+	}
 	for i := range ns.CDCs {
 		c := &ns.CDCs[i]
-		vs := ns.CDCVariants(c.Name)
-		if len(vs) > 1 && c.Variant == "" {
+		if variants[c.Name] > 1 && c.Variant == "" {
 			v.add("missing-variant", elemPath("/NS/CDCs", "CDC", c.Name), "CDC is defined more than once and this definition has no variant")
 		}
 	}
@@ -64,7 +76,7 @@ func Validate(ns *model.Namespace) model.Diagnostics {
 		seen := map[int]string{}
 		for _, l := range e.Literals {
 			if prev, ok := seen[l.Value]; ok {
-				v.add("duplicate-literal-value", elemPath(p, "Literal", l.Name), fmt.Sprintf("value %d is also used by literal %q", l.Value, prev))
+				v.add("duplicate-literal-value", elemPath(p, "Literal", l.Name), "value %d is also used by literal %q", l.Value, clip(prev))
 				continue
 			}
 			seen[l.Value] = l.Name
@@ -102,15 +114,32 @@ func Validate(ns *model.Namespace) model.Diagnostics {
 			v.add("self-inheritance", p, "class inherits from itself")
 		}
 	}
-	return v.diags
+	return v.diags, v.dropped
 }
 
 type validator struct {
 	ns    *model.Namespace
 	diags model.Diagnostics
+	// limit bounds len(diags) when it is not negative; dropped counts
+	// the findings beyond it.
+	limit   int
+	dropped int
 }
 
-func (v *validator) add(code, path, msg string) {
+// full reports whether the validator keeps no further finding.
+func (v *validator) full() bool { return v.limit >= 0 && len(v.diags) >= v.limit }
+
+// add records a finding. The message is formatted only when the
+// finding is kept.
+func (v *validator) add(code, path, format string, args ...any) {
+	if v.full() {
+		v.dropped++
+		return
+	}
+	msg := format
+	if len(args) > 0 {
+		msg = fmt.Sprintf(format, args...)
+	}
 	v.diags = append(v.diags, model.Diagnostic{Severity: model.SeverityError, Code: code, Namespace: v.ns.ID, Path: path, Message: msg})
 }
 
@@ -122,7 +151,11 @@ func (v *validator) unique(parent, elem string, n int, name func(int) string) {
 			continue
 		}
 		if seen[nm] {
-			v.add("duplicate-definition", elemPath(parent, elem, nm), fmt.Sprintf("%s %q is defined more than once", elem, nm))
+			if v.full() {
+				v.dropped++
+				continue
+			}
+			v.add("duplicate-definition", elemPath(parent, elem, nm), "%s %q is defined more than once", elem, clip(nm))
 			continue
 		}
 		seen[nm] = true

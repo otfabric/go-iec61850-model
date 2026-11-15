@@ -292,3 +292,82 @@ func TestProfiles(t *testing.T) {
 		t.Errorf("profile validation found %d errors: %v", found, bad.Validate())
 	}
 }
+
+// A lock entry that pins a digest says when its package was retrieved.
+func TestLockRetrievalTimes(t *testing.T) {
+	sha := strings.Repeat("a", 64)
+	entry := func(retrieved, sha256 string) *Lock {
+		return &Lock{SchemaVersion: 1, Sources: []Entry{{Standard: "S", Namespace: "S:2026A1", Status: StateNSDAvailable, SHA256: sha256, RetrievedAt: retrieved}}}
+	}
+	for _, tc := range []struct {
+		retrieved, sha256 string
+		errors, warnings  int
+	}{
+		{"2026-11-09", sha, 0, 0},
+		{"2026-11-09T19:24:47Z", sha, 0, 0},
+		{"2026-11-09T20:24:47+01:00", sha, 0, 0},
+		{"2026-11-09T19:24:47.123456Z", sha, 0, 0},
+		{"2024-02-29", sha, 0, 0},
+		{"", "", 0, 0},           // nothing pinned, nothing to date
+		{"2026-11-09", "", 0, 0}, // a date without a digest is allowed
+		{"", sha, 0, 1},
+		{"2026-11-9", sha, 1, 0},
+		{"2026-13-01", sha, 1, 0},
+		{"2025-02-29", sha, 1, 0},
+		{"2026-11-09 19:24:47", sha, 1, 0},
+		{"2026-11-09T19:24:47", sha, 1, 0},
+		{"09/11/2026", sha, 1, 0},
+		{"yesterday", sha, 1, 0},
+		{" 2026-11-09", sha, 1, 0},
+	} {
+		ds := entry(tc.retrieved, tc.sha256).Validate()
+		warnings := len(ds.AtLeast(model.SeverityWarning)) - len(ds.Errors())
+		if len(ds.Errors()) != tc.errors || warnings != tc.warnings {
+			t.Errorf("retrievedAt %q with digest %q: %v, want %d errors and %d warnings", tc.retrieved, tc.sha256, ds, tc.errors, tc.warnings)
+		}
+		if len(ds) != tc.errors+tc.warnings {
+			continue
+		}
+		if tc.errors == 1 && !strings.Contains(ds[0].Message, "neither an RFC 3339 time nor a date") {
+			t.Errorf("retrievedAt %q: %v", tc.retrieved, ds)
+		}
+		if tc.warnings == 1 && (ds[0].Code != "undated-package" || !strings.Contains(ds[0].Message, "S:2026A1 pins a sha256 without retrievedAt")) {
+			t.Errorf("no retrievedAt: %v", ds)
+		}
+	}
+
+	// The lock of this repository dates every package it pins.
+	lock, err := LoadLock(repoFile("nsd.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ds := lock.Validate(); len(ds) != 0 {
+		t.Errorf("the lock of the repository: %v", ds)
+	}
+	for _, e := range lock.Sources {
+		if e.SHA256 == "" || e.RetrievedAt == "" || !validRetrievedAt(e.RetrievedAt) {
+			t.Errorf("%s: sha256 %q retrieved %q", e.Namespace, e.SHA256, e.RetrievedAt)
+		}
+	}
+}
+
+// The registry and the lock are read up to 4 MiB: a longer file is cut
+// there and is not valid JSON.
+func TestLoadSizeLimit(t *testing.T) {
+	dir := t.TempDir()
+	entry := `{"standard":"S","namespace":"S:2026A1","status":"nsd-available","notes":"` + strings.Repeat("n", 1000) + `"}`
+	lock := func(entries int) string {
+		return `{"schemaVersion":1,"sources":[` + strings.Repeat(entry+",", entries-1) + entry + `]}`
+	}
+	small := writeFile(t, dir, "small.json", lock(3000)) // about 3.2 MiB
+	if l, err := LoadLock(small); err != nil || len(l.Sources) != 3000 {
+		t.Errorf("a lock below the limit: %v", err)
+	}
+	large := writeFile(t, dir, "large.json", lock(5000)) // about 5.3 MiB
+	if _, err := LoadLock(large); !errors.Is(err, model.ErrInvalidNSD) {
+		t.Errorf("a lock above the limit: error = %v, want ErrInvalidNSD", err)
+	}
+	if _, err := LoadIndex(writeFile(t, dir, "index.json", `{"schemaVersion":1,"parts":[`+strings.Repeat(`{"part":"`+strings.Repeat("p", 1000)+`"},`, 5000)+`{"part":"x"}]}`)); !errors.Is(err, model.ErrInvalidNSD) {
+		t.Errorf("a registry above the limit: error = %v, want ErrInvalidNSD", err)
+	}
+}

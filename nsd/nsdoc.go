@@ -14,6 +14,9 @@ import (
 //
 // The texts are IEC content. Use them at run time; do not redistribute
 // them (see docs/licensing.md).
+//
+// The zero value is a documentation file without texts. The methods of
+// a nil *NSDoc report the same.
 type NSDoc struct {
 	// ID identifies the namespace the texts belong to.
 	ID model.NamespaceID
@@ -24,15 +27,26 @@ type NSDoc struct {
 
 // Text returns the text with the given documentation ID.
 func (d *NSDoc) Text(id string) (string, bool) {
+	if d == nil {
+		return "", false
+	}
 	t, ok := d.texts[id]
 	return t, ok
 }
 
 // Len returns the number of texts.
-func (d *NSDoc) Len() int { return len(d.texts) }
+func (d *NSDoc) Len() int {
+	if d == nil {
+		return 0
+	}
+	return len(d.texts)
+}
 
 // IDs returns the documentation IDs in sorted order.
 func (d *NSDoc) IDs() []string {
+	if d == nil {
+		return []string{}
+	}
 	ids := make([]string, 0, len(d.texts))
 	for id := range d.texts {
 		ids = append(ids, id)
@@ -44,7 +58,7 @@ func (d *NSDoc) IDs() []string {
 // Matches reports whether the documentation belongs to namespace id:
 // same standard, version and revision. The release is not compared,
 // because documentation files are commonly shared across releases.
-func (d *NSDoc) Matches(id model.NamespaceID) bool { return d.ID.SameVersion(id) }
+func (d *NSDoc) Matches(id model.NamespaceID) bool { return d != nil && d.ID.SameVersion(id) }
 
 // ApplyDoc fills the Title and Description fields of every definition
 // in ns from doc, and the ArgsText of every presence condition whose

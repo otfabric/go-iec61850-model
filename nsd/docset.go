@@ -81,6 +81,10 @@ type DocText struct {
 //
 // A DocSet is not safe for concurrent modification; once built it may
 // be read and applied concurrently.
+//
+// The zero value is an empty set without a language, ready for
+// [DocSet.Set]. The read methods of a nil *DocSet, such as the result of
+// [SelectDocSet] for a language without a set, report an empty set.
 type DocSet struct {
 	lang   string
 	source string
@@ -93,16 +97,34 @@ func NewDocSet(lang string) *DocSet {
 }
 
 // Lang returns the language code of the set.
-func (s *DocSet) Lang() string { return s.lang }
+func (s *DocSet) Lang() string {
+	if s == nil {
+		return ""
+	}
+	return s.lang
+}
 
 // Source names where the set was loaded from, if known.
-func (s *DocSet) Source() string { return s.source }
+func (s *DocSet) Source() string {
+	if s == nil {
+		return ""
+	}
+	return s.source
+}
 
 // Len returns the number of keys.
-func (s *DocSet) Len() int { return len(s.texts) }
+func (s *DocSet) Len() int {
+	if s == nil {
+		return 0
+	}
+	return len(s.texts)
+}
 
 // Keys returns the keys (without field suffix) in sorted order.
 func (s *DocSet) Keys() []string {
+	if s == nil {
+		return []string{}
+	}
 	out := make([]string, 0, len(s.texts))
 	for k := range s.texts {
 		out = append(out, k)
@@ -113,17 +135,27 @@ func (s *DocSet) Keys() []string {
 
 // Text returns the texts of a key, e.g. "DO:MMXU.TotW".
 func (s *DocSet) Text(key string) (DocText, bool) {
+	if s == nil {
+		return DocText{}, false
+	}
 	t, ok := s.texts[key]
 	return t, ok
 }
 
 // Set stores text under key. A key with "#title" or "#desc" sets that
 // field; otherwise the default field of the key kind. White space is
-// normalized. It fails with [model.ErrInvalidNSD] for a malformed key.
+// normalized. It fails with [model.ErrInvalidNSD] for a malformed key,
+// and for a nil set.
 func (s *DocSet) Set(key, text string) error {
+	if s == nil {
+		return fmt.Errorf("%w: doc set is nil", model.ErrInvalidNSD)
+	}
 	k, title, err := parseDocKey(key)
 	if err != nil {
 		return err
+	}
+	if s.texts == nil {
+		s.texts = map[string]DocText{}
 	}
 	t := s.texts[k]
 	if title {
@@ -164,8 +196,11 @@ func parseDocKey(key string) (string, bool, error) {
 // (an NSDoc-compatible doc set, e.g. <Doc id="DO:MMXU.TotW">) into a
 // DocSet. It fails with [model.ErrInvalidNSD] on the first ID that is
 // not a key, e.g. for an IEC NSDoc keyed by documentation IDs: apply
-// those with [ApplyDoc].
+// those with [ApplyDoc]. A nil d fails with [model.ErrInvalidNSD] too.
 func DocSetFromNSDoc(d *NSDoc) (*DocSet, error) {
+	if d == nil {
+		return nil, fmt.Errorf("%w: doc set: NSDoc is nil", model.ErrInvalidNSD)
+	}
 	s := NewDocSet(d.Lang)
 	for _, id := range d.IDs() {
 		if err := s.Set(id, d.texts[id]); err != nil {
@@ -272,19 +307,29 @@ func LoadDocSets(path string) ([]*DocSet, error) {
 	return sets, nil
 }
 
-// EncodeDocSets returns the JSON form of the sets, with sorted keys.
+// EncodeDocSets returns the JSON form of the sets, with sorted keys. A
+// nil set, such as the result of [SelectDocSet] for a language without
+// a set, fails with [model.ErrInvalidNSD].
 func EncodeDocSets(sets ...*DocSet) ([]byte, error) {
 	out := docSetsJSON{Format: docSetFormat}
-	for _, s := range sets {
-		out.Sets = append(out.Sets, docSetJSON{Lang: s.lang, Source: s.source, Texts: s.texts})
+	for i, s := range sets {
+		if s == nil {
+			return nil, fmt.Errorf("%w: doc set %d is nil", model.ErrInvalidNSD, i)
+		}
+		texts := s.texts
+		if texts == nil {
+			texts = map[string]DocText{} // "texts": {}, as an empty set built with NewDocSet
+		}
+		out.Sets = append(out.Sets, docSetJSON{Lang: s.lang, Source: s.source, Texts: texts})
 	}
 	return json.MarshalIndent(out, "", " ")
 }
 
-// SelectDocSet returns the set of the language among sets, or nil.
+// SelectDocSet returns the set of the language among sets, or nil. Nil
+// entries of sets are skipped.
 func SelectDocSet(sets []*DocSet, lang string) *DocSet {
 	for _, s := range sets {
-		if s.lang == lang {
+		if s != nil && s.lang == lang {
 			return s
 		}
 	}

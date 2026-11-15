@@ -7,6 +7,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-11.NSD.2019A2.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-11.NSD.2019A2.light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "63401cd1e065d4363554db52d6fc567e4407c8d68fec42814ef9781d61874724",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -21,6 +22,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-14.NSD.2020A3.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-14.NSD.2020A3.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "d6f06ace3eca3d7f9ad089f48c2407652dca8c479964bf051a4f22c92e652edd",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -35,6 +37,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-21.NSD.2022A2.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-21.NSD.2022A2.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "d6df9731479ae2a2cf053ca3e2e3b0efa1a0d72e53d3ea5be10f4435597126e6",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -49,6 +52,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-4.NSD.2018A.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-4.NSD.2018A.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "99319b01bbe868fd5631150df168175c74f446b9e2cacc62544d111998cf984f",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -63,6 +67,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-9.NSD.2018A3.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-9.NSD.2018A3.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "68a86c06177ecf48e7fd2a580a81bec7f4a3dba5a0dddc259f4179da48213911",
       "dependencies": [
         "IEC 61850-7-420:2019A"
@@ -77,6 +82,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-3.NSD.2015B.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-3.NSD.2015B.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "813b32e8c5a20526f80c9cbf450cc4e5a983b90206885038d2c16c53c8e2e646",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -91,6 +97,7 @@
       "content": "light",
       "package": "IEC_61850-90-6.NSD.2018A.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-90-6.NSD.2018A.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "f1c9d0f35f6c093a5a5aba04c86b2d552daae60cdd8bd0c7e723ee5187accc97",
       "dependencies": [
         "IEC 61850-7-4:2007B1"
@@ -105,6 +112,7 @@
       "content": "light",
       "package": "IEC_TR_61850-90-6.NSD.2018B.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_TR_61850-90-6.NSD.2018B.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "083347f18438d3fbb83c80622a2f31097b9224ac728ce97b62fa7758bfbc392b",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -119,6 +127,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007A2.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007A2.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "d6c423b3d65d09cfbfb1b7dcf30da0099ee7daa4370256ecf16e01b8da140819",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -130,6 +139,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007A3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007A3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "14e339626f440d7c7208f7b3d37a064d1e9e86a95624acb4a3e7646012a59258",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -141,6 +151,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007B3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "19f10537be3d0b6d786d6929db597cd97f0057c19dbdb90af3b02b87c28acd35",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -152,6 +163,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007B4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B4.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "4972390cfecd05e0bcf4a2660d517737ef4b175d9ae5c6de72e142e059a71e66",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -163,6 +175,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007B5.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B5.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "dbcdaa965ce418b286bd6d1485fe095a029a2006cf7dccb0c898db87a6294aed",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -174,6 +187,7 @@
       "content": "light",
       "package": "IEC_61850-7-2.NSD.2007B6.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-2.NSD.2007B6.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "d2ecb929472fcad26b2c38e4501ad10a3a3cde03b609d9363c0e5a41febb498b",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -185,6 +199,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007A2.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007A2.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "05c0ab6fd2e3673389d6a6179f93647082b7e787897b7c98545a48603256a365",
       "dependencies": [
         "IEC 61850-7-2:2007A2"
@@ -199,6 +214,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007A3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007A3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "3f32e5b652438cc6a5e1ff90070aedbf0c79f2c5234b07e0650861f211b0d8e2",
       "dependencies": [
         "IEC 61850-7-2:2007A3"
@@ -213,6 +229,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007B3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "fd7ec05220c5c3d5446e542d384b02f31f43e41e0de36fc43d961a692c536e09",
       "dependencies": [
         "IEC 61850-7-2:2007B"
@@ -227,6 +244,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007B4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B4.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "3adbda14ea5ab93f08bc386eca93786f2017e829f8576c52298c1a967ffdd068",
       "dependencies": [
         "IEC 61850-7-2:2007B"
@@ -241,6 +259,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007B5.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B5.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "0473837e5d7db57833f5b16cab083443d69346502a3a547aa21fd5250b7b3194",
       "dependencies": [
         "IEC 61850-7-2:2007B"
@@ -255,6 +274,7 @@
       "content": "light",
       "package": "IEC_61850-7-3.NSD.2007B6.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-3.NSD.2007B6.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "5305aa90706db1ceb06f48f7769e1744122ab6f58452aee338d3f163e20b7382",
       "dependencies": [
         "IEC 61850-7-2:2007B"
@@ -269,6 +289,7 @@
       "content": "light",
       "package": "IEC_61850-7-410.NSD.2024A4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-410.NSD.2024A4.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "dd6231f14072d3d0d159da4664659fe3c4137c77eab9aba6214ff3a7e3cd6701",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -283,6 +304,7 @@
       "content": "light",
       "package": "IEC_61850-7-420.NSD.2019A4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-420.NSD.2019A4.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "0b6774ea69a00295d22ddf4409c819fd943dbfb7d24661e0a0db0a35b70451fe",
       "dependencies": [
         "IEC 61850-7-4:2007B"
@@ -297,6 +319,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007A2.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007A2.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "471515911a0f908d91bc247ded36cf84a57c804649e65f02229a8ab942679910",
       "dependencies": [
         "IEC 61850-7-3:2007A2"
@@ -311,6 +334,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007A3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007A3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "b38202577ddfd594cba8e9df3c6e30f2df1a9c5a9165057af3d6ae3b32089427",
       "dependencies": [
         "IEC 61850-7-3:2007A3"
@@ -325,6 +349,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007B3.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B3.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "43364791dff8d11fa8d24e997567217f9ba76a520bba6b18b2113572760e2259",
       "status": "nsd-validated",
       "redistribution": "permitted",
@@ -336,6 +361,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007B4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B4.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "9cef55368fe57bdceb70b04c3ec8273d97be3d764dd2bf6e9f083c5c414541f7",
       "dependencies": [
         "IEC 61850-7-3:2007B"
@@ -350,6 +376,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007B5.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B5.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "b79796003410c7da7b4d34f36937ad0e870d0063964e3a3270eb27b3c29a0a5f",
       "dependencies": [
         "IEC 61850-7-3:2007B"
@@ -364,6 +391,7 @@
       "content": "light",
       "package": "IEC_61850-7-4.NSD.2007B6.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-4.NSD.2007B6.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "429c9b5cad3e6e804c1e6cc0efdc59659bf03096b9693ff3cf920ff5caf8203a",
       "dependencies": [
         "IEC 61850-7-3:2007B"
@@ -378,6 +406,7 @@
       "content": "full",
       "package": "IEC_61850-7-7.2017.NSD.2017A.full.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-7-7.2017.NSD.2017A.full.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "d6c5f7fdac0ff059d817542a7b5ed574850971e5d940723c738b6a6646b69c54",
       "status": "nsd-available",
       "redistribution": "local-only",
@@ -389,6 +418,7 @@
       "content": "light",
       "package": "IEC_61850-8-1.NSD.2003.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "c3b93a02f80c679bfdc9d9c0097445ad227164435671b0e5add4a7bee6d8af5e",
       "status": "nsd-available",
       "redistribution": "local-only",
@@ -400,6 +430,7 @@
       "content": "light",
       "package": "IEC_61850-8-1.NSD.2003A2.light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A2.light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "d5c617b68267b1fdec46bd5b2596a8dd277f89d14e78b30a677f31834de711c2",
       "status": "nsd-available",
       "redistribution": "local-only",
@@ -411,6 +442,7 @@
       "content": "light",
       "package": "IEC_61850-8-1.NSD.2003A3.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A3.Light.zip",
+      "retrievedAt": "2026-11-09",
       "sha256": "fea093d23b0c8046fe71501876d2e342fcae8ad633f3d0fb392a08056acd42bf",
       "status": "nsd-available",
       "redistribution": "local-only",
@@ -422,6 +454,7 @@
       "content": "light",
       "package": "IEC_61850-8-1.NSD.2003A4.Light.zip",
       "source": "https://assets.iec.ch/public/tc57/IEC_61850-8-1.NSD.2003A4.Light.zip",
+      "retrievedAt": "2026-10-21",
       "sha256": "b5b54ab117319fa002276e3dc081c9fbadf0821148a46230ecf68cd95edf853b",
       "status": "nsd-available",
       "redistribution": "local-only",

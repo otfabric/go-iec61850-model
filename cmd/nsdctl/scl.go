@@ -118,6 +118,20 @@ type sclIndex struct {
 	lnTypes map[string]int
 	doTypes map[string]int
 	daTypes map[string]int
+	// names counts the names and values of the instance being built:
+	// every reference to a type builds its members again, so the size
+	// of an instance is bounded apart from the size of the file, by the
+	// limit of the JSON form of an instance.
+	names int
+}
+
+// add counts one more name or value of the instance being built.
+func (ix *sclIndex) add() error {
+	if ix.names >= presence.MaxInstanceNames {
+		return fmt.Errorf("%w: %w: SCL types expand to more than %d names", model.ErrInvalidInstance, model.ErrLimitExceeded, presence.MaxInstanceNames)
+	}
+	ix.names++
+	return nil
 }
 
 func newSCLIndex(doc *sclDoc) *sclIndex {
@@ -141,8 +155,12 @@ func (ix *sclIndex) lnType(id string) (*presence.Instance, error) {
 		return nil, fmt.Errorf("%w: SCL has no LNodeType %q", model.ErrInvalidInstance, id)
 	}
 	t := ix.doc.Templates.LNodeTypes[i]
+	ix.names = 0
 	inst := &presence.Instance{Class: t.LNClass, Present: []string{}, Children: map[string]*presence.Instance{}}
 	for _, do := range t.DOs {
+		if err := ix.add(); err != nil {
+			return nil, err
+		}
 		inst.Present = append(inst.Present, do.Name)
 		child, err := ix.doType(do.Type, 1)
 		if err != nil {
@@ -164,6 +182,9 @@ func (ix *sclIndex) doType(id string, depth int) (*presence.Instance, error) {
 	t := ix.doc.Templates.DOTypes[i]
 	inst := &presence.Instance{Class: t.CDC, Present: []string{}}
 	for _, s := range t.SDOs {
+		if err := ix.add(); err != nil {
+			return nil, err
+		}
 		child, err := ix.doType(s.Type, depth+1)
 		if err != nil {
 			return nil, err
@@ -179,8 +200,14 @@ func (ix *sclIndex) doType(id string, depth int) (*presence.Instance, error) {
 
 func (ix *sclIndex) attributes(inst *presence.Instance, das []sclDA, depth int) error {
 	for _, da := range das {
+		if err := ix.add(); err != nil {
+			return err
+		}
 		inst.Present = append(inst.Present, da.Name)
 		if valueAttrs[da.Name] && len(da.Vals) > 0 {
+			if err := ix.add(); err != nil {
+				return err
+			}
 			setValue(inst, da.Name, da.Vals[0])
 		}
 		if da.BType != "Struct" {

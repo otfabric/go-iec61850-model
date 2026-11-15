@@ -110,6 +110,10 @@ type Relation struct {
 
 // Graph is an immutable concept graph. Every listing and traversal is
 // deterministic. It is safe for concurrent use.
+//
+// What the graph returns is the caller's: a concept is a copy with its
+// own Properties, and every slice is a new one. Changing a result does
+// not change the graph.
 type Graph struct {
 	conflicts []string
 	concepts  map[string]Concept
@@ -129,11 +133,28 @@ func (g *Graph) Conflicts() []string { return append([]string(nil), g.conflicts.
 // Concept returns the concept with the given ID.
 func (g *Graph) Concept(id string) (Concept, bool) {
 	c, ok := g.concepts[id]
-	return c, ok
+	return c.clone(), ok
+}
+
+// clone returns c with its own Properties: a copy of the struct alone
+// would share them with the graph.
+func (c Concept) clone() Concept {
+	c.Properties = slices.Clone(c.Properties)
+	return c
 }
 
 // Concepts returns all concepts, ordered by ID.
 func (g *Graph) Concepts() []Concept {
+	out := make([]Concept, len(g.ids))
+	for i, id := range g.ids {
+		out[i] = g.concepts[id].clone()
+	}
+	return out
+}
+
+// shared returns all concepts, ordered by ID, with the Properties of
+// the graph: for the graph's own read-only use.
+func (g *Graph) shared() []Concept {
 	out := make([]Concept, len(g.ids))
 	for i, id := range g.ids {
 		out[i] = g.concepts[id]
@@ -206,7 +227,7 @@ func (g *Graph) FindConcepts(q Query) []Concept {
 				continue
 			}
 		}
-		out = append(out, c)
+		out = append(out, c.clone())
 	}
 	return out
 }
@@ -222,8 +243,9 @@ func containsKind(ks []Kind, k Kind) bool {
 
 // Walk traverses the graph breadth-first from start along outgoing
 // relations with the given predicates (all when none are given),
-// visiting each concept once. fn receives the concept and its distance
-// from start; returning false stops the walk below that concept.
+// visiting each concept once. fn receives a copy of the concept and its
+// distance from start; returning false stops the walk below that
+// concept.
 // Neighbors are visited in [Graph.Relations] order.
 func (g *Graph) Walk(start string, fn func(c Concept, depth int) bool, preds ...Predicate) error {
 	if _, ok := g.concepts[start]; !ok {
@@ -238,7 +260,7 @@ func (g *Graph) Walk(start string, fn func(c Concept, depth int) bool, preds ...
 	for len(queue) > 0 {
 		it := queue[0]
 		queue = queue[1:]
-		if !fn(g.concepts[it.id], it.depth) {
+		if !fn(g.concepts[it.id].clone(), it.depth) {
 			continue
 		}
 		for _, r := range g.Relations(it.id, preds...) {
@@ -259,7 +281,7 @@ type export struct {
 // MarshalJSON encodes the graph as {"concepts": [...], "relations":
 // [...]}, both in their deterministic order.
 func (g *Graph) MarshalJSON() ([]byte, error) {
-	return json.Marshal(export{Concepts: g.Concepts(), Relations: g.RelationsAll()})
+	return json.Marshal(export{Concepts: g.shared(), Relations: g.rels})
 }
 
 // ExportJSON writes the indented JSON form of the graph to w. The
@@ -267,7 +289,7 @@ func (g *Graph) MarshalJSON() ([]byte, error) {
 func (g *Graph) ExportJSON(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(export{Concepts: g.Concepts(), Relations: g.RelationsAll()})
+	return enc.Encode(export{Concepts: g.shared(), Relations: g.rels})
 }
 
 // Options configures [BuildGraph].

@@ -6,9 +6,11 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"path"
 	"strings"
+	"unicode"
 
 	"github.com/otfabric/go-iec61850-model/model"
 )
@@ -104,10 +106,26 @@ func findAttr(attrs []Attr, name string) (string, bool) {
 	return "", false
 }
 
+// Fixed bounds of a manifest. The manifests of the official packages
+// have a few dozen elements with paths of some twenty bytes.
+const (
+	// maxManifestElements bounds the elements below the root.
+	maxManifestElements = 10_000
+	// maxManifestPathBytes bounds the element paths, all together. A
+	// path repeats the names of the elements around it, so its size is
+	// bounded apart from the size of the document.
+	maxManifestPathBytes = 1 << 20
+)
+
 // ReadManifest reads an IECManifest.xml document. It applies the same
-// size, depth and DTD restrictions as [Parse].
+// size, depth, token and DTD restrictions as [Parse]. A manifest with
+// more than 10 000 elements below the root, or whose element paths take
+// more than 1 MiB together, is rejected with [model.ErrLimitExceeded].
 func ReadManifest(r io.Reader, opts ...Option) (*Manifest, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readBounded(r, o.MaxDocumentSize, o.Source)
 	if err != nil {
 		return nil, err
@@ -122,8 +140,16 @@ func parseManifest(data []byte, o *Options) (*Manifest, error) {
 	src := sourceName(o.Source)
 	m := &Manifest{Source: o.Source, SHA256: sha256Hex(data)}
 	d := xml.NewDecoder(bytes.NewReader(data))
-	var stack []string
-	var open []int // index into m.Elements of each open element, -1 for the root
+	// One frame per open element: its path below the root, its index
+	// into m.Elements (-1 for the root) and the character data collected
+	// so far. The text is stored once, when the element ends.
+	type frame struct {
+		path  string
+		index int
+		text  []byte
+	}
+	var open []frame
+	pathBytes := 0
 	for {
 		tok, err := d.Token()
 		if err == io.EOF {
@@ -135,23 +161,45 @@ func parseManifest(data []byte, o *Options) (*Manifest, error) {
 		switch t := tok.(type) {
 		case xml.StartElement:
 			attrs := convertAttrs(t.Attr)
-			if len(stack) == 0 {
+			if len(open) == 0 {
 				m.Root, m.Attrs = t.Name.Local, attrs
-				open = append(open, -1)
-			} else {
-				path := strings.Join(append(append([]string(nil), stack[1:]...), t.Name.Local), "/")
-				m.Elements = append(m.Elements, ManifestElement{Path: path, Attrs: attrs})
-				open = append(open, len(m.Elements)-1)
+				open = append(open, frame{index: -1})
+				continue
 			}
-			stack = append(stack, t.Name.Local)
+			if len(m.Elements) >= maxManifestElements {
+				return nil, &model.SourceError{Source: src, Reason: fmt.Sprintf("manifest has more than %d elements", maxManifestElements), Err: model.ErrLimitExceeded}
+			}
+			parent := open[len(open)-1].path
+			// The length is checked before the path is built.
+			n := len(parent) + 1 + len(t.Name.Local)
+			if n > maxManifestPathBytes-pathBytes {
+				return nil, &model.SourceError{Source: src, Reason: fmt.Sprintf("manifest element paths exceed %d bytes", maxManifestPathBytes), Err: model.ErrLimitExceeded}
+			}
+			pathBytes += n
+			path := t.Name.Local
+			if parent != "" {
+				path = parent + "/" + path
+			}
+			m.Elements = append(m.Elements, ManifestElement{Path: path, Attrs: attrs})
+			open = append(open, frame{path: path, index: len(m.Elements) - 1})
 		case xml.EndElement:
-			stack = stack[:len(stack)-1]
+			if f := open[len(open)-1]; f.index >= 0 {
+				m.Elements[f.index].Text = string(f.text)
+			}
 			open = open[:len(open)-1]
 		case xml.CharData:
-			if len(open) > 0 && open[len(open)-1] >= 0 {
-				e := &m.Elements[open[len(open)-1]]
-				e.Text = strings.TrimSpace(e.Text + string(t))
+			if len(open) == 0 || open[len(open)-1].index < 0 {
+				continue
 			}
+			// The text of an element is its character data without
+			// surrounding white space; a chunk that follows a child
+			// element or a comment keeps the white space before it.
+			f := &open[len(open)-1]
+			chunk := bytes.TrimRightFunc(t, unicode.IsSpace)
+			if len(f.text) == 0 {
+				chunk = bytes.TrimLeftFunc(chunk, unicode.IsSpace)
+			}
+			f.text = append(f.text, chunk...)
 		}
 	}
 	return m, nil

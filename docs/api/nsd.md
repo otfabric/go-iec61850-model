@@ -12,11 +12,13 @@ Package nsd imports IEC 61850 namespace definition (NSD) files, the machine-read
 
 #### Input safety {#hdr-Input_safety}
 
-Inputs are untrusted. Every document is bounded in size, nesting depth and token count, and DOCTYPE declarations are rejected, which also rules out entity expansion. Archives are bounded in entry count, total uncompressed size and compression ratio; absolute names, path traversal, backslashes, duplicate entries (compared case-insensitively) and non-regular entries are rejected. Archives nested inside archives are opened one level deep. Nothing is written to disk.
+Inputs are untrusted. Every document (namespace, documentation, schema or manifest) is bounded in size, nesting depth and token count, and DOCTYPE declarations are rejected, which also rules out entity expansion. Archives are bounded in entry count, total uncompressed size and compression ratio; absolute names, path traversal, backslashes, duplicate entries (compared case-insensitively) and non-regular entries are rejected. Archives nested inside archives are opened one level deep. Nothing is written to disk.
+
+Besides the limits the options set there are fixed ones: a document carries at most 10 000 findings and a package 100 000, a manifest has at most 10 000 elements, and a finding quotes at most 256 bytes of a name. Exceeding a limit fails with [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded). SECURITY.md of the module lists every limit with the memory it means.
 
 #### Diagnostics {#hdr-Diagnostics}
 
-The importer does not drop data silently. Elements and attributes it does not model are reported as warnings with their XML path; missing required attributes, invalid values and duplicate definitions are errors. A document with errors is rejected with a [\*model.ValidationError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ValidationError) listing every finding; [WithStrict](#func-withstrict) makes warnings fatal too.
+The importer does not drop data silently. Elements and attributes it does not model are reported as warnings with their XML path; missing required attributes, invalid values (a literal value is a 32-bit integer), names with control characters and duplicate definitions are errors. A document with errors is rejected with a [\*model.ValidationError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ValidationError) listing every finding; [WithStrict](#func-withstrict) makes warnings fatal too.
 
 Validation is structural and uses the standard library only: the importer checks the elements and attributes it models and the rules in [Validate](#func-validate), but it does not run an XSD validator.
 
@@ -61,7 +63,7 @@ const (
 )
 ```
 
-Default safety bounds. They are generous for official NSD packages, whose largest documents are a few MiB, and small enough to stop malicious input early.
+Default safety bounds. They are generous for official NSD packages, whose largest documents are a few MiB. SECURITY.md lists them with the fixed bounds that have no option.
 
 ```go
 const ManifestFileName = "Manifest.xml"
@@ -121,7 +123,7 @@ DocKeys returns the doc set keys of every element of ns, sorted and without dupl
 func EncodeDocSets(sets ...*DocSet) ([]byte, error)
 ```
 
-EncodeDocSets returns the JSON form of the sets, with sorted keys.
+EncodeDocSets returns the JSON form of the sets, with sorted keys. A nil set, such as the result of [SelectDocSet](#func-selectdocset) for a language without a set, fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD).
 
 ### func ParseNamespace
 
@@ -195,13 +197,15 @@ DocSet holds documentation texts keyed by model path, in one language. Load one 
 
 A DocSet is not safe for concurrent modification; once built it may be read and applied concurrently.
 
+The zero value is an empty set without a language, ready for [DocSet.Set](#func-docset-set). The read methods of a nil \*DocSet, such as the result of [SelectDocSet](#func-selectdocset) for a language without a set, report an empty set.
+
 #### func DocSetFromNSDoc
 
 ```go
 func DocSetFromNSDoc(d *NSDoc) (*DocSet, error)
 ```
 
-DocSetFromNSDoc converts an NSDoc file whose Doc IDs are doc set keys (an NSDoc-compatible doc set, e.g. \<Doc id="DO:MMXU.TotW">) into a DocSet. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) on the first ID that is not a key, e.g. for an IEC NSDoc keyed by documentation IDs: apply those with [ApplyDoc](#func-applydoc).
+DocSetFromNSDoc converts an NSDoc file whose Doc IDs are doc set keys (an NSDoc-compatible doc set, e.g. \<Doc id="DO:MMXU.TotW">) into a DocSet. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) on the first ID that is not a key, e.g. for an IEC NSDoc keyed by documentation IDs: apply those with [ApplyDoc](#func-applydoc). A nil d fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) too.
 
 #### func LoadDocSets
 
@@ -233,7 +237,7 @@ ReadDocSets parses doc sets: the JSON form (optionally gzip compressed), {"forma
 func SelectDocSet(sets []*DocSet, lang string) *DocSet
 ```
 
-SelectDocSet returns the set of the language among sets, or nil.
+SelectDocSet returns the set of the language among sets, or nil. Nil entries of sets are skipped.
 
 #### func (DocSet) Keys
 
@@ -265,7 +269,7 @@ Len returns the number of keys.
 func (s *DocSet) Set(key, text string) error
 ```
 
-Set stores text under key. A key with "#title" or "#desc" sets that field; otherwise the default field of the key kind. White space is normalized. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) for a malformed key.
+Set stores text under key. A key with "#title" or "#desc" sets that field; otherwise the default field of the key kind. White space is normalized. It fails with [model.ErrInvalidNSD](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrInvalidNSD) for a malformed key, and for a nil set.
 
 #### func (DocSet) Source
 
@@ -328,7 +332,7 @@ func Parse(r io.Reader, opts ...Option) (*Document, error)
 
 Parse reads and parses one NSD XML document: a namespace definition (NS), a documentation file (NSDoc), or a service namespace, which is recognized but not modeled.
 
-The input is bounded by the configured size, depth and token limits; DOCTYPE declarations are rejected. A document whose structure has errors, or warnings in strict mode, is rejected with a [\*model.ValidationError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ValidationError) that lists every finding.
+The input is bounded by the configured size, depth and token limits; DOCTYPE declarations are rejected. A document whose structure has errors, or warnings in strict mode, is rejected with a [\*model.ValidationError](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ValidationError) that lists every finding. A document with more than 10 000 findings is rejected with [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded), and so is an option that is not a positive limit; the reason names the option.
 
 ### type DocumentKind
 
@@ -391,7 +395,7 @@ The manifest format is not modeled field by field yet: the root attributes and e
 func ReadManifest(r io.Reader, opts ...Option) (*Manifest, error)
 ```
 
-ReadManifest reads an IECManifest.xml document. It applies the same size, depth and DTD restrictions as [Parse](#func-parse).
+ReadManifest reads an IECManifest.xml document. It applies the same size, depth, token and DTD restrictions as [Parse](#func-parse). A manifest with more than 10 000 elements below the root, or whose element paths take more than 1 MiB together, is rejected with [model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded).
 
 #### func (Manifest) Attr
 
@@ -455,6 +459,8 @@ type NSDoc struct {
 NSDoc is a parsed NSDoc documentation file: the texts referenced by the titleID, descID and presCondArgsID attributes of one namespace, in one language.
 
 The texts are IEC content. Use them at run time; do not redistribute them (see docs/licensing.md).
+
+The zero value is a documentation file without texts. The methods of a nil \*NSDoc report the same.
 
 #### func (NSDoc) IDs
 
@@ -534,7 +540,7 @@ WithMaxArchiveSize sets the maximum total uncompressed archive size.
 func WithMaxCompressionRatio(n int64) Option
 ```
 
-WithMaxCompressionRatio sets the maximum compression ratio of an archive entry.
+WithMaxCompressionRatio sets the maximum compression ratio of an archive entry larger than 1 MiB.
 
 #### func WithMaxDepth
 
@@ -550,7 +556,7 @@ WithMaxDepth sets the maximum XML nesting depth.
 func WithMaxDocumentSize(n int64) Option
 ```
 
-WithMaxDocumentSize sets the maximum size of one XML document.
+WithMaxDocumentSize sets the maximum size of one XML document, in bytes. Like every limit it must be positive; see [Options](#type-options).
 
 #### func WithMaxTokens
 
@@ -558,7 +564,7 @@ WithMaxDocumentSize sets the maximum size of one XML document.
 func WithMaxTokens(n int) Option
 ```
 
-WithMaxTokens sets the maximum number of XML tokens per document.
+WithMaxTokens sets the maximum number of XML tokens per document; attributes count as tokens.
 
 #### func WithSchemaNamespaces
 
@@ -566,7 +572,7 @@ WithMaxTokens sets the maximum number of XML tokens per document.
 func WithSchemaNamespaces(uris ...string) Option
 ```
 
-WithSchemaNamespaces replaces the accepted XML namespaces of NSD documents. Use it when an official package declares a namespace this version does not know yet, after checking that the structure is compatible.
+WithSchemaNamespaces replaces the accepted XML namespaces of NSD documents. Use it when an official package declares a namespace this version does not know yet, after checking that the structure is compatible. At least one URI must be given; see [Options](#type-options).
 
 #### func WithSource
 
@@ -593,16 +599,19 @@ type Options struct {
 	// MaxDocumentSize bounds the size of one XML document in bytes.
 	MaxDocumentSize int64
 	// MaxArchiveSize bounds the total uncompressed size of a ZIP
-	// archive in bytes.
+	// archive in bytes, over the archives nested in it, and the size
+	// of the archive file itself.
 	MaxArchiveSize int64
-	// MaxArchiveEntries bounds the number of entries of a ZIP archive.
+	// MaxArchiveEntries bounds the number of entries of a ZIP archive,
+	// over the archives nested in it.
 	MaxArchiveEntries int
 	// MaxDepth bounds the XML element nesting depth.
 	MaxDepth int
-	// MaxTokens bounds the number of XML tokens of one document.
+	// MaxTokens bounds the number of XML tokens of one document. Every
+	// attribute of an element counts as one token.
 	MaxTokens int
 	// MaxCompressionRatio bounds the ratio of uncompressed to
-	// compressed size of a ZIP entry.
+	// compressed size of a ZIP entry larger than 1 MiB.
 	MaxCompressionRatio int64
 	// Strict turns warnings (unknown elements and attributes, entries
 	// that are not processed) into errors.
@@ -619,7 +628,7 @@ type Options struct {
 }
 ```
 
-Options controls parsing. The zero value is not used directly; pass [Option](#type-option) values to the parse and load functions, which start from the defaults.
+Options controls parsing. The zero value is not used directly; pass [Option](#type-option) values to the parse and load functions, which start from the defaults. Every limit must be positive and at least one schema namespace must be accepted: a parse or load function called with another value fails before it reads anything, with an error that names the option ([model.ErrLimitExceeded](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrLimitExceeded) for a limit, [model.ErrUnsupportedSchema](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/model#ErrUnsupportedSchema) for the schema namespaces).
 
 ### type Package
 
@@ -647,7 +656,7 @@ LoadDir loads every NSD document (.nsd, .snsd, .nsdoc), XSD schema, manifest and
 func LoadFile(name string, opts ...Option) (*Package, error)
 ```
 
-LoadFile loads an NSD source from a file: a ZIP archive, recognized by its content whatever its extension (official package names such as "IEC\_61850-7-2.NSD.2007B6.light" may have none), an XSD schema, or a single XML document.
+LoadFile loads an NSD source from a file: a ZIP archive, recognized by its content whatever its extension (official package names such as "IEC\_61850-7-2.NSD.2007B6.light" may have none), an XSD schema, or a single XML document. The limits of an archive apply to an archive, the limits of a document to every other file.
 
 #### func LoadZIP
 
@@ -663,7 +672,7 @@ LoadZIP loads an NSD package from a ZIP archive on disk.
 func ReadZIP(r io.Reader, opts ...Option) (*Package, error)
 ```
 
-ReadZIP loads an NSD package from a ZIP archive held by r.
+ReadZIP loads an NSD package from a ZIP archive held by r. The archive, the archives inside it and their entries are bounded by the archive options; every XML document in them by the document options. A package carries at most 100 000 findings.
 
 #### func (Package) Content
 
@@ -769,7 +778,7 @@ Schema is the inventory of an XSD file of the NSD format (IEC 61850-7-7): its ta
 func ParseSchema(r io.Reader, opts ...Option) (*Schema, error)
 ```
 
-ParseSchema reads the inventory of one XSD document, under the same size, depth and DTD restrictions as [Parse](#func-parse).
+ParseSchema reads the inventory of one XSD document, under the same size, depth, token and DTD restrictions as [Parse](#func-parse).
 
 #### func (Schema) Gaps
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/format"
 	"go/token"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -51,9 +52,30 @@ func sanitize(s string) string {
 	return b.String()
 }
 
-// assign returns a unique exported identifier for prefix+name.
+// comment returns a model string for a line comment or a header line.
+// Control characters, the Unicode line and paragraph separators and the
+// byte order mark become spaces, and invalid UTF-8 becomes U+FFFD, so
+// the text stays on its line and the file stays valid source whatever
+// the string holds. Identifiers go through sanitize and string
+// constants through %q; this is the third way a model string reaches
+// the generated source.
+func comment(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || r == '\u2028' || r == '\u2029' || r == '\ufeff' {
+			return ' '
+		}
+		return r
+	}, s)
+}
+
+// assign returns a unique exported identifier for prefix+name. The
+// prefix is model text as well when it is the name of a class: both
+// parts are mapped to identifier characters.
 func (id *idents) assign(prefix, name string) string {
-	base := prefix + sanitize(name)
+	base := sanitize(name)
+	if prefix != "" {
+		base = sanitize(prefix) + base
+	}
 	if r := rune(base[0]); !unicode.IsUpper(r) {
 		base = "X" + base
 	}
@@ -124,9 +146,9 @@ func Go(in Input, pkg string) (Files, error) {
 		if len(refs) == 0 {
 			continue
 		}
-		w("// Data objects of %s (%s), including inherited ones.\nconst (\n", c.name, c.sources())
+		w("// Data objects of %s (%s), including inherited ones.\nconst (\n", comment(c.name), comment(c.sources()))
 		for _, ref := range refs {
-			w("\t%s DataObjectRef = %q // %s\n", ids.assign(c.name+"_", ref.name), c.name+"."+ref.name, strings.Join(ref.notes, "; "))
+			w("\t%s DataObjectRef = %q // %s\n", ids.assign(c.name+"_", ref.name), c.name+"."+ref.name, comment(strings.Join(ref.notes, "; ")))
 		}
 		w(")\n\n")
 	}
@@ -136,11 +158,11 @@ func Go(in Input, pkg string) (Files, error) {
 	var tests []enumTest
 	for _, e := range enums {
 		typ := ids.assign("", e.typeName)
-		w("// %s is the enumeration %s (%s).\ntype %s int32\n\n", typ, e.name, e.source, typ)
+		w("// %s is the enumeration %s (%s).\ntype %s int32\n\n", typ, comment(e.name), comment(e.source.String()), typ)
 		if len(e.literals) == 0 {
 			continue
 		}
-		w("// Literals of %s.\nconst (\n", e.name)
+		w("// Literals of %s.\nconst (\n", comment(e.name))
 		names := make([]string, len(e.literals))
 		for i, l := range e.literals {
 			names[i] = ids.assign(typ+"_", l.Name)
@@ -150,9 +172,7 @@ func Go(in Input, pkg string) (Files, error) {
 		w("// String returns the literal name, or %s(n) for an unknown value.\n", typ)
 		w("func (v %s) String() string {\n\tswitch v {\n", typ)
 		seen := map[int]bool{}
-		maxV := e.literals[0].Value
 		for i, l := range e.literals {
-			maxV = max(maxV, l.Value)
 			if seen[l.Value] {
 				// Another literal has the same value; String reports the first.
 				continue
@@ -162,7 +182,7 @@ func Go(in Input, pkg string) (Files, error) {
 			tests = append(tests, enumTest{expr: names[i] + ".String()", want: l.Name})
 		}
 		w("\tdefault:\n\t\treturn %q + strconv.Itoa(int(v)) + \")\"\n\t}\n}\n\n", typ+"(")
-		unknown := maxV + 1
+		unknown := unusedValue(seen)
 		tests = append(tests, enumTest{expr: fmt.Sprintf("%s(%d).String()", typ, unknown), want: fmt.Sprintf("%s(%d)", typ, unknown)})
 	}
 
@@ -173,13 +193,13 @@ func Go(in Input, pkg string) (Files, error) {
 	if len(notes) > 0 {
 		out.WriteString("//\n// Ambiguous names (see the profile diagnostics):\n")
 		for _, n := range notes {
-			out.WriteString("//   " + n + "\n")
+			out.WriteString("//   " + comment(n) + "\n")
 		}
 	}
 	if len(ids.renames) > 0 {
 		out.WriteString("//\n// Renamed identifiers:\n")
 		for _, r := range ids.renames {
-			out.WriteString("//   " + r + "\n")
+			out.WriteString("//   " + comment(r) + "\n")
 		}
 	}
 	fmt.Fprintf(&out, "\n// Package %s declares the names of an IEC 61850 namespace profile.\npackage %s\n\n", pkg, pkg)
@@ -201,6 +221,31 @@ func Go(in Input, pkg string) (Files, error) {
 		files["LOCAL-ONLY.md"] = in.localNotice("go")
 	}
 	return files, nil
+}
+
+// unusedValue returns a value no literal of an enumeration has, for the
+// generated test of String: one above the highest value, as long as
+// that is a 32-bit integer, otherwise one below the lowest, otherwise
+// the lowest value that is free.
+func unusedValue(used map[int]bool) int {
+	lo, hi, first := 0, 0, true
+	for v := range used {
+		if first {
+			lo, hi, first = v, v, false
+		}
+		lo, hi = min(lo, v), max(hi, v)
+	}
+	switch {
+	case hi < math.MaxInt32:
+		return hi + 1
+	case lo > math.MinInt32:
+		return lo - 1
+	}
+	v := math.MinInt32
+	for used[v] {
+		v++
+	}
+	return v
 }
 
 func hasLiterals(enums []enumType) bool {

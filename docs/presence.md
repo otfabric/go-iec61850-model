@@ -93,7 +93,7 @@ catalog has a rule (a test enforces it).
 | Family | Conditions | Decided by |
 | --- | --- | --- |
 | Unconditional | `M`, `O`, `F`, `na` | nothing; `na` (data set presence) is optional |
-| Multi-instance | `Mmulti`, `Omulti`, `MmultiRange(min, max)`, `OmultiRange(min, max)` | required/optional; numbered instances must lie in the range and use one number of digits per data object (7-2 §22.2) |
+| Multi-instance | `Mmulti`, `Omulti`, `MmultiRange(min, max)`, `OmultiRange(min, max)` | required/optional; numbered instances must lie in the range and use one number of digits per data object (7-2 §22.2); a number of any length is compared, and one beyond the range of an `int` is outside every range |
 | Sibling | `MF`, `MO`, `OF`, `OM`, `FM`, `MmultiF` | whether the element the argument names is present: mandatory/forbidden, mandatory/optional, optional/forbidden, optional/mandatory, forbidden/mandatory |
 | Group | `AtLeastOne(n)` | one or more members of group n |
 | | `AtMostOne` | no more than one of the elements with this condition |

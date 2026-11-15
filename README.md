@@ -325,10 +325,12 @@ typed errors (`*ResolutionError`, `*AmbiguityError`, `*DependencyError`,
 
 ## Input safety
 
-NSD input is treated as untrusted: documents are bounded in size, depth and
-token count, DTDs are rejected, archives are checked for traversal, duplicate
-and non-regular entries, entry count, total size and compression ratio. Nothing
-is written to disk. See [SECURITY.md](SECURITY.md).
+NSD input is treated as untrusted: documents are bounded in size, depth,
+token count and findings, DTDs are rejected, archives are checked for
+traversal, duplicate and non-regular entries, entry count, total size and
+compression ratio. Nothing is written to disk. [SECURITY.md](SECURITY.md#limits)
+lists every limit with its default, its option and the memory a document at
+the limit needs.
 
 ## Documentation
 
@@ -349,6 +351,8 @@ is written to disk. See [SECURITY.md](SECURITY.md).
 | [docs/licensing.md](docs/licensing.md) | IEC content and redistribution limits |
 | [docs/reference](docs/reference/index.md) | Generated model reference of the official namespaces |
 | [ERRORS.md](ERRORS.md) | Error taxonomy |
+| [SECURITY.md](SECURITY.md) | Reporting, input limits and the memory they mean |
+| [TESTING.md](TESTING.md) | Test tiers, limits and budgets, fuzz targets |
 | [LIMITATIONS.md](LIMITATIONS.md) | Scope not implemented, upstream gaps, what has not been verified |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Workflow, checks and source policy |
 | [REQUIREMENTS.md](REQUIREMENTS.md), [PLAN.md](PLAN.md), [PROGRESS.md](PROGRESS.md) | Scope, plan and progress |
@@ -431,7 +435,8 @@ The texts also reach `semantic.Descriptor.Title`/`Description`, and
 ```bash
 make check   # format, tidy, vet, staticcheck, golangci-lint, govulncheck, race tests, coverage gate
 make test    # unit tests
-make fuzz    # fuzz the NSD parser and the reference parser
+make fuzz    # every fuzz target of the library and of nsdctl, FUZZTIME each
+make bench   # benchmarks of the importer, the embedded catalog and the resolver
 make build   # bin/nsdctl (a nested module: cmd/nsdctl)
 ```
 

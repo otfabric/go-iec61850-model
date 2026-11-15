@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 
+	"github.com/otfabric/go-iec61850-model/cmd/nsdctl/internal/buildinfo"
 	"github.com/otfabric/go-iec61850-model/internal/fixtures"
 	"github.com/otfabric/go-iec61850-model/internal/generator"
 	"github.com/otfabric/go-iec61850-model/model"
@@ -297,6 +299,42 @@ func TestSourcesFetchGuards(t *testing.T) {
 	}
 	if _, _, code := nsdctl(t, "sources", "fetch", "--index", "missing.json", "--dest", filepath.Join(dir, "c2")); code != exitInvalidInput {
 		t.Error("missing index")
+	}
+}
+
+// The version command names the library the binary is built on: the
+// go-iec61850-model version that go.mod requires.
+func TestVersionReportsTheLibrary(t *testing.T) {
+	mod, err := os.ReadFile("go.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := regexp.MustCompile(`(?m)^\s*github\.com/otfabric/go-iec61850-model v(\S+)`).FindSubmatch(mod)
+	if m == nil {
+		t.Fatal("go.mod does not require the library")
+	}
+	required := string(m[1])
+	var lib *buildinfo.Library
+	for _, l := range build().Libraries {
+		if l.Name == "go-iec61850-model" {
+			lib = &l
+		}
+	}
+	if lib == nil {
+		t.Fatalf("libraries %v: go-iec61850-model is not listed", build().Libraries)
+	}
+	// With a go.work or a replace directive the binary holds the tree of
+	// the library, without a version; otherwise the version of go.mod.
+	if lib.Version != required && lib.Version != "(devel)" && lib.Version != "" {
+		t.Errorf("library version %q, go.mod requires %q", lib.Version, required)
+	}
+	out, _, code := nsdctl(t, "version")
+	if code != exitOK || !strings.Contains(out, ", go-iec61850-model "+lib.Version+", go") {
+		t.Errorf("version: %d %q", code, out)
+	}
+	out, _, code = nsdctl(t, "version", "--json")
+	if code != exitOK || !strings.Contains(out, `"libraries":[{"name":"go-iec61850-model","version":"`+lib.Version+`"}]`) {
+		t.Errorf("version --json: %d %q", code, out)
 	}
 }
 

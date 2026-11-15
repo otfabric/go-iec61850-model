@@ -96,6 +96,8 @@ func Docs(lang string) (*nsd.DocSet, error)
 
 Docs returns the doc set of the language, e.g. "en": the public texts with a local doc set applied, if there is one. It fails with ErrNoDocs for a language without texts, or with the error of reading the IEC61850\_MODEL\_DOCS file. Use the set with nsd.WithFallbackDocs to document namespaces loaded from packages.
 
+Every call returns a new set, a copy of the texts the package holds: the caller owns it and may change it with [nsd.DocSet.Set](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/nsd#DocSet.Set). A change does not reach another caller's set, nor the profiles of [OpenDocumented](#func-opendocumented). Keep the set when you use it more than once; the copy takes some milliseconds.
+
 ### func DocsSource
 
 ```go
@@ -175,6 +177,8 @@ func PublicDocs() (*nsd.DocSet, error)
 ```
 
 PublicDocs returns the public OT Fabric doc set: English titles and descriptions for every element of every embedded namespace, written by OT Fabric (MIT). Most data object descriptions are composed from the expansions of the terms their names are built from. Unlike [Docs](#func-docs) it ignores any local doc set.
+
+Every call returns a new set, decoded from the embedded texts: the caller owns it and may change it with [nsd.DocSet.Set](https://pkg.go.dev/github.com/otfabric/go-iec61850-model/nsd#DocSet.Set). Keep the set when you use it more than once; decoding it takes some milliseconds.
 
 ## Types
 

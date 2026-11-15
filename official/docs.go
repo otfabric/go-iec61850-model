@@ -82,23 +82,25 @@ func mergeDocSets(base, over []*nsd.DocSet) []*nsd.DocSet {
 	out := make([]*nsd.DocSet, 0, len(langs))
 	for _, lang := range langs {
 		m := nsd.NewDocSet(lang)
-		for _, src := range []*nsd.DocSet{nsd.SelectDocSet(base, lang), nsd.SelectDocSet(over, lang)} {
-			if src == nil {
-				continue
-			}
-			for _, k := range src.Keys() {
-				t, _ := src.Text(k)
-				if t.Title != "" {
-					_ = m.Set(k+"#title", t.Title) // keys come from a valid set
-				}
-				if t.Description != "" {
-					_ = m.Set(k+"#desc", t.Description)
-				}
-			}
-		}
+		copyTexts(m, nsd.SelectDocSet(base, lang))
+		copyTexts(m, nsd.SelectDocSet(over, lang))
 		out = append(out, m)
 	}
 	return out
+}
+
+// copyTexts sets every title and description of src in dst; a nil src
+// has none.
+func copyTexts(dst, src *nsd.DocSet) {
+	for _, k := range src.Keys() {
+		t, _ := src.Text(k)
+		if t.Title != "" {
+			_ = dst.Set(k+"#title", t.Title) // keys come from a valid set
+		}
+		if t.Description != "" {
+			_ = dst.Set(k+"#desc", t.Description)
+		}
+	}
 }
 
 // DocsSource names where the documentation texts come from: the path
@@ -136,11 +138,16 @@ func DocLanguages() []string {
 // OT Fabric (MIT). Most data object descriptions are composed from the
 // expansions of the terms their names are built from. Unlike [Docs] it
 // ignores any local doc set.
+//
+// Every call returns a new set, decoded from the embedded texts: the
+// caller owns it and may change it with [nsd.DocSet.Set]. Keep the set
+// when you use it more than once; decoding it takes some milliseconds.
 func PublicDocs() (*nsd.DocSet, error) {
-	if _, err := loadDocs(); err != nil && publicSets == nil {
+	sets, err := nsd.ReadDocSets(publicDocs)
+	if err != nil {
 		return nil, err
 	}
-	return nsd.SelectDocSet(publicSets, "en"), nil
+	return nsd.SelectDocSet(sets, "en"), nil
 }
 
 // Docs returns the doc set of the language, e.g. "en": the public
@@ -148,13 +155,32 @@ func PublicDocs() (*nsd.DocSet, error) {
 // [ErrNoDocs] for a language without texts, or with the error of reading
 // the IEC61850_MODEL_DOCS file. Use the set with nsd.WithFallbackDocs to
 // document namespaces loaded from packages.
+//
+// Every call returns a new set, a copy of the texts the package holds:
+// the caller owns it and may change it with [nsd.DocSet.Set]. A change
+// does not reach another caller's set, nor the profiles of
+// [OpenDocumented]. Keep the set when you use it more than once; the
+// copy takes some milliseconds.
 func Docs(lang string) (*nsd.DocSet, error) {
+	s, err := sharedDocs(lang)
+	if err != nil {
+		return nil, err
+	}
+	out := nsd.NewDocSet(s.Lang())
+	copyTexts(out, s)
+	return out, nil
+}
+
+// sharedDocs returns the doc set of the language that the package
+// holds. It is shared by every caller and never changed after it was
+// loaded: the package only reads it, and hands out copies.
+func sharedDocs(lang string) (*nsd.DocSet, error) {
 	sets, err := loadDocs()
 	if err != nil {
 		return nil, err
 	}
 	s := nsd.SelectDocSet(sets, lang)
-	if s == nil || s.Len() == 0 {
+	if s.Len() == 0 {
 		return nil, fmt.Errorf("%w: no %q texts", ErrNoDocs, lang)
 	}
 	return s, nil
@@ -167,7 +193,7 @@ func Docs(lang string) (*nsd.DocSet, error) {
 // returns, which stays without texts. It fails with [ErrNoDocs] for a
 // language without texts.
 func OpenDocumented(name, lang string) (*catalog.Profile, error) {
-	set, err := Docs(lang)
+	set, err := sharedDocs(lang)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +234,7 @@ func cachedDocumentedCatalog(lang string, set *nsd.DocSet) (*catalog.Catalog, er
 // per language and shared; it fails with [ErrNoDocs] for a language
 // without texts.
 func DocumentedCatalog(lang string) (*catalog.Catalog, error) {
-	set, err := Docs(lang)
+	set, err := sharedDocs(lang)
 	if err != nil {
 		return nil, err
 	}

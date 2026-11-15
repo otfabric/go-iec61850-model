@@ -23,6 +23,10 @@ import (
 // maxNesting bounds how deep archives inside archives are opened.
 const maxNesting = 2
 
+// centralHeaderSignature starts every central directory header of a
+// ZIP archive (APPNOTE.TXT 4.3.12): one header per entry.
+var centralHeaderSignature = []byte("PK\x01\x02")
+
 // Package is the content of one NSD source: a ZIP archive, a directory
 // or a single document. It holds the parsed namespaces, documentation
 // files, the manifest when present, and the diagnostics of the import.
@@ -96,9 +100,13 @@ func (p *Package) Diagnostics() model.Diagnostics {
 // LoadFile loads an NSD source from a file: a ZIP archive, recognized
 // by its content whatever its extension (official package names such
 // as "IEC_61850-7-2.NSD.2007B6.light" may have none), an XSD schema, or
-// a single XML document.
+// a single XML document. The limits of an archive apply to an archive,
+// the limits of a document to every other file.
 func LoadFile(name string, opts ...Option) (*Package, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	if o.Source == "" {
 		o.Source = name
 	}
@@ -144,7 +152,10 @@ func LoadDir(dir string, opts ...Option) (*Package, error) {
 	if err != nil {
 		return nil, &model.SourceError{Source: dir, Reason: "cannot read directory", Err: errors.Join(model.ErrSourceUnavailable, err)}
 	}
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	b := newBuilder(dir, &o)
 	for _, e := range entries {
 		if !e.Type().IsRegular() {
@@ -153,7 +164,9 @@ func LoadDir(dir string, opts ...Option) (*Package, error) {
 		full := filepath.Join(dir, e.Name())
 		known := isNSDFile(e.Name()) || isSchemaFile(e.Name()) || strings.EqualFold(filepath.Ext(e.Name()), ".zip") || isManifestFile(e.Name())
 		if !known && !startsWithZIP(full) {
-			b.info("not-processed", full, "file is not an NSD document and was not processed")
+			if err := b.info("not-processed", full, "file is not an NSD document and was not processed"); err != nil {
+				return nil, err
+			}
 			continue
 		}
 		data, err := readFileBounded(full, o.MaxArchiveSize)
@@ -169,7 +182,10 @@ func LoadDir(dir string, opts ...Option) (*Package, error) {
 
 // LoadZIP loads an NSD package from a ZIP archive on disk.
 func LoadZIP(name string, opts ...Option) (*Package, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	if o.Source == "" {
 		o.Source = name
 	}
@@ -180,9 +196,15 @@ func LoadZIP(name string, opts ...Option) (*Package, error) {
 	return readZIPBytes(data, &o)
 }
 
-// ReadZIP loads an NSD package from a ZIP archive held by r.
+// ReadZIP loads an NSD package from a ZIP archive held by r. The
+// archive, the archives inside it and their entries are bounded by the
+// archive options; every XML document in them by the document options.
+// A package carries at most 100 000 findings.
 func ReadZIP(r io.Reader, opts ...Option) (*Package, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readBounded(r, o.MaxArchiveSize, o.Source)
 	if err != nil {
 		return nil, err
@@ -223,8 +245,23 @@ func newBuilder(source string, o *Options) *builder {
 	return &builder{o: o, pkg: &Package{source: source}, budget: o.MaxArchiveSize, manifestIn: map[string]bool{}}
 }
 
-func (b *builder) info(code, source, msg string) {
-	b.pkg.diagnostics = append(b.pkg.diagnostics, model.Diagnostic{Severity: model.SeverityInfo, Code: code, Source: source, Message: msg})
+func (b *builder) info(code, source, msg string) error {
+	return b.diagnose(model.Diagnostic{Severity: model.SeverityInfo, Code: code, Source: source, Message: msg})
+}
+
+// diagnose adds findings to the package. A package carries at most
+// maxPackageDiagnostics of them, over all its documents; with more the
+// load fails.
+func (b *builder) diagnose(ds ...model.Diagnostic) error {
+	if len(ds) > maxPackageDiagnostics-len(b.pkg.diagnostics) {
+		return &model.SourceError{
+			Source: b.pkg.source,
+			Reason: fmt.Sprintf("package has more than %d findings", maxPackageDiagnostics),
+			Err:    model.ErrLimitExceeded,
+		}
+	}
+	b.pkg.diagnostics = append(b.pkg.diagnostics, ds...)
+	return nil
 }
 
 func isNSDFile(name string) bool {
@@ -253,9 +290,15 @@ func startsWithZIP(name string) bool {
 // addFile dispatches one file by name and content: archive, manifest,
 // schema or document.
 func (b *builder) addFile(name, source string, data []byte, depth int) error {
-	switch {
-	case strings.EqualFold(path.Ext(name), ".zip") || isZIP(data):
+	if strings.EqualFold(path.Ext(name), ".zip") || isZIP(data) {
 		return b.addZIP(source, data, depth)
+	}
+	// Every XML document is bounded by MaxDocumentSize: namespaces and
+	// documentation, schemas and manifests alike.
+	if int64(len(data)) > b.o.MaxDocumentSize {
+		return &model.SourceError{Source: source, Reason: fmt.Sprintf("document exceeds %d bytes", b.o.MaxDocumentSize), Err: model.ErrLimitExceeded}
+	}
+	switch {
 	case isSchemaFile(name):
 		o := *b.o
 		o.Source = source
@@ -286,14 +329,13 @@ func (b *builder) addFile(name, source string, data []byte, depth int) error {
 	default:
 		o := *b.o
 		o.Source = source
-		if int64(len(data)) > o.MaxDocumentSize {
-			return &model.SourceError{Source: source, Reason: fmt.Sprintf("document exceeds %d bytes", o.MaxDocumentSize), Err: model.ErrLimitExceeded}
-		}
 		doc, err := parseBytes(data, &o)
 		if err != nil {
 			return err
 		}
-		b.pkg.diagnostics = append(b.pkg.diagnostics, doc.Diagnostics...)
+		if err := b.diagnose(doc.Diagnostics...); err != nil {
+			return err
+		}
 		switch doc.Kind {
 		case KindNS:
 			b.pkg.namespaces = append(b.pkg.namespaces, doc.Namespace)
@@ -313,6 +355,14 @@ func (b *builder) addFile(name, source string, data []byte, depth int) error {
 func (b *builder) addZIP(source string, data []byte, depth int) error {
 	if depth >= maxNesting {
 		return &model.SourceError{Source: source, Reason: fmt.Sprintf("archives nested deeper than %d levels", maxNesting), Err: model.ErrLimitExceeded}
+	}
+	// The entry limit is applied before the directory is read: an
+	// archive cannot hold more entries than central directory headers,
+	// and counting their signature allocates nothing. The count is an
+	// upper bound; it includes the headers of archives stored without
+	// compression inside this one, which count again when they are opened.
+	if n := bytes.Count(data, centralHeaderSignature); n > b.o.MaxArchiveEntries-b.entries {
+		return &model.SourceError{Source: source, Reason: fmt.Sprintf("archive has more than %d entries", b.o.MaxArchiveEntries), Err: model.ErrLimitExceeded}
 	}
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -355,10 +405,12 @@ func (b *builder) addZIP(source string, data []byte, depth int) error {
 		}
 		base := path.Base(name)
 		if !isNSDFile(base) && !isSchemaFile(base) && !strings.EqualFold(path.Ext(base), ".zip") && !isManifestFile(base) {
-			b.info("not-processed", entrySource, "entry is not an NSD document and was not processed")
+			if err := b.info("not-processed", entrySource, "entry is not an NSD document and was not processed"); err != nil {
+				return err
+			}
 			continue
 		}
-		content, err := b.readEntry(f, entrySource)
+		content, err := b.readEntry(f, entrySource, int64(len(data)))
 		if err != nil {
 			return err
 		}
@@ -369,29 +421,37 @@ func (b *builder) addZIP(source string, data []byte, depth int) error {
 	return nil
 }
 
-// readEntry decompresses one entry within the remaining size budget and
-// the compression-ratio bound. Declared sizes are checked first but not
-// trusted: the actual decompressed size is enforced while reading.
-func (b *builder) readEntry(f *zip.File, source string) ([]byte, error) {
+// readEntry decompresses one entry of an archive of archiveSize bytes
+// within the remaining size budget and the compression-ratio bound.
+// Declared sizes are checked first but not trusted: the actual
+// decompressed size is enforced while reading, and a declared
+// compressed size that the archive cannot hold is refused, so the ratio
+// is never computed from it.
+func (b *builder) readEntry(f *zip.File, source string, archiveSize int64) ([]byte, error) {
 	limit := b.budget
 	if f.UncompressedSize64 > uint64(limit) {
 		return nil, &model.SourceError{Source: source, Reason: fmt.Sprintf("entry declares %d bytes, more than the remaining archive budget", f.UncompressedSize64), Err: model.ErrLimitExceeded}
+	}
+	if f.CompressedSize64 > uint64(archiveSize) {
+		return nil, &model.SourceError{Source: source, Reason: fmt.Sprintf("entry declares %d compressed bytes, more than the %d bytes of its archive", f.CompressedSize64, archiveSize), Err: model.ErrInvalidNSD}
 	}
 	rc, err := f.Open()
 	if err != nil {
 		return nil, &model.SourceError{Source: source, Reason: "cannot open entry", Err: errors.Join(model.ErrInvalidNSD, err)}
 	}
 	defer func() { _ = rc.Close() }()
-	data, err := io.ReadAll(io.LimitReader(rc, limit+1))
+	data, more, err := readLimited(rc, limit)
 	if err != nil {
 		return nil, &model.SourceError{Source: source, Reason: "cannot read entry", Err: errors.Join(model.ErrInvalidNSD, err)}
 	}
-	n := int64(len(data))
-	if n > limit {
+	if more {
 		return nil, &model.SourceError{Source: source, Reason: fmt.Sprintf("archive exceeds %d uncompressed bytes", b.o.MaxArchiveSize), Err: model.ErrLimitExceeded}
 	}
-	if c := int64(f.CompressedSize64); c > 0 && n > 1<<20 && n/c > b.o.MaxCompressionRatio {
-		return nil, &model.SourceError{Source: source, Reason: fmt.Sprintf("compression ratio %d exceeds %d", n/c, b.o.MaxCompressionRatio), Err: model.ErrLimitExceeded}
+	// n and the ratio limit are positive and c is at most archiveSize,
+	// so the comparison is exact in uint64.
+	n := int64(len(data))
+	if c := f.CompressedSize64; c > 0 && n > 1<<20 && uint64(n)/c > uint64(b.o.MaxCompressionRatio) {
+		return nil, &model.SourceError{Source: source, Reason: fmt.Sprintf("compression ratio %d exceeds %d", uint64(n)/c, b.o.MaxCompressionRatio), Err: model.ErrLimitExceeded}
 	}
 	b.budget -= n
 	return data, nil
@@ -443,10 +503,12 @@ func (b *builder) finish() (*Package, error) {
 	kept := p.namespaces[:0]
 	for _, ns := range p.namespaces {
 		if n := len(kept); n > 0 && kept[n-1].ID == ns.ID && kept[n-1].Provenance.SHA256 == ns.Provenance.SHA256 {
-			p.diagnostics = append(p.diagnostics, model.Diagnostic{
+			if err := b.diagnose(model.Diagnostic{
 				Severity: model.SeverityInfo, Code: "duplicate-document", Namespace: ns.ID, Source: ns.Provenance.Source,
 				Message: "identical copy of " + kept[n-1].Provenance.Source + "; ignored",
-			})
+			}); err != nil {
+				return nil, err
+			}
 			continue
 		}
 		kept = append(kept, ns)
@@ -475,7 +537,9 @@ func (b *builder) finish() (*Package, error) {
 		if b.o.Language == "" {
 			continue
 		}
-		b.applyDocs(ns)
+		if err := b.applyDocs(ns); err != nil {
+			return nil, err
+		}
 	}
 	return p, nil
 }
@@ -488,7 +552,7 @@ func (b *builder) finish() (*Package, error) {
 // release: an NSDoc of the exact release is applied last, so it wins,
 // and a matching NSDoc that applies no text is reported with the
 // warning "doc-ids-unmatched" (MDL-09).
-func (b *builder) applyDocs(ns *model.Namespace) {
+func (b *builder) applyDocs(ns *model.Namespace) error {
 	p := b.pkg
 	var matching []*NSDoc
 	for _, d := range p.docs {
@@ -501,21 +565,26 @@ func (b *builder) applyDocs(ns *model.Namespace) {
 	})
 	for _, d := range matching {
 		if n := ApplyDoc(ns, d); n == 0 && docIDs(ns) > 0 {
-			p.diagnostics = append(p.diagnostics, model.Diagnostic{
+			if err := b.diagnose(model.Diagnostic{
 				Severity: model.SeverityWarning, Code: "doc-ids-unmatched", Namespace: ns.ID, Source: ns.Provenance.Source,
-				Message: fmt.Sprintf("documentation file for %s (%s) applies no text: its IDs do not match the %d IDs of this release", d.ID, d.Lang, docIDs(ns)),
-			})
+				Message: fmt.Sprintf("documentation file for %s (%s) applies no text: its IDs do not match the %d IDs of this release", clip(d.ID.String()), clip(d.Lang), docIDs(ns)),
+			}); err != nil {
+				return err
+			}
 		}
 	}
 	if len(matching) == 0 && len(p.docs) > 0 {
-		p.diagnostics = append(p.diagnostics, model.Diagnostic{
+		if err := b.diagnose(model.Diagnostic{
 			Severity: model.SeverityInfo, Code: "no-documentation", Namespace: ns.ID, Source: ns.Provenance.Source,
 			Message: fmt.Sprintf("no %q documentation file for this namespace", b.o.Language),
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	if set := b.o.FallbackDocs; set != nil && (set.Lang() == "" || set.Lang() == b.o.Language) {
 		ApplyDocSet(ns, set)
 	}
+	return nil
 }
 
 func sha256Hex(data []byte) string {
