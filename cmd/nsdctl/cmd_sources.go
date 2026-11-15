@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -278,6 +279,11 @@ the package file, dependencies and a status. A namespace whose profile
 of other namespaces are kept; the redistribution decision and source URL
 of an existing entry are kept too, and new entries are "local-only".
 
+An entry records when its package was retrieved (retrievedAt): the
+modification time of the package file, which "sources fetch" sets when
+it downloads. The time of an entry that already pins the same digest is
+kept.
+
 Without --write the merged lock is printed; with --write it replaces the
 lock file. Packages that are missing are left out.`,
 		Args: cobra.NoArgs,
@@ -354,6 +360,7 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 			if e.Source == "" {
 				e.Source = st.URL
 			}
+			e.RetrievedAt = retrievedAt(e, digest, st.File)
 			e.Standard, e.Namespace, e.Content, e.SHA256 = "IEC 61850-"+st.Part, ns, string(st.pkg.Content()), digest
 			e.Package = st.Name
 			e.Status, e.Notes = sources.StateNSDAvailable, fmt.Sprintf("schema package, %d XSD files", st.Schemas)
@@ -365,6 +372,7 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 		}
 		for _, id := range st.pkg.ServiceNamespaces() {
 			e := byNS[id.String()]
+			e.RetrievedAt = retrievedAt(e, digest, st.File)
 			e.Standard, e.Namespace, e.SHA256, e.Package = id.Standard, id.String(), digest, st.Name
 			e.Content = string(st.pkg.Content())
 			if e.Source == "" {
@@ -378,6 +386,7 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 		}
 		for _, ns := range st.pkg.Namespaces() {
 			e := byNS[ns.ID.String()]
+			e.RetrievedAt = retrievedAt(e, digest, st.File)
 			e.Standard, e.Namespace, e.SHA256 = ns.ID.Standard, ns.ID.String(), digest
 			e.Package = st.Name
 			if e.Source == "" {
@@ -411,6 +420,21 @@ func mergeLock(lock *sources.Lock, survey []packageStatus) (*sources.Lock, error
 		out.Sources = []sources.Entry{}
 	}
 	return out, nil
+}
+
+// retrievedAt returns the retrieval time for the lock entry of a
+// package file with the given digest: the time the entry records
+// already when it pins the same digest, otherwise the modification time
+// of the file, which sources fetch sets when it downloads the package.
+func retrievedAt(e sources.Entry, digest, file string) string {
+	if e.RetrievedAt != "" && e.SHA256 == digest {
+		return e.RetrievedAt
+	}
+	info, err := os.Stat(file)
+	if err != nil {
+		return ""
+	}
+	return info.ModTime().UTC().Format(time.RFC3339)
 }
 
 func short(s string) string {

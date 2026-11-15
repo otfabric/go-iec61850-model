@@ -9,6 +9,10 @@ This directory is its own Go module
 (`github.com/otfabric/go-iec61850-model/cmd/nsdctl`). Installation is
 described in the [repository README](../../README.md#install-nsdctl).
 
+The module requires a released version of the library, so a release binary of
+`nsdctl` contains the library of the release before it. `nsdctl version` says
+which one; [docs/cli.md](docs/cli.md#version) lists it per release.
+
 | Document | Contents |
 |---|---|
 | [docs/cli.md](docs/cli.md) | Global flags, commands and a walkthrough with real output |

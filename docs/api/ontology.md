@@ -109,6 +109,8 @@ type Graph struct {
 
 Graph is an immutable concept graph. Every listing and traversal is deterministic. It is safe for concurrent use.
 
+What the graph returns is the caller's: a concept is a copy with its own Properties, and every slice is a new one. Changing a result does not change the graph.
+
 #### func BuildGraph
 
 ```go
@@ -197,7 +199,7 @@ RelationsAll returns all relations, ordered by source, predicate and target.
 func (g *Graph) Walk(start string, fn func(c Concept, depth int) bool, preds ...Predicate) error
 ```
 
-Walk traverses the graph breadth-first from start along outgoing relations with the given predicates (all when none are given), visiting each concept once. fn receives the concept and its distance from start; returning false stops the walk below that concept. Neighbors are visited in [Graph.Relations](#func-graph-relations) order.
+Walk traverses the graph breadth-first from start along outgoing relations with the given predicates (all when none are given), visiting each concept once. fn receives a copy of the concept and its distance from start; returning false stops the walk below that concept. Neighbors are visited in [Graph.Relations](#func-graph-relations) order.
 
 ### type Kind
 

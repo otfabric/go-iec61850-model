@@ -353,11 +353,18 @@ func TestNotice(t *testing.T) {
 	}
 }
 
+// The importer of typeCheck reads the standard library from source,
+// once for all the tests: it keeps the packages it has checked.
+var (
+	checkFiles    = token.NewFileSet()
+	checkImporter = importer.ForCompiler(checkFiles, "source", nil)
+)
+
 // typeCheck parses and type-checks the generated file together with its
 // generated test.
 func typeCheck(t *testing.T, files Files) *types.Package {
 	t.Helper()
-	fset := token.NewFileSet()
+	fset := checkFiles
 	var parsed []*ast.File
 	for _, name := range []string{GoFileName, GoTestFileName} {
 		f, err := parser.ParseFile(fset, name, files[name], parser.ParseComments)
@@ -369,7 +376,7 @@ func typeCheck(t *testing.T, files Files) *types.Package {
 		}
 		parsed = append(parsed, f)
 	}
-	conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
+	conf := types.Config{Importer: checkImporter}
 	pkg, err := conf.Check("names", fset, parsed, nil)
 	if err != nil {
 		t.Fatalf("type check: %v", err)

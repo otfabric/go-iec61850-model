@@ -134,15 +134,18 @@ vuln: ## Run govulncheck
 	@govulncheck $(PKGS)
 	@cd $(CLI_DIR) && govulncheck ./...
 
-fuzz: ## Run all fuzz targets for FUZZTIME each (default 15s)
-	@echo "Fuzzing nsd.Parse"
-	@go test -run='^$$' -fuzz='^FuzzParse$$' -fuzztime=$(FUZZTIME) ./nsd
-	@echo "Fuzzing nsd.ReadDocSets"
-	@go test -run='^$$' -fuzz=FuzzReadDocSets -fuzztime=$(FUZZTIME) ./nsd
-	@echo "Fuzzing reference.Parse"
-	@go test -run='^$$' -fuzz=FuzzParse -fuzztime=$(FUZZTIME) ./reference
-	@echo "Fuzzing presence.ReadInstance"
-	@go test -run='^$$' -fuzz=FuzzReadInstance -fuzztime=$(FUZZTIME) ./presence
+# Every fuzz target of both modules, found with `go test -list`: a new
+# target runs without being added here (TEST-005).
+fuzz: ## Run every fuzz target of the library and of nsdctl for FUZZTIME each (default 15s)
+	@set -e; for dir in . $(CLI_DIR); do \
+		for pkg in $$(go -C $$dir list ./...); do \
+			listed=$$(go -C $$dir test -list '^Fuzz' $$pkg); \
+			for target in $$(echo "$$listed" | grep '^Fuzz' || true); do \
+				echo "Fuzzing $$pkg $$target"; \
+				go -C $$dir test -run='^$$' -fuzz="^$$target\$$" -fuzztime=$(FUZZTIME) $$pkg; \
+			done; \
+		done; \
+	done
 
 bench: ## Run benchmarks
 	@echo "Running benchmarks"

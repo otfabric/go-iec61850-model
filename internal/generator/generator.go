@@ -16,6 +16,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"strings"
 
@@ -27,7 +28,31 @@ import (
 // FormatVersion is the version of the generated output format. It
 // changes whenever the generator would write different bytes for the
 // same input.
-const FormatVersion = 6
+const FormatVersion = 7
+
+// modulePath is the path of the module the generator belongs to.
+const modulePath = "github.com/otfabric/go-iec61850-model"
+
+// readBuildInfo is replaced in tests.
+var readBuildInfo = debug.ReadBuildInfo
+
+// libraryVersion returns the version of this module in the running
+// program, e.g. "v0.10.2": the revision of the generator, which the
+// header of every output names. It is empty when the program is built
+// from the module's own tree (its tests and tools) or with the module
+// replaced, because such a build has no version to name.
+func libraryVersion() string {
+	bi, ok := readBuildInfo()
+	if !ok || bi == nil {
+		return ""
+	}
+	for _, d := range bi.Deps {
+		if d != nil && d.Path == modulePath && d.Replace == nil && d.Version != "(devel)" {
+			return d.Version
+		}
+	}
+	return ""
+}
 
 // Marker identifies files written by the generator. Write and Check
 // only replace or remove files that contain it near the top.
@@ -88,7 +113,7 @@ func (in Input) sourceLines() []string {
 		if ns.Provenance.PackageSHA256 != "" {
 			line += " package-sha256:" + ns.Provenance.PackageSHA256
 		}
-		out = append(out, line)
+		out = append(out, comment(line))
 	}
 	return out
 }
@@ -100,12 +125,19 @@ func (in Input) distribution() string {
 	return "local-only; derived from IEC NSD files, do not commit or publish (see docs/licensing.md of github.com/otfabric/go-iec61850-model)"
 }
 
-// headerLines is the provenance header shared by all outputs.
+// headerLines is the provenance header shared by all outputs: the
+// generator with its revision (the version of this library in the
+// program that generates, when it has one) and its output format, the
+// distribution and the source namespaces.
 func (in Input) headerLines(kind string) []string {
+	generator := fmt.Sprintf("output format %d", FormatVersion)
+	if v := libraryVersion(); v != "" {
+		generator = "go-iec61850-model " + v + ", " + generator
+	}
 	lines := []string{
 		Marker + " generate " + kind + "; DO NOT EDIT.",
 		"",
-		fmt.Sprintf("Generator: nsdctl %s (output format %d)", orDev(in.ToolVersion), FormatVersion),
+		comment(fmt.Sprintf("Generator: nsdctl %s (%s)", orDev(in.ToolVersion), generator)),
 		"Distribution: " + in.distribution(),
 		"Namespaces:",
 	}
@@ -144,9 +176,10 @@ func (in Input) noticeFile(kind string) []byte {
 			b.WriteString("the standard it is taken from, with the copyright notice and license it declares.\n")
 			found = true
 		}
-		fmt.Fprintf(&b, "\n## %s\n\nSource: IEC code component %s, © IEC.\n", ns.ID, ns.ID)
+		id := comment(ns.ID.String())
+		fmt.Fprintf(&b, "\n## %s\n\nSource: IEC code component %s, © IEC.\n", id, id)
 		if c := ns.Copyright; c.LicenseURI != "" {
-			fmt.Fprintf(&b, "License: %s (%s).\n", c.LicenseURI, orDash(c.LicenseKind))
+			fmt.Fprintf(&b, "License: %s (%s).\n", comment(c.LicenseURI), comment(orDash(c.LicenseKind)))
 		}
 		if ns.Copyright.Notice != "" {
 			b.WriteString("\n> " + ns.Copyright.Notice + "\n")

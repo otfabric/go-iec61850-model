@@ -40,6 +40,7 @@ jobs:
       test-exclude-regex: "/example(s)?($|/)"
       run-govulncheck: true
       coverage-min: "90"
+      fuzz-time: 10s
       run-codecov: false
       go-versions: '["1.26", "1.27"]'
       # The shared default (v2.1.6) predates Go 1.26; the version `make lint` is checked with.

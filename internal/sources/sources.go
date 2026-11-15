@@ -19,6 +19,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/otfabric/go-iec61850-model/model"
 )
@@ -282,7 +283,10 @@ type Entry struct {
 	Package string `json:"package,omitempty"`
 	// Source is the official location the package was obtained from.
 	Source string `json:"source,omitempty"`
-	// RetrievedAt is the RFC 3339 retrieval time.
+	// RetrievedAt says when the package was retrieved from Source: an
+	// RFC 3339 time ("2026-11-09T19:24:47Z") or, when only the day is
+	// known, a date ("2026-11-09"). An entry that pins a SHA256 records
+	// it, so that a package replaced at its location can be dated.
 	RetrievedAt string `json:"retrievedAt,omitempty"`
 	// SHA256 is the hex digest of the package archive or document.
 	SHA256 string `json:"sha256,omitempty"`
@@ -436,9 +440,21 @@ func (idx *Index) Validate() model.Diagnostics {
 	return ds
 }
 
+// validRetrievedAt reports whether s is a retrieval time of a lock
+// entry: an RFC 3339 time or a date (YYYY-MM-DD).
+func validRetrievedAt(s string) bool {
+	if _, err := time.Parse(time.RFC3339, s); err == nil {
+		return true
+	}
+	_, err := time.Parse(time.DateOnly, s)
+	return err == nil
+}
+
 // Validate checks the lock: schema version, parsable and unique
 // namespace IDs, known states and redistribution values, official
-// source URLs, digests, and that adopted entries carry a digest.
+// source URLs, digests, retrieval times, and that adopted entries carry
+// a digest. An entry that pins a digest without a retrieval time is
+// reported as a warning.
 func (l *Lock) Validate() model.Diagnostics {
 	var ds model.Diagnostics
 	add := func(path, msg string) {
@@ -475,6 +491,13 @@ func (l *Lock) Validate() model.Diagnostics {
 		}
 		if e.SHA256 != "" && !isSHA256(e.SHA256) {
 			add(p, "sha256 must be 64 lower-case hex characters")
+		}
+		switch {
+		case e.RetrievedAt != "" && !validRetrievedAt(e.RetrievedAt):
+			add(p, fmt.Sprintf("retrievedAt %q is neither an RFC 3339 time nor a date (YYYY-MM-DD)", e.RetrievedAt))
+		case e.RetrievedAt == "" && e.SHA256 != "":
+			ds = append(ds, model.Diagnostic{Severity: model.SeverityWarning, Code: "undated-package", Source: "lock", Path: p,
+				Message: fmt.Sprintf("%s pins a sha256 without retrievedAt (nsdctl sources lock records it)", e.Namespace)})
 		}
 		if (e.Status == StateNSDValidated || e.Status == StateAdopted) && e.SHA256 == "" {
 			add(p, fmt.Sprintf("status %s requires a sha256", e.Status))

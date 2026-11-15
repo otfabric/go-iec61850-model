@@ -45,9 +45,12 @@ var (
 	buildDate = ""
 )
 
-// build is the resolved build information of this binary.
+// build is the resolved build information of this binary. Its
+// libraries include go-iec61850-model, the library of this repository:
+// nsdctl is a module of its own and is built on the library version its
+// go.mod requires, which is not the version of the nsdctl release.
 func build() buildinfo.Info {
-	return buildinfo.Resolve("nsdctl", version, tag, commit, buildDate, "github.com/otfabric/go-iec61850-model")
+	return buildinfo.Resolve("nsdctl", version, tag, commit, buildDate)
 }
 
 // Exit codes: the organisation table (docs/exitcodes.md).

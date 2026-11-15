@@ -203,7 +203,17 @@ func (f *Fetcher) fetchOne(ctx context.Context, p Package, lock *Lock, dir strin
 	if limit <= 0 {
 		limit = MaxPackageSize
 	}
-	n, err := io.Copy(io.MultiWriter(tmp, h), io.LimitReader(resp.Body, limit+1))
+	// Copy the limit, then ask for one byte more: a package of exactly
+	// the limit is complete, and no limit overflows the arithmetic.
+	n, err := io.Copy(io.MultiWriter(tmp, h), io.LimitReader(resp.Body, limit))
+	if err == nil && n == limit {
+		var one [1]byte
+		if m, rerr := io.ReadFull(resp.Body, one[:]); m > 0 {
+			n++
+		} else if rerr != io.EOF {
+			err = rerr
+		}
+	}
 	if cerr := tmp.Close(); err == nil {
 		err = cerr
 	}

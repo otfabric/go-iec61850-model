@@ -53,9 +53,9 @@ namespace of the profile (`IEC 61850-7-420:2019A4`, `IEC 61850-7-420`,
 | `generate go\|docs\|json\|catalog -o DIR` | Deterministic output; see [generation.md](../../../docs/generation.md) |
 | `sources check [--index --lock --packages DIR --tiers T]` | Validate the registry and lock; with `--packages`, check that every tracked package is present and carries its release, and compare digests with the lock |
 | `sources fetch [--dest DIR --tiers T --allow-unpinned --refresh]` | Download the tracked packages from their official locations, verified against the lock, into `.nsd-cache/` or a directory outside the repository |
-| `sources lock --packages DIR [--write]` | Produce lock entries (digest, content, dependencies, status) for the tracked packages found in DIR |
+| `sources lock --packages DIR [--write]` | Produce lock entries (digest, retrieval time, content, dependencies, status) for the tracked packages found in DIR; the retrieval time is the modification time of the package file, kept when the digest is unchanged |
 | `schema [SOURCE...] [--exit-code]` | XSD constructs (e.g. of IEC 61850-7-7) that the importer does not model |
-| `version` | Version, tag, commit, build date, Go version, platform on one line (`--json`: one line of JSON) |
+| `version` | Version, tag, commit, build date, the go-iec61850-model library the binary is built on, Go version, platform on one line (`--json`: one line of JSON) |
 | `notice` | The IEC attribution and notices of the embedded catalog |
 | `completion bash\|zsh\|fish\|powershell` | Shell completion script |
 
@@ -133,9 +133,32 @@ $ nsdctl version --json
 Release binaries carry version, tag, full commit and build date. A binary
 built with `go install …@vX.Y.Z` reports that module version; other builds
 report `dev`, the VCS revision (with `-dirty` for uncommitted changes) and no
-tag. `libraries` lists the other OT Fabric libraries linked in; nsdctl links
-none besides go-iec61850-model, whose version is the version, so the text line
-has none and the JSON has `[]`.
+tag.
+
+From v0.10.2, `libraries` lists go-iec61850-model, the library the binary is
+built on, with its version: the text line reads `…, built <date>,
+go-iec61850-model 0.10.1, go1.26.11, darwin/arm64)` and the JSON
+`"libraries":[{"name":"go-iec61850-model","version":"0.10.1"}]`. Earlier
+binaries, like the one above, print no library.
+
+The library version is not the version of the binary. `nsdctl` is a module of
+its own (`cmd/nsdctl/go.mod`) that requires a released library version, and
+that requirement moves to a release after the release exists. So a release
+binary contains the library of the release before it, and a library change
+reaches `nsdctl` one release later:
+
+| nsdctl | contains library |
+| --- | --- |
+| v0.10.2 | v0.10.1 |
+| v0.10.1 | v0.10.0 |
+| v0.10.0 | commit `d508c31`, between v0.9.1 and v0.10.0: without the semantic rules, the exclusions and the coverage report that the library v0.10.0 added |
+| v0.9.1 | v0.9.0 |
+| v0.9.0 | a commit between v0.8.2 and v0.9.0 (pseudo-version `v0.8.3-0.20261111104802-ea4f1a766773`) |
+| v0.8.2 | v0.8.1 |
+| v0.8.1 | v0.8.0 |
+| v0.8.0 | v0.7.0 |
+
+`git show vX.Y.Z:cmd/nsdctl/go.mod` shows it for any release.
 
 The binary embeds the official catalog; `nsdctl notice` prints the IEC
 attribution, license and copyright notice of every namespace in it:
@@ -488,8 +511,10 @@ MMXU.TotW.t          Timestamp  BASIC       MX
 objects come from `--present`, a JSON instance (`--instance`, `-` for stdin)
 or an SCL file: `--ln LD/LN` takes the logical node, its lnType, its DOI
 values of ctlModel and hvRef and the ldNs/lnNs of the name plates;
-`--ln-type ID` takes an LNodeType of the templates. Values, facts and context
-come from flags:
+`--ln-type ID` takes an LNodeType of the templates. An SCL file may have 64
+MiB, its types may nest 32 levels deep, and the instance built from them may
+have 100 000 names and values, the limit of a JSON instance; beyond that the
+command exits with code 3. Values, facts and context come from flags:
 
 | Flag | Meaning |
 | --- | --- |

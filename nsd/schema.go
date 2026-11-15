@@ -32,9 +32,12 @@ type Schema struct {
 }
 
 // ParseSchema reads the inventory of one XSD document, under the same
-// size, depth and DTD restrictions as [Parse].
+// size, depth, token and DTD restrictions as [Parse].
 func ParseSchema(r io.Reader, opts ...Option) (*Schema, error) {
-	o := buildOptions(opts)
+	o, err := buildOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readBounded(r, o.MaxDocumentSize, o.Source)
 	if err != nil {
 		return nil, err

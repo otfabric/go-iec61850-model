@@ -14,9 +14,9 @@ Messages start with `iec61850-model:`.
 
 | Sentinel | When returned |
 | --- | --- |
-| `ErrInvalidNSD` | Malformed XML, a document with structural errors, an invalid archive, a namespace without ID |
-| `ErrUnsupportedSchema` | Unknown root element or XML namespace; a non-NS document where a namespace is required |
-| `ErrLimitExceeded` | A size, depth, token, entry, nesting, compression-ratio or path-depth bound was exceeded |
+| `ErrInvalidNSD` | Malformed XML, a document with structural errors, an invalid archive (also an entry that declares more compressed bytes than its archive holds), a namespace without ID, a nil doc set or NSDoc passed to `nsd.EncodeDocSets`, `nsd.DocSetFromNSDoc` or `(*nsd.DocSet).Set` |
+| `ErrUnsupportedSchema` | Unknown root element or XML namespace; a non-NS document where a namespace is required; `nsd.WithSchemaNamespaces` without a namespace |
+| `ErrLimitExceeded` | A size, depth, token, finding, entry, nesting, compression-ratio, manifest, path-depth or expansion bound was exceeded ([SECURITY.md](SECURITY.md#limits) lists them); a limit option of `nsd` that is not positive, with the option named in the reason |
 | `ErrUnsafeArchive` | Absolute, traversing, backslash or drive-letter entry names; duplicate or non-regular entries; two manifests |
 | `ErrMissingDependency` | A namespace dependency is not loaded |
 | `ErrNamespaceConflict` | Two namespaces with the same ID; two releases of one standard in a profile; a selected release that does not satisfy a dependency |
@@ -155,6 +155,11 @@ findings such as unprocessed archive entries. `catalog.Profile.Diagnostics()`
 reports conflicting definitions (warnings) and unresolved type references
 (errors) without failing profile construction.
 
+A document carries at most 10 000 findings and a package 100 000; with more,
+the load fails with `ErrLimitExceeded`, and the reason quotes the first
+finding. The path and the message of a finding quote at most 256 bytes of a
+name, an attribute value or a namespace URI, followed by `...`.
+
 Diagnostic codes:
 
 | Code | Severity | Meaning |
@@ -163,7 +168,8 @@ Diagnostic codes:
 | `unexpected-attribute` | warning | An attribute not defined for this element kind, ignored |
 | `missing-type` | warning | A data attribute with neither type nor type kind |
 | `missing-attribute` | error | A required attribute is missing |
-| `invalid-boolean`, `invalid-release`, `invalid-literal` | error | An attribute value has the wrong format |
+| `invalid-boolean`, `invalid-release`, `invalid-literal` | error | An attribute value has the wrong format; a `literalVal` is a 32-bit integer |
+| `invalid-name` | error | A name-bearing attribute (`name`, `abbreviation`, `variant`, or the `id`, `version` or `revision` of a namespace) contains a control character |
 | `duplicate-definition`, `duplicate-literal-value` | error | A name or literal value is used twice |
 | `self-inheritance`, `self-dependency` | error | A class, enumeration or namespace refers to itself |
 | `empty-literal-name` | info | An enumeration literal without a name |

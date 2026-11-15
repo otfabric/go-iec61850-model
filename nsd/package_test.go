@@ -25,7 +25,7 @@ type entry struct {
 	mode fs.FileMode
 }
 
-func buildZIP(t *testing.T, entries ...entry) []byte {
+func buildZIP(t testing.TB, entries ...entry) []byte {
 	t.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
@@ -48,7 +48,7 @@ func buildZIP(t *testing.T, entries ...entry) []byte {
 	return buf.Bytes()
 }
 
-func fixtureEntries(t *testing.T, dir string) []entry {
+func fixtureEntries(t testing.TB, dir string) []entry {
 	es := []entry{
 		{name: dir + fixtures.NS72, data: fixtures.Read(t, fixtures.NS72)},
 		{name: dir + fixtures.NS73, data: fixtures.Read(t, fixtures.NS73)},

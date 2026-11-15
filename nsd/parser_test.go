@@ -344,18 +344,3 @@ func TestReadManifest(t *testing.T) {
 		t.Errorf("oversized manifest error = %v", err)
 	}
 }
-
-func FuzzParse(f *testing.F) {
-	f.Add([]byte(nsOpen + `<CDCs><CDC name="X"><DataAttribute name="a" fc="ST" type="B"/></CDC></CDCs></NS>`))
-	f.Add([]byte(`<NSDoc xmlns="http://www.iec.ch/61850/2016/NSD" id="T" version="1"><Doc id="a">x</Doc></NSDoc>`))
-	f.Add([]byte(`<!DOCTYPE x>`))
-	f.Fuzz(func(t *testing.T, data []byte) {
-		doc, err := nsd.Parse(bytes.NewReader(data), nsd.WithMaxDocumentSize(1<<16))
-		if err == nil && doc == nil {
-			t.Fatal("nil document without error")
-		}
-		if err != nil && doc != nil {
-			t.Fatal("document with error")
-		}
-	})
-}

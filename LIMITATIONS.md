@@ -38,6 +38,11 @@ device or engineering tool.
   `numCyc` 1 and harmonic magnitudes may be ratios (`hvRef`); SEQ components
   depend on `seqT`; unit hints are base units without multiplier. Each is
   device configuration, stated in the descriptor notes.
+- **Fixed limits.** Some limits have no option: the findings a document and
+  a package may carry, the size of a manifest, the elements one call of
+  `resolver.Resolver.Leaves` visits, and the limits of an instance and of an
+  SCL file ([SECURITY.md](SECURITY.md#limits)). A caller cannot raise or
+  lower them.
 - **No update monitor.** Nothing discovers new IEC releases: `nsdctl sources
   check` contacts no server, and the weekly `nsd.yml` run only detects packages
   that changed or disappeared at their pinned locations.

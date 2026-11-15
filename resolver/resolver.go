@@ -46,8 +46,18 @@ type Lookup interface {
 // expands data objects and constructed types.
 const DefaultMaxDepth = 32
 
+// maxExpansion bounds the model elements one call of [Resolver.Leaves]
+// visits: the leaves it returns and the data objects and structures
+// above them. The depth alone does not bound an expansion: types of a
+// few members each, nested a few levels deep, multiply. The largest
+// expansion of a class of the embedded catalog (MHAI) visits 15 543
+// elements for 11 043 leaves.
+const maxExpansion = 100_000
+
 // Resolver resolves references and model paths against a [Lookup],
 // usually a namespace profile. It is safe for concurrent use.
+//
+// The zero value is not usable: create a Resolver with [New].
 //
 // The logical node class of a path is looked up unqualified, unless the
 // resolver is restricted to a namespace with [Resolver.In]. Every other
@@ -56,13 +66,16 @@ const DefaultMaxDepth = 32
 // so a name that two namespaces define does not make paths through the
 // other one ambiguous.
 type Resolver struct {
-	l        Lookup
-	maxDepth int
-	ns       *model.NamespaceID
+	l            Lookup
+	maxDepth     int
+	maxExpansion int
+	ns           *model.NamespaceID
 }
 
 // New returns a resolver for the given lookup.
-func New(l Lookup) *Resolver { return &Resolver{l: l, maxDepth: DefaultMaxDepth} }
+func New(l Lookup) *Resolver {
+	return &Resolver{l: l, maxDepth: DefaultMaxDepth, maxExpansion: maxExpansion}
+}
 
 // In returns a resolver that looks up logical node classes in namespace
 // ns only, e.g. DBAT as IEC 61850-7-420 defines it when IEC TR 61850-90-9
@@ -139,6 +152,10 @@ type Step struct {
 
 // Resolution is a resolved model path, from a logical node class down
 // to a data object or data attribute.
+//
+// The resolver returns resolutions with at least one step. The zero
+// value has none: its leaf is the zero [Step], and its paths, types and
+// class reference are empty.
 type Resolution struct {
 	// Steps lists every element of the path; the first is the logical
 	// node class.
@@ -159,8 +176,14 @@ type Resolution struct {
 	Basic       *model.BasicType            `json:"-"`
 }
 
-// Leaf returns the last step.
-func (r *Resolution) Leaf() Step { return r.Steps[len(r.Steps)-1] }
+// Leaf returns the last step, or the zero Step for a resolution
+// without steps.
+func (r *Resolution) Leaf() Step {
+	if r == nil || len(r.Steps) == 0 {
+		return Step{}
+	}
+	return r.Steps[len(r.Steps)-1]
+}
 
 // Doc returns the documentation of the leaf.
 func (r *Resolution) Doc() model.Doc { return r.Leaf().Doc }
@@ -170,18 +193,26 @@ func (r *Resolution) Doc() model.Doc { return r.Leaf().Doc }
 func (r *Resolution) Description() string { return r.Leaf().Doc.Long() }
 
 // Path returns the class path, e.g. "MMXU.Hz.mag.f".
-func (r *Resolution) Path() string { return joinSteps(r.Steps, nil) }
+func (r *Resolution) Path() string { return joinSteps(r.steps(), nil) }
 
 // DataObjectPath returns the data object part of the path, e.g. "Hz"
 // or "PNV.phsA".
 func (r *Resolution) DataObjectPath() string {
-	return joinSteps(r.Steps, func(s Step) bool { return s.Kind == StepDataObject || s.Kind == StepSubDataObject })
+	return joinSteps(r.steps(), func(s Step) bool { return s.Kind == StepDataObject || s.Kind == StepSubDataObject })
 }
 
 // AttributePath returns the attribute part of the path, e.g. "mag.f";
 // empty when the path ends at a data object.
 func (r *Resolution) AttributePath() string {
-	return joinSteps(r.Steps, func(s Step) bool { return s.Kind.isAttribute() })
+	return joinSteps(r.steps(), func(s Step) bool { return s.Kind.isAttribute() })
+}
+
+// steps returns the steps, none for a nil resolution.
+func (r *Resolution) steps() []Step {
+	if r == nil {
+		return nil
+	}
+	return r.Steps
 }
 
 // isAttribute reports whether a step of this kind is an attribute: a
@@ -214,6 +245,9 @@ func (r *Resolution) IsAttribute() bool { return r.Leaf().Kind.isAttribute() }
 // ClassRef returns the class reference of the resolved path, with the
 // leaf FC for attribute paths.
 func (r *Resolution) ClassRef() reference.ClassRef {
+	if len(r.steps()) == 0 {
+		return reference.ClassRef{}
+	}
 	ref := reference.ClassRef{LNClass: r.Steps[0].Name}
 	for _, s := range r.Steps[1:] {
 		ref.Path = append(ref.Path, s.Name)
@@ -316,7 +350,9 @@ func (r *Resolver) ResolveInheritance(lnClass string) ([]*model.LogicalNodeClass
 // ResolvePath resolves a path of data object and attribute names below
 // a logical node class. When fc is set, every data attribute on the
 // path must have that functional constraint, and a path that ends at a
-// data object must contain at least one attribute with it.
+// data object must contain at least one attribute with it, in its CDC or
+// in a CDC of its sub data objects. The search for that attribute
+// examines each CDC once per lookup.
 //
 // Errors wrap [model.ErrUnknownLogicalNode], [model.ErrUnknownDataObject],
 // [model.ErrUnknownCDC], [model.ErrUnknownAttribute],
@@ -333,7 +369,7 @@ func (r *Resolver) ResolvePath(lnClass string, path []string, fc model.Functiona
 		}
 	}
 	if fc != "" && !w.res.IsAttribute() && len(w.res.Steps) > 1 {
-		ok, err := r.hasFC(w.cdc.Source, w.cdc.Name, fc, map[string]bool{})
+		ok, err := r.hasFC(w.cdc.Source, w.cdc.Name, fc, map[string]bool{}, map[cdcRef]bool{})
 		if err != nil {
 			return nil, err
 		}
@@ -757,12 +793,24 @@ func (r *Resolver) kindOf(from model.NamespaceID, element, typ string, kind mode
 	}
 }
 
+// cdcRef is a CDC as a namespace references it.
+type cdcRef struct {
+	from model.NamespaceID
+	name string
+}
+
 // hasFC reports whether a CDC (any of its variants), or a CDC of one of
 // its sub data objects, has a data attribute with the functional
-// constraint.
-func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.FunctionalConstraint, visiting map[string]bool) (bool, error) {
+// constraint. visiting holds the CDCs of the current chain, for the
+// cycle error; examined the CDCs of this lookup found without the FC,
+// so that each CDC is examined once per lookup.
+func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.FunctionalConstraint, visiting map[string]bool, examined map[cdcRef]bool) (bool, error) {
 	if visiting[cdcName] {
 		return false, &model.ResolutionError{Element: cdcName, Reason: "CDC contains itself", Err: model.ErrCycle}
+	}
+	ref := cdcRef{from, cdcName}
+	if examined[ref] {
+		return false, nil
 	}
 	visiting[cdcName] = true
 	defer delete(visiting, cdcName)
@@ -781,11 +829,12 @@ func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.Functi
 		return true, nil
 	}
 	for i := range variants[0].SubDataObjects {
-		ok, err := r.hasFC(variants[0].Source, variants[0].SubDataObjects[i].Type, fc, visiting)
+		ok, err := r.hasFC(variants[0].Source, variants[0].SubDataObjects[i].Type, fc, visiting, examined)
 		if err != nil || ok {
 			return ok, err
 		}
 	}
+	examined[ref] = true
 	return false, nil
 }
 
@@ -797,12 +846,19 @@ func (r *Resolver) hasFC(from model.NamespaceID, cdcName string, fc model.Functi
 //
 // Leaves are returned in model order: data objects in class order,
 // members of a CDC or constructed type in document order.
+//
+// One call visits at most 100 000 model elements, leaves and the
+// structures above them together, and follows at most
+// [DefaultMaxDepth] levels; an expansion beyond either fails with
+// [model.ErrLimitExceeded]. The largest class of the embedded catalog
+// has 11 043 leaves.
 func (r *Resolver) Leaves(lnClass string, path []string, fc model.FunctionalConstraint) ([]*Resolution, error) {
 	base, err := r.ResolvePath(lnClass, path, fc)
 	if err != nil {
 		return nil, err
 	}
 	var out []*Resolution
+	visited := 0
 	if len(base.Steps) == 1 {
 		var dos []catalog.InheritedDataObject
 		var err error
@@ -819,19 +875,25 @@ func (r *Resolver) Leaves(lnClass string, path []string, fc model.FunctionalCons
 			if err != nil {
 				return nil, err
 			}
-			if out, err = r.expand(sub, fc, out, map[string]bool{}); err != nil {
+			if out, err = r.expand(sub, fc, out, map[string]bool{}, &visited); err != nil {
 				return nil, err
 			}
 		}
 		return out, nil
 	}
-	return r.expand(base, fc, out, map[string]bool{})
+	return r.expand(base, fc, out, map[string]bool{}, &visited)
 }
 
-func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []*Resolution, visiting map[string]bool) ([]*Resolution, error) {
+// expand appends the leaves below res to out. visited counts the
+// elements of the whole expansion, over every data object of a class.
+func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []*Resolution, visiting map[string]bool, visited *int) ([]*Resolution, error) {
 	if len(res.Steps) > r.maxDepth {
 		return nil, &model.ResolutionError{Path: res.Path(), Reason: fmt.Sprintf("expansion deeper than %d elements", r.maxDepth), Err: model.ErrLimitExceeded}
 	}
+	if *visited >= r.maxExpansion {
+		return nil, &model.ResolutionError{Path: res.Path(), Reason: fmt.Sprintf("expansion of more than %d elements", r.maxExpansion), Err: model.ErrLimitExceeded}
+	}
+	*visited++
 	leaf := res.Leaf()
 	var typeKey string
 	var members []member
@@ -872,7 +934,7 @@ func (r *Resolver) expand(res *Resolution, fc model.FunctionalConstraint, out []
 		if err != nil {
 			return nil, err
 		}
-		if out, err = r.expand(child, fc, out, visiting); err != nil {
+		if out, err = r.expand(child, fc, out, visiting, visited); err != nil {
 			return nil, err
 		}
 	}

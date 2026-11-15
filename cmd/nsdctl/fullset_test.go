@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/otfabric/go-iec61850-model/internal/fixtures"
 	"github.com/otfabric/go-iec61850-model/internal/sources"
@@ -228,6 +229,18 @@ func TestFullSetLockAndModel(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The retrieval time of a package is the modification time of its file.
+	fetched := time.Date(2026, 11, 9, 19, 24, 47, 0, time.UTC)
+	packages, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range packages {
+		if err := os.Chtimes(filepath.Join(dir, p.Name()), fetched, fetched); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	out, errOut, code := nsdctl(t, "sources", "lock", "--index", index, "--lock", lockPath, "--packages", dir)
 	if code != exitOK {
 		t.Fatalf("sources lock: %d %s", code, errOut)
@@ -243,6 +256,9 @@ func TestFullSetLockAndModel(t *testing.T) {
 		t.Errorf("generated lock is invalid: %v", ds)
 	}
 	for _, e := range lock.Sources {
+		if e.RetrievedAt != "2026-11-09T19:24:47Z" {
+			t.Errorf("%s: retrievedAt %q, want the modification time of the package", e.Namespace, e.RetrievedAt)
+		}
 		switch e.Namespace {
 		case "IEC 61850-7-420:2019A4":
 			if e.Redistribution != sources.RedistributionPermitted || e.Source == "" || e.Status != sources.StateNSDValidated || e.Content != "light" {
@@ -270,6 +286,38 @@ func TestFullSetLockAndModel(t *testing.T) {
 	}
 	if _, _, code := nsdctl(t, "sources", "lock", "--index", index, "--lock", lockPath); code != exitUsage {
 		t.Error("lock without --packages")
+	}
+	// A later run keeps the time of a package whose digest is unchanged,
+	// whatever the file says now, and takes a new one with a new digest.
+	later := fetched.Add(48 * time.Hour)
+	for _, p := range packages {
+		if err := os.Chtimes(filepath.Join(dir, p.Name()), later, later); err != nil {
+			t.Fatal(err)
+		}
+	}
+	changed := filepath.Join(dir, "IEC_61850-7-420.NSD.2019A4.Light.zip")
+	if err := os.WriteFile(changed, zipOf(t, map[string][]byte{"7-420.nsd": extension("IEC 61850-7-420", "2019", "A", "4", dependsOn74, "DXTS", "OutVar")}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(changed, later, later); err != nil {
+		t.Fatal(err)
+	}
+	out, errOut, code = nsdctl(t, "sources", "lock", "--index", index, "--lock", lockPath, "--packages", dir)
+	if code != exitOK {
+		t.Fatalf("second sources lock: %d %s", code, errOut)
+	}
+	var second sources.Lock
+	if err := json.Unmarshal([]byte(out), &second); err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range second.Sources {
+		want := "2026-11-09T19:24:47Z"
+		if e.Namespace == "IEC 61850-7-420:2019A4" {
+			want = "2026-11-11T19:24:47Z"
+		}
+		if e.RetrievedAt != want {
+			t.Errorf("second run, %s: retrievedAt %q, want %q", e.Namespace, e.RetrievedAt, want)
+		}
 	}
 
 	// Every release validates; a dependency several releases satisfy

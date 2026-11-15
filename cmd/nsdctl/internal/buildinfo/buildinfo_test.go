@@ -171,3 +171,25 @@ func TestLibrariesFromBuildInfo(t *testing.T) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
 }
+
+// A nested CLI module that does not exclude its parent library reports
+// it like every other library, with the version it is built on.
+func TestParentLibraryIsListed(t *testing.T) {
+	withBuildInfo(t, &debug.BuildInfo{
+		Main: debug.Module{Path: "github.com/otfabric/go-own/cmd/tool"},
+		Deps: []*debug.Module{
+			{Path: "github.com/otfabric/go-own", Version: "v1.0.0"},
+			{Path: "github.com/spf13/cobra", Version: "v1.10.2"},
+		},
+	})
+	i := Resolve("tool", "1.1.0", "v1.1.0", sha, "d")
+	if want := []Library{{"go-own", "1.0.0"}}; !slices.Equal(i.Libraries, want) {
+		t.Fatalf("got %v, want %v", i.Libraries, want)
+	}
+	if got, want := i.String(), "tool 1.1.0 (tag v1.1.0, commit "+sha+", built d, go-own 1.0.0, "+platform()+")"; got != want {
+		t.Errorf("text %q\nwant %q", got, want)
+	}
+	if !strings.Contains(i.JSON(), `"libraries":[{"name":"go-own","version":"1.0.0"}]`) {
+		t.Errorf("json %s", i.JSON())
+	}
+}

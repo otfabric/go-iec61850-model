@@ -1,5 +1,61 @@
 # go-iec61850-model Releases
 
+## v0.10.2
+
+**Date:** 2026-11-15
+**Previous release:** v0.10.1
+
+Review against engineering policy 1.6. The limits of the importer, the resolver and `nsdctl` are stated in one table ([SECURITY.md](SECURITY.md#limits)) and tested with what a refused call allocates; what the packages hand out belongs to the caller; `nsdctl version` names the library the binary is built on. No exported identifier is added, removed or changed.
+
+**Which library the `nsdctl` binaries contain.** The `nsdctl` v0.10.2 binaries are built on library v0.10.1. `cmd/nsdctl` is a module of its own that requires a released library version, and that requirement moves to a release after the release exists. The changes below to `nsd`, `resolver`, `presence`, `official`, `ontology`, the generator and the lock validation are in the library v0.10.2 and reach `nsdctl` with the release after this one; the changes under "nsdctl" are in the v0.10.2 binaries. [cmd/nsdctl/docs/cli.md](cmd/nsdctl/docs/cli.md#version) lists the library of every release since v0.8.0.
+
+### Changed
+
+Input that is now refused, each with its rule:
+
+- **Findings.** A document carries at most 10 000 findings (diagnostics) and a package 100 000, over all its documents; with more the load fails with `model.ErrLimitExceeded`, and the reason quotes the first finding. The path and the message of a finding quote at most 256 bytes of a name, an attribute value or an XML namespace URI, followed by `...`. `nsd.Validate` on a namespace you hold keeps every finding, as before.
+- **Tokens.** `nsd.WithMaxTokens` counts every attribute of an element as one token, next to the XML tokens: the decoder keeps a name and a value for each. The default stays 10 000 000.
+- **Schemas and manifests.** `nsd.WithMaxDocumentSize` applies to every XML document of an archive, a directory or a file: XSD schemas and manifests as well as namespaces and documentation, as `ParseSchema` and `ReadManifest` say. A manifest has at most 10 000 elements below its root, and its element paths take at most 1 MiB together.
+- **Archives.** `nsd.WithMaxArchiveEntries` is applied before the directory of an archive is read, by counting the central directory headers in the archive bytes; the headers of an archive stored inside without compression count as well. An entry that declares a compressed size larger than its archive is rejected (`model.ErrInvalidNSD`), so the compression ratio is computed from a size the archive can hold.
+- **Names.** A `name`, `abbreviation` or `variant` attribute, or the `id`, `version` or `revision` of a namespace, with a control character or a Unicode line or paragraph separator is an error (`invalid-name`). White space around an ID is removed first, as before.
+- **Literal values.** A `literalVal` is a 32-bit integer, the type the generator declares for an enumeration; a value outside it is an error (`invalid-literal`), on every platform. Before, 64-bit platforms accepted larger values and 32-bit platforms did not.
+- **Options.** A limit option of `nsd` that is not positive is rejected before anything is read, with an error that names the option and matches `model.ErrLimitExceeded`; `nsd.WithSchemaNamespaces` without a namespace is rejected with `model.ErrUnsupportedSchema`. Before, such a value made every load fail with a message about the document.
+- **Expansion.** `resolver.Resolver.Leaves` visits at most 100 000 model elements in one call, leaves and the structures above them, and fails with `model.ErrLimitExceeded` beyond that. The largest class of the embedded catalog, MHAI, has 11 043 leaves and 15 543 elements.
+- **Instance numbers.** The range of `MmultiRange` and `OmultiRange` and the one-width rule of 7-2 §22.2 apply to every instance number, whatever its length. A number beyond the range of an `int` is outside every range, so `presence` gives the same verdict on 32-bit and 64-bit platforms.
+
+Other changes:
+
+- **Cost of an import.** The memory and time an import takes are proportional to the size of the document, for every shape of document: a finding quotes a bounded part of a name, the definitions per CDC name are counted in one pass, and the text of a manifest element is collected once. [SECURITY.md](SECURITY.md#limits) states what a document at the default limit needs.
+- **FC search.** `resolver.Resolver.ResolvePath` with an FC, for a path that ends at a data object, looks for an attribute with that FC in its CDC and the CDCs of its sub data objects; each CDC is examined once per lookup, however many sub data objects refer to it, so the work grows with the number of CDCs below the data object. `Resolve`, `ResolveString`, `ResolveClass` and `Leaves` with an FC use it. The results for the embedded catalog are unchanged.
+- **Generated Go.** A model string reaches the generated source as an identifier, as a quoted string constant or in a comment that stays on its line: in comments and header lines control characters, line and paragraph separators and the byte order mark become spaces, and the class name in front of a data object constant is mapped to identifier characters like every other name. The names of the official packages are written as before.
+- **Ownership.** `official.Docs` and `official.PublicDocs` return a new doc set on every call; changing it with `Set` reaches neither another caller nor the profiles of `OpenDocumented`. `ontology.Graph.Concept`, `Concepts`, `FindConcepts` and `Walk` return concepts with their own `Properties`.
+- **Generator output format 7.** The header of every generated file names the library the generating `nsdctl` is built on: `Generator: nsdctl dev (go-iec61850-model v0.10.2, output format 7)`. The committed output (`names`, `official`, `docs/reference`) stays at format 6 in this release and is regenerated when `nsdctl` is re-pinned.
+- **Lock file.** Every entry of `sources/nsd.lock.json` records when its package was retrieved (`retrievedAt`): 2026-10-21 for the 14 newest releases, 2026-11-09 for the 19 earlier ones, the days their digests were pinned. The lock validation rejects a `retrievedAt` that is neither an RFC 3339 time nor a date and reports a pinned digest without one as a warning.
+- `make fuzz` runs every fuzz target of both modules, found with `go test -list '^Fuzz'`; `make bench` has benchmarks to run; the `cli` job of CI runs the fuzz targets of `nsdctl` for 10 s each.
+
+nsdctl:
+
+- `nsdctl version` lists go-iec61850-model with the version the binary is built on, in the text line and in `libraries` of the JSON form.
+- `nsdctl model check --scl`: the instance built from the data type templates has at most 100 000 names and values, the limit of a JSON instance; beyond that the command exits with code 3.
+- `nsdctl sources lock` records the retrieval time of a package, the modification time of its file, and keeps the time of an entry whose digest is unchanged.
+
+### Fixed
+
+- **Limits at the largest value.** `nsd.WithMaxDocumentSize(math.MaxInt64)` and `nsd.WithMaxArchiveSize(math.MaxInt64)` read the whole input: a limit is applied by reading that many bytes and asking for one more.
+- **Nil and zero values.** The zero `nsd.DocSet` is an empty set ready for `Set`. The read methods of a nil `*nsd.DocSet` or `*nsd.NSDoc`, such as the result of `nsd.SelectDocSet` for a language without a set, report an empty set; `EncodeDocSets`, `DocSetFromNSDoc` and `Set` return an error that matches `model.ErrInvalidNSD` for a nil set. A `resolver.Resolution` without steps has the zero `Step` as its leaf and empty paths. The doc comments of `DocSet`, `NSDoc`, `Resolver` and `Resolution` say what their zero value is.
+- **Generated test.** The generated test of an enumeration calls `String` with a value no literal has; when the highest value is the largest `int32`, that is a value below the lowest one, so the generated files compile for every value a literal may have.
+- **Documents.** cmd/nsdctl/docs/cli.md said that `nsdctl` links go-iec61850-model at its own version; it does not (see above). Correction to the v0.10.1 notes: the `nsdctl` v0.10.0 binaries contain the library at commit `d508c31`, without the semantic rules, the exclusions and the coverage report that v0.10.0 added to the library; `nsdctl` has them from v0.10.1.
+
+### Tests
+
+- Allocation and work budgets per limit: `nsd/budget_test.go`, `nsd/archive_limits_test.go`, `nsd/manifest_limits_test.go`, `resolver/limits_test.go`, and boundary tables (one below, at, one above) for every limit and option.
+- Fuzz targets with invariants: `FuzzParse` (documented error categories, bounds on the findings, an allocation budget), `FuzzReadZIP`, `FuzzReadManifest`, `FuzzParseSchema`, `FuzzParseClass`, `FuzzNormalize`, `FuzzFromMMS`, `FuzzParseLNName`, `FuzzParseNamespaceID`, `FuzzLeaves`, `FuzzGenerateGo`; `FuzzReadSCL` checks the size of the instance.
+- Ownership tests for `official` and `ontology`, also from several goroutines under the race detector.
+- Benchmarks that check their results: `nsd.Parse`, `nsd.ReadZIP`, the cold load of the embedded catalog, building a profile, `ResolvePath` and `Leaves`.
+- New [TESTING.md](TESTING.md): tiers, limits and budgets, fuzz targets, and why the lifecycle contract tests do not apply.
+
+---
+
 ## v0.10.1
 
 **Date:** 2026-11-11

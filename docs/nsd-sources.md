@@ -222,10 +222,21 @@ namespaces the committed output is generated from are `permitted`, the four
 
 Lock entry fields: `standard`, `publication`, `namespace` (canonical ID),
 `content` (`light`/`full`), `source` (official HTTPS URL on an `iec.ch` host),
-`retrievedAt` (RFC 3339), `sha256`, `dependencies`, `status`
+`retrievedAt` (an RFC 3339 time, or a date when only the day is known),
+`sha256`, `dependencies`, `status`
 (`publication-announced`, `nsd-available`, `nsd-validated`,
 `adoption-blocked`, `adopted`), `redistribution` (`local-only` by default, or
 `permitted` after a documented licensing decision) and `notes`.
+Every entry that pins a digest says when its package was retrieved, so that a
+package replaced at its location can be dated. `nsdctl sources lock` records
+the modification time of the package file, which `nsdctl sources fetch` sets
+when it downloads, and keeps the time of an entry whose digest is unchanged.
+The 33 entries pinned before that carry the day their digest was pinned, the
+day the packages were downloaded and verified: 2026-10-21 for the 14 newest
+releases, 2026-11-09 for the 19 earlier ones. The lock validation rejects a
+`retrievedAt` that is neither a time nor a date, and reports a pinned digest
+without one as a warning.
+
 `nsdctl sources check` validates both files; with `--packages DIR` it
 compares the digests of local packages with the lock. It contacts no server:
 automated discovery waits for verified official endpoints (M0) and belongs to

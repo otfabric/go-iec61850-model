@@ -53,8 +53,13 @@ resolver depends on the small `resolver.Lookup` interface, which both
   normative class and type catalog only; `presence` takes an instance (the
   names a device or SCL type has), not SCL. `nsdctl model check --scl` reads
   only the data type templates and DOI values it needs to build one.
-- No network access, no disk writes, no global mutable state. Catalogs and
-  profiles are immutable after construction and safe for concurrent reads.
+- No network access, no disk writes. Catalogs and profiles are immutable
+  after construction and safe for concurrent reads. The only package-level
+  state is what `official` builds on first use and keeps: the embedded
+  catalog, its profiles and the doc sets. What a caller can change is handed
+  out as a copy it owns: `official.Docs` and `PublicDocs` return a new doc set
+  on every call, and an `ontology.Graph` returns concepts with their own
+  properties.
 
 ## Data flow
 

@@ -17,10 +17,14 @@ discovery.
 
 - Output is sorted and formatted (`go/format` for Go) and contains no
   timestamps or local paths: sources appear as namespace ID plus SHA-256.
-- Every file starts with a header naming the generator version, the output
-  format version (`generator.FormatVersion`), the distribution status and the
-  source namespaces with their digests.
-- The output format is version 6 (`generator.FormatVersion`).
+- Every file starts with a header naming the generator, the output format
+  version (`generator.FormatVersion`), the distribution status and the source
+  namespaces with their digests. The generator line names the `nsdctl` version
+  and the version of the go-iec61850-model library the binary is built on,
+  which holds the generator: `Generator: nsdctl dev (go-iec61850-model
+  v0.10.2, output format 7)`. A binary built from the library's own tree, or
+  with the library replaced, has no library version to name.
+- The output format is version 7 (`generator.FormatVersion`).
 - `TestGolden` compares the output for the synthetic fixtures with
   [testdata/golden](../testdata/golden); `make golden` refreshes it after an
   intentional change (bump `FormatVersion` too).
@@ -32,6 +36,18 @@ Names become exported identifiers with a kind prefix. Characters outside
 start with an upper-case letter gets an `X` prefix, and a clash gets a numeric
 suffix. Every changed identifier is listed under "Renamed identifiers" in the
 header, so no collision is resolved silently.
+
+A model string reaches the Go source in one of three ways: as an identifier
+(mapped as above, the class name in front of a data object included), as a
+string constant (quoted) or in a comment or header line, where control
+characters, the Unicode line and paragraph separators and the byte order mark
+become spaces. So the generated files declare what the model has, whatever its
+names contain. The importer rejects names with control characters before that
+(`invalid-name`).
+
+Enumeration types are `int32`, and the importer accepts 32-bit literal values
+only. The generated test calls `String` with a value no literal has: one above
+the highest, or one below the lowest when the highest is the largest `int32`.
 
 ## Writing, checking, overwriting
 
