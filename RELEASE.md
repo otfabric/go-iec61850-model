@@ -1,5 +1,20 @@
 # go-iec61850-model Releases
 
+## v0.10.3
+
+**Date:** 2026-11-15
+**Previous release:** v0.10.2
+
+The library code is unchanged from v0.10.2. `nsdctl` is built on library v0.10.2 (was v0.10.1), and the committed generated output is regenerated with it.
+
+### Changed
+
+- `nsdctl` has the library changes of v0.10.2 (see v0.10.2 below): the limits of the importer and the resolver, the FC search that examines each CDC once, and the generator rules. For the tool this means that `inspect`, `validate`, `diff`, `dependencies`, `generate` and `model` refuse what v0.10.2 refuses, with the rules of [SECURITY.md](SECURITY.md#limits).
+- [cmd/nsdctl/docs/cli.md](cmd/nsdctl/docs/cli.md#version) lists library v0.10.2 for `nsdctl` v0.10.3.
+- The committed generated output (`names`, `official`, `docs/reference`) is regenerated with generator output format 7 (see v0.10.2): the header of each file names library v0.10.2, and the catalog's `format` is 7. The names, the catalog content and the reference pages are unchanged.
+
+---
+
 ## v0.10.2
 
 **Date:** 2026-11-15

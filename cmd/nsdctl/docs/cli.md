@@ -149,6 +149,7 @@ reaches `nsdctl` one release later:
 
 | nsdctl | contains library |
 | --- | --- |
+| v0.10.3 | v0.10.2 |
 | v0.10.2 | v0.10.1 |
 | v0.10.1 | v0.10.0 |
 | v0.10.0 | commit `d508c31`, between v0.9.1 and v0.10.0: without the semantic rules, the exclusions and the coverage report that the library v0.10.0 added |
