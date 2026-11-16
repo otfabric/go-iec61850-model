@@ -22,7 +22,7 @@ discovery.
   namespaces with their digests. The generator line names the `nsdctl` version
   and the version of the go-iec61850-model library the binary is built on,
   which holds the generator: `Generator: nsdctl dev (go-iec61850-model
-  v0.10.2, output format 7)`. A binary built from the library's own tree, or
+  v0.10.3, output format 7)`. A binary built from the library's own tree, or
   with the library replaced, has no library version to name.
 - The output format is version 7 (`generator.FormatVersion`).
 - `TestGolden` compares the output for the synthetic fixtures with
